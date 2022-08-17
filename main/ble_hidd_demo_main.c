@@ -52,8 +52,34 @@
 
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
+int isr = 0;
 // static bool send_volum_up = false;
 #define CHAR_DECLARATION_SIZE (sizeof(uint8_t))
+
+
+typedef struct{
+    int available;
+    int gesture;
+} gesture_state;
+
+gesture_state generic_gs;
+
+int is_gesture_available(gesture_state gs)
+{
+    return gs.available;
+}
+
+int get_gesture(gesture_state *gs)
+{
+    gs->available = 0;
+    return gs->gesture;
+}
+
+void set_gesture(gesture_state *gs, int gesture)
+{
+    gs->available = 1;
+    gs->gesture = gesture;
+}
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 
@@ -107,7 +133,6 @@ static esp_ble_adv_params_t hidd_adv_params = {
 };
 
 // PAJ7620 interrupt flag.
-int isr = 0;
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
 {
@@ -191,6 +216,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
 }
 
+
 void readpaj7620()
 {
     // put your main code here, to run repeatedly:
@@ -198,12 +224,12 @@ void readpaj7620()
 
     //  Serial.print("Interrup is triggered:");
     //  Serial.println(isr);
-    ESP_LOGI(HID_DEMO_TAG, "Enter A New paj7620 read loop...");
+    //ESP_LOGI(HID_DEMO_TAG, "Enter A New paj7620 read loop...");
 
     if (isr)
     {
         error = paj7620ReadReg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
-        ESP_LOGI(HID_DEMO_TAG, "READ Gesture, error：%d", error);
+        //ESP_LOGI(HID_DEMO_TAG, "READ Gesture, error：%d", error);
 
         isr = 0;
 
@@ -216,18 +242,21 @@ void readpaj7620()
                 paj7620ReadReg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
+                    set_gesture(&generic_gs, GES_RIGHT_FLAG);
                     // Serial.println("Right");
                     ESP_LOGI(HID_DEMO_TAG, "Right");
                 }
@@ -237,18 +266,21 @@ void readpaj7620()
                 paj7620ReadReg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
+                    set_gesture(&generic_gs, GES_LEFT_FLAG);
                     // Serial.println("Left");
                     ESP_LOGI(HID_DEMO_TAG, "Left");
                 }
@@ -258,18 +290,21 @@ void readpaj7620()
                 paj7620ReadReg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
+                    set_gesture(&generic_gs, GES_UP_FLAG);
                     // Serial.println("Up");
                     ESP_LOGI(HID_DEMO_TAG, "Up");
                 }
@@ -279,37 +314,44 @@ void readpaj7620()
                 paj7620ReadReg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
+                    set_gesture(&generic_gs, GES_DOWN_FLAG);
                     // Serial.println("Down");
                     ESP_LOGI(HID_DEMO_TAG, "Down");
                 }
                 break;
             case GES_FORWARD_FLAG:
+                set_gesture(&generic_gs, GES_FORWARD_FLAG);
                 // Serial.println("Forward");
                 ESP_LOGI(HID_DEMO_TAG, "Forward");
                 delay(GES_QUIT_TIME);
                 break;
             case GES_BACKWARD_FLAG:
+                set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                 // Serial.println("Backward");
                 ESP_LOGI(HID_DEMO_TAG, "Backward");
                 delay(GES_QUIT_TIME);
                 break;
             case GES_CLOCKWISE_FLAG:
+                set_gesture(&generic_gs, GES_CLOCKWISE_FLAG);
                 // Serial.println("Clockwise");
                 ESP_LOGI(HID_DEMO_TAG, "Clockwise");
                 break;
             case GES_COUNT_CLOCKWISE_FLAG:
+                set_gesture(&generic_gs, GES_COUNT_CLOCKWISE_FLAG);
                 // Serial.println("anti-clockwise");
                 ESP_LOGI(HID_DEMO_TAG, "anti-clockwise");
                 break;
@@ -317,6 +359,7 @@ void readpaj7620()
                 paj7620ReadReg(0x44, 1, &data1);
                 if (data1 == GES_WAVE_FLAG)
                 {
+                    set_gesture(&generic_gs, GES_WAVE_FLAG);
                     // Serial.println("wave");
                     ESP_LOGI(HID_DEMO_TAG, "wave");
                 }
@@ -331,15 +374,40 @@ void readpaj7620()
 void hid_demo_task(void *pvParameters)
 {
 
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     while (1)
     {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         
         readpaj7620();
 
         if (sec_conn)
         {
+            if(is_gesture_available(generic_gs))
+            {
+                ESP_LOGI(HID_DEMO_TAG, "Send gesture over ble!");
+                switch (get_gesture(&generic_gs))
+                {
+                case GES_RIGHT_FLAG:
+                    esp_hidd_send_mouse_value(hid_conn_id, 0, 100, 0);
+                    /* code */
+                    break;
+                case GES_LEFT_FLAG:
+                    esp_hidd_send_mouse_value(hid_conn_id, 0, -100, 0);
+                    /* code */
+                    break;
+                case GES_UP_FLAG:
+                    esp_hidd_send_mouse_value(hid_conn_id, 0, 0, -100);
+                    /* code */
+                    break;
+                case  GES_DOWN_FLAG:
+                    esp_hidd_send_mouse_value(hid_conn_id, 0, 0, 100);
+                    /* code */
+                    break;
+                default:
+                    break;
+                }
+            }
             // ----------------------------------Mouse keyboard demo-----------------------------------------
             // ESP_LOGI(HID_DEMO_TAG, "Send the volume");
             // send_volum_up = true;
@@ -367,7 +435,7 @@ void hid_demo_task(void *pvParameters)
     }
 }
 
-void paj7620_event_handler(void* arg)
+static void paj7620_event_handler(void* arg)
 {
     isr = 1;
     //ESP_LOGI(HID_DEMO_TAG, "Paj7620 interrup triggered.");
