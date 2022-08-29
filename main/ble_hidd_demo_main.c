@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -27,6 +28,10 @@
 #include "driver/gpio.h"
 #include "hid_dev.h"
 #include "paj7620.h"
+#include "driver/uart.h"
+#include "driver/gpio.h"
+#include "sdkconfig.h"
+#include "IMU.h"
 
 /**
  * Brief:
@@ -48,6 +53,7 @@
  */
 
 #define HID_DEMO_TAG "HID_DEMO"
+#define IMU_LOG_TAG "IMU DATA"
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 static uint16_t hid_conn_id = 0;
@@ -56,8 +62,8 @@ int isr = 0;
 // static bool send_volum_up = false;
 #define CHAR_DECLARATION_SIZE (sizeof(uint8_t))
 
-
-typedef struct{
+typedef struct
+{
     int available;
     int gesture;
 } gesture_state;
@@ -216,7 +222,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
 }
 
-
 void readpaj7620()
 {
     // put your main code here, to run repeatedly:
@@ -224,12 +229,12 @@ void readpaj7620()
 
     //  Serial.print("Interrup is triggered:");
     //  Serial.println(isr);
-    //ESP_LOGI(HID_DEMO_TAG, "Enter A New paj7620 read loop...");
+    // ESP_LOGI(HID_DEMO_TAG, "Enter A New paj7620 read loop...");
 
     if (isr)
     {
         error = paj7620ReadReg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
-        //ESP_LOGI(HID_DEMO_TAG, "READ Gesture, error：%d", error);
+        // ESP_LOGI(HID_DEMO_TAG, "READ Gesture, error：%d", error);
 
         isr = 0;
 
@@ -373,87 +378,128 @@ void readpaj7620()
 
 void hid_demo_task(void *pvParameters)
 {
-
     vTaskDelay(100 / portTICK_PERIOD_MS);
+    angle pre_angle = {0}, new_angle = {0};
+    uint8_t data[READ_BUFF_SIZE] = {0};
+    int length;
+
     while (1)
     {
-      
         if (sec_conn)
         {
-            //----------------------------------Paj7620 to mouse move------------------------------------------
-            if(is_gesture_available(generic_gs))
+            // Read UART data from IMU
+            ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
+            ESP_LOGI(IMU_LOG_TAG, "Buffered data len: %d", length);
+            if (length < READ_BUFF_SIZE)
             {
-                ESP_LOGI(HID_DEMO_TAG, "Send gesture over ble!");
-                switch (get_gesture(&generic_gs))
+                ESP_LOGI(IMU_LOG_TAG, "Wait 10 ms... \n");
+                vTaskDelay(10 / portTICK_PERIOD_MS);
+                continue;
+            }
+            // Read data from the UART
+            int len = uart_read_bytes(IMU_UART_PORT_NUM, data, READ_BUFF_SIZE, 10 / portTICK_PERIOD_MS);
+            if (len == READ_BUFF_SIZE)
+            {
+                // Get  agnle from IMU Data
+                for (int i = 0; i < READ_BUFF_SIZE - 1; i++)
                 {
-                case GES_RIGHT_FLAG:
-                    esp_hidd_send_mouse_value(hid_conn_id, 0, 100, 0);
-                    /* code */
-                    break;
-                case GES_LEFT_FLAG:
-                    esp_hidd_send_mouse_value(hid_conn_id, 0, -100, 0);
-                    /* code */
-                    break;
-                case GES_UP_FLAG:
-                    esp_hidd_send_mouse_value(hid_conn_id, 0, 0, -100);
-                    /* code */
-                    break;
-                case  GES_DOWN_FLAG:
-                    esp_hidd_send_mouse_value(hid_conn_id, 0, 0, 100);
-                    /* code */
-                    break;
-                default:
-                    break;
+                    if ((data[i] == 0x55) && (data[i + 1] == 0x53))
+                    {
+                        new_angle = get_angle(&data[i]);
+                        ESP_LOGI(IMU_LOG_TAG, "ANG,X:%-3.3f,Y:%-3.3f,Z:%-3.3f\n", new_angle.x, new_angle.y, new_angle.z);
+
+                        // Send mouse move over BLE
+                        if ((abs((int)(100 * (new_angle.y - pre_angle.y))) > 2) && (abs((int)(100 * (new_angle.z - pre_angle.z)))) > 2)
+                        {
+                            int y, z;
+                            y = (new_angle.y - pre_angle.y) / 0.02;
+                            z = (new_angle.z - pre_angle.z) / 0.02;
+                            esp_hidd_send_mouse_value(hid_conn_id, 0, z, y);
+                            pre_angle = new_angle;
+                            ESP_LOGI(IMU_LOG_TAG, "Send mouse x = %d, y=%d.", z, y);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
                 }
             }
-          
+            else
+            {
+                ESP_LOGI(IMU_LOG_TAG, "Read less data than 33.");
+                continue;
+            }
         }
     }
 }
 
-static void paj7620_event_handler(void* arg)
+static void paj7620_event_handler(void *arg)
 {
     isr = 1;
-    //ESP_LOGI(HID_DEMO_TAG, "Paj7620 interrup triggered.");
+    // ESP_LOGI(HID_DEMO_TAG, "Paj7620 interrup triggered.");
 }
 
 esp_err_t initPaj7620Interrupt()
 {
-    esp_err_t err =0;
+    esp_err_t err = 0;
     gpio_config_t io_conf = {};
-    //interrupt of failing edge
+    // interrupt of failing edge
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
-    //set as input mode
+    // set as input mode
     io_conf.mode = GPIO_MODE_DEF_INPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = (1ULL<<INTERRUPT_PIN) ;
-    //disable pull-down mode
+    // bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = (1ULL << INTERRUPT_PIN);
+    // disable pull-down mode
     io_conf.pull_down_en = 0;
-    //enable pull-up mode
+    // enable pull-up mode
     io_conf.pull_up_en = 1;
 
-    err =  gpio_config(&io_conf);
-    if(err != ESP_OK)
+    err = gpio_config(&io_conf);
+    if (err != ESP_OK)
     {
         ESP_LOGI(HID_DEMO_TAG, "Failed to gpio config, error: %d.", err);
         return err;
     }
 
     err = gpio_install_isr_service(0);
-    if(err != ESP_OK)
+    if (err != ESP_OK)
     {
         ESP_LOGI(HID_DEMO_TAG, "Failed to install isr service, error: %d.", err);
         return err;
     }
-    //hook isr handler for specific gpio pin
+    // hook isr handler for specific gpio pin
     err = gpio_isr_handler_add(INTERRUPT_PIN, paj7620_event_handler, NULL);
-    if(err != ESP_OK)
+    if (err != ESP_OK)
     {
         ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder, error: %d.", err);
         return err;
     }
 
     return err;
+}
+
+void init_UART_for_IMU()
+{
+    /* Configure parameters of an UART driver,
+     * communication pins and install the driver */
+    uart_config_t uart_config = {
+        .baud_rate = IMU_UART_BAUD_RATE,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+    int intr_alloc_flags = 0;
+
+#if CONFIG_UART_ISR_IN_IRAM
+    intr_alloc_flags = ESP_INTR_FLAG_IRAM;
+#endif
+
+    ESP_ERROR_CHECK(uart_driver_install(IMU_UART_PORT_NUM, BUF_SIZE * 2, 0, 0, NULL, intr_alloc_flags));
+    ESP_ERROR_CHECK(uart_param_config(IMU_UART_PORT_NUM, &uart_config));
+    ESP_ERROR_CHECK(uart_set_pin(IMU_UART_PORT_NUM, IMU_UART_TXD, IMU_UART_RXD, IMU_UART_RTS, IMU_UART_CTS));
 }
 
 void app_main(void)
@@ -530,6 +576,9 @@ void app_main(void)
 
     // Initialize PAJ7620 interrupt
     initPaj7620Interrupt();
+
+    // Init UART from IMU
+    init_UART_for_IMU();
 
     xTaskCreate(&hid_demo_task, "hid_task", 2048, NULL, 5, NULL);
 }

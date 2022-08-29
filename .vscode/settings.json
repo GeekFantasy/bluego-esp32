@@ -28,7 +28,9 @@
         "type_traits": "c",
         "utility": "c",
         "*.inc": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "chrono": "c",
+        "cstdlib": "cpp"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3"
