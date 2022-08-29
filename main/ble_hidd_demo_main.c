@@ -383,6 +383,7 @@ void hid_demo_task(void *pvParameters)
 
         if (sec_conn)
         {
+            //----------------------------------Paj7620 to mouse move------------------------------------------
             if(is_gesture_available(generic_gs))
             {
                 ESP_LOGI(HID_DEMO_TAG, "Send gesture over ble!");
