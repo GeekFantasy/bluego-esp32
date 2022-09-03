@@ -30,7 +30,10 @@
         "*.inc": "cpp",
         "*.ipp": "cpp",
         "chrono": "c",
-        "cstdlib": "cpp"
+        "cstdlib": "cpp",
+        "stream_buffer.h": "c",
+        "event_groups.h": "c",
+        "string_view": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3"

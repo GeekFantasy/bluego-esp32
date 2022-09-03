@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/stream_buffer.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -32,7 +33,6 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 #include "IMU.h"
-
 /**
  * Brief:
  * This example Implemented BLE HID device profile related functions, in which the HID device
@@ -376,47 +376,103 @@ void readpaj7620()
     delay(GES_REACTION_TIME);
 }
 
+// void receive_imu_uart_task(void *pvParam)
+// {
+//     StreamBufferHandle_t *sbh = (StreamBufferHandle_t)pvParam;
+//     size_t length = 0, recv_len = 0;
+//     uint8_t data[2 * READ_BUFF_SIZE] = {0};
+
+//     if (pvParam == NULL)
+//     {
+//         ESP_LOGI(IMU_LOG_TAG, "Failed to get stream buffer, delete the task.");
+//         vTaskDelete(NULL);
+//     }
+
+//     while (1)
+//     {
+//         // Read UART data from IMU
+//         ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
+//         ESP_LOGI(IMU_LOG_TAG, "Buffer len: %d", length);
+//         if (length < READ_BUFF_SIZE)
+//         {
+//             ESP_LOGI(IMU_LOG_TAG, "Wait 5 ms...");
+//             vTaskDelay(5 / portTICK_PERIOD_MS);
+//             continue;
+//         }
+
+//         recv_len = uart_read_bytes(IMU_UART_PORT_NUM, data, 2 * READ_BUFF_SIZE, 0);
+//         if (recv_len > 0)
+//         {
+//             xStreamBufferSend(*sbh, data, recv_len, 0);
+//             ESP_LOGI(IMU_LOG_TAG, "Sent q data.");
+//         }
+//     }
+// }
+
+// void send_mouse_move_task(void *pvParam)
+// {
+//     StreamBufferHandle_t *sbh = (StreamBufferHandle_t)pvParam;
+//     uint8_t rec_data[2* READ_BUFF_SIZE] = {0};
+
+//     if (pvParam == NULL)
+//     {
+//         ESP_LOGI(IMU_LOG_TAG, "Failed to get stream buffer, delete the task\n");
+//         vTaskDelete(NULL);
+//     }
+
+//     while (1)
+//     {
+
+//     }
+// }
+
 void hid_demo_task(void *pvParameters)
 {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     angle pre_angle = {0}, new_angle = {0};
-    uint8_t data[READ_BUFF_SIZE] = {0};
-    int length;
+    uint8_t data[2 * READ_BUFF_SIZE] = {0};
+    int length, rec_len, i;
 
     while (1)
     {
         if (sec_conn)
         {
+            // Create stream buffer for receiving uart data
+            // UART_stream = xStreamBufferCreate(100, DATA_FRAME_LEN);
+
+            // xTaskCreate(send_mouse_move_task, "send movement", 1024 * 2, (void *)&UART_stream, 1, &send_movement_task);
+            // xTaskCreate(receive_imu_uart_task, "receive uart", 1024 * 2, (void *)&UART_stream, 1, &receive_uart_task);
+
             // Read UART data from IMU
             ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
-            ESP_LOGI(IMU_LOG_TAG, "Buffered data len: %d", length);
+            ESP_LOGI(IMU_LOG_TAG, "Blen: %d", length);
             if (length < READ_BUFF_SIZE)
             {
-                ESP_LOGI(IMU_LOG_TAG, "Wait 10 ms... \n");
-                vTaskDelay(10 / portTICK_PERIOD_MS);
+                ESP_LOGI(IMU_LOG_TAG, "Wait 5 ms...\n");
+                vTaskDelay(pdMS_TO_TICKS(5));
                 continue;
             }
             // Read data from the UART
-            int len = uart_read_bytes(IMU_UART_PORT_NUM, data, READ_BUFF_SIZE, 10 / portTICK_PERIOD_MS);
-            if (len == READ_BUFF_SIZE)
+            rec_len = uart_read_bytes(IMU_UART_PORT_NUM, data, 2* READ_BUFF_SIZE, 0);
+            if (rec_len >= READ_BUFF_SIZE)
             {
                 // Get  agnle from IMU Data
-                for (int i = 0; i < READ_BUFF_SIZE - 1; i++)
+                for (i = 0; i < (rec_len - READ_BUFF_SIZE + 1); i++)
                 {
                     if ((data[i] == 0x55) && (data[i + 1] == 0x53))
                     {
                         new_angle = get_angle(&data[i]);
-                        ESP_LOGI(IMU_LOG_TAG, "ANG,X:%-3.3f,Y:%-3.3f,Z:%-3.3f\n", new_angle.x, new_angle.y, new_angle.z);
+                        // ESP_LOGI(IMU_LOG_TAG, "ANG,X:%-3.3f,Y:%-3.3f,Z:%-3.3f\n", new_angle.x, new_angle.y, new_angle.z);
 
                         // Send mouse move over BLE
-                        if ((abs((int)(100 * (new_angle.y - pre_angle.y))) > 2) && (abs((int)(100 * (new_angle.z - pre_angle.z)))) > 2)
+                        if ((abs((int)(100 * (new_angle.y - pre_angle.y))) > 2) || (abs((int)(100 * (new_angle.z - pre_angle.z)))) > 2)
                         {
                             int y, z;
                             y = (new_angle.y - pre_angle.y) / 0.02;
                             z = (new_angle.z - pre_angle.z) / 0.02;
-                            esp_hidd_send_mouse_value(hid_conn_id, 0, z, y);
+                            esp_hidd_send_mouse_value(hid_conn_id, 0, -z, y);
                             pre_angle = new_angle;
-                            ESP_LOGI(IMU_LOG_TAG, "Send mouse x = %d, y=%d.", z, y);
+                            ESP_LOGI(IMU_LOG_TAG, "M:x=%d,y=%d.", z, y);
                         }
                         else
                         {
@@ -430,6 +486,30 @@ void hid_demo_task(void *pvParameters)
                 ESP_LOGI(IMU_LOG_TAG, "Read less data than 33.");
                 continue;
             }
+        }
+        else
+        {
+            // // delete stream after ble closed
+            // if (UART_stream != null)
+            // {
+            //     vStreamBufferDelete(UART_stream);
+            //     UART_stream = NULL:
+            // }
+
+            // // delete receive UART and check IMU task after ble closed
+            // if (receive_uart_task == NULL)
+            // {
+            //     vTaskDelete(receive_uart_task);
+            //     receive_uart_task = NULL;
+            // }
+            // if (send_movement_task == NULL)
+            // {
+            //     vTaskDelete(send_movement_task);
+            //     send_movement_task = NULL;
+            // }
+
+            vTaskDelay(pdMS_TO_TICKS(200));
+            // delay 200 ms
         }
     }
 }
@@ -580,5 +660,5 @@ void app_main(void)
     // Init UART from IMU
     init_UART_for_IMU();
 
-    xTaskCreate(&hid_demo_task, "hid_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&hid_demo_task, "hid_task", 2048 *2, NULL, 5, NULL);
 }
