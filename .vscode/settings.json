@@ -33,7 +33,8 @@
         "cstdlib": "cpp",
         "stream_buffer.h": "c",
         "event_groups.h": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "esp_log.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3"

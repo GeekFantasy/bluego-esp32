@@ -1,4 +1,4 @@
-idf_component_register(SRCS "IMU.c" "paj7620.c" "ble_hidd_demo_main.c"
+idf_component_register(SRCS "ble_go_main.c" "IMU.c" "paj7620.c"
                             "esp_hidd_prf_api.c"
                             "hid_dev.c"
                             "hid_device_le_prf.c"
