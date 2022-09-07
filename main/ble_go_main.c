@@ -440,11 +440,13 @@ void hid_demo_task(void *pvParameters)
         {
             if (is_touch)
             {
-                for (size_t j = 0; j < 1000; j++)
+                for (size_t j = 0; j <= 30; j++)
                 {
-                    esp_hidd_send_touch_value(hid_conn_id, 1, 0 + 10 * j, 00 + 10 * j, 100, 100);
+                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, 140, 450 - 10*j, 10, 10);
                     vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
+                esp_hidd_send_touch_value(hid_conn_id, 0, 1, 140, 150, 0, 0);
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             else
             {
