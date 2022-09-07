@@ -432,59 +432,71 @@ void hid_demo_task(void *pvParameters)
     angle pre_angle = {0}, new_angle = {0};
     uint8_t data[2 * READ_BUFF_SIZE] = {0};
     int length, rec_len, i;
+    int is_touch = 1;
 
     while (1)
     {
         if (sec_conn)
         {
-            // Create stream buffer for receiving uart data
-            // UART_stream = xStreamBufferCreate(100, DATA_FRAME_LEN);
-
-            // xTaskCreate(send_mouse_move_task, "send movement", 1024 * 2, (void *)&UART_stream, 1, &send_movement_task);
-            // xTaskCreate(receive_imu_uart_task, "receive uart", 1024 * 2, (void *)&UART_stream, 1, &receive_uart_task);
-
-            // Read UART data from IMU
-            ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
-            ESP_LOGI(IMU_LOG_TAG, "Blen: %d", length);
-            if (length < READ_BUFF_SIZE)
+            if (is_touch)
             {
-                ESP_LOGI(IMU_LOG_TAG, "Wait 5 ms...\n");
-                vTaskDelay(pdMS_TO_TICKS(5));
-                continue;
-            }
-            // Read data from the UART
-            rec_len = uart_read_bytes(IMU_UART_PORT_NUM, data, 2* READ_BUFF_SIZE, 0);
-            if (rec_len >= READ_BUFF_SIZE)
-            {
-                // Get  agnle from IMU Data
-                for (i = 0; i < (rec_len - READ_BUFF_SIZE + 1); i++)
+                for (size_t j = 0; j < 1000; j++)
                 {
-                    if ((data[i] == 0x55) && (data[i + 1] == 0x53))
-                    {
-                        new_angle = get_angle(&data[i]);
-                        // ESP_LOGI(IMU_LOG_TAG, "ANG,X:%-3.3f,Y:%-3.3f,Z:%-3.3f\n", new_angle.x, new_angle.y, new_angle.z);
-
-                        // Send mouse move over BLE
-                        if ((abs((int)(100 * (new_angle.y - pre_angle.y))) > 2) || (abs((int)(100 * (new_angle.z - pre_angle.z)))) > 2)
-                        {
-                            int y, z;
-                            y = (new_angle.y - pre_angle.y) / 0.02;
-                            z = (new_angle.z - pre_angle.z) / 0.02;
-                            esp_hidd_send_mouse_value(hid_conn_id, 0, -z, y);
-                            pre_angle = new_angle;
-                            ESP_LOGI(IMU_LOG_TAG, "M:x=%d,y=%d.", z, y);
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
+                    esp_hidd_send_touch_value(hid_conn_id, 1, 6000 + 10 * j, 6000 + 10 * j, 100, 100);
+                    vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
             }
             else
             {
-                ESP_LOGI(IMU_LOG_TAG, "Read less data than 33.");
-                continue;
+                // Create stream buffer for receiving uart data
+                // UART_stream = xStreamBufferCreate(100, DATA_FRAME_LEN);
+
+                // xTaskCreate(send_mouse_move_task, "send movement", 1024 * 2, (void *)&UART_stream, 1, &send_movement_task);
+                // xTaskCreate(receive_imu_uart_task, "receive uart", 1024 * 2, (void *)&UART_stream, 1, &receive_uart_task);
+
+                // Read UART data from IMU
+                ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
+                ESP_LOGI(IMU_LOG_TAG, "Blen: %d", length);
+                if (length < READ_BUFF_SIZE)
+                {
+                    ESP_LOGI(IMU_LOG_TAG, "Wait 5 ms...\n");
+                    vTaskDelay(pdMS_TO_TICKS(5));
+                    continue;
+                }
+                // Read data from the UART
+                rec_len = uart_read_bytes(IMU_UART_PORT_NUM, data, 2 * READ_BUFF_SIZE, 0);
+                if (rec_len >= READ_BUFF_SIZE)
+                {
+                    // Get  agnle from IMU Data
+                    for (i = 0; i < (rec_len - READ_BUFF_SIZE + 1); i++)
+                    {
+                        if ((data[i] == 0x55) && (data[i + 1] == 0x53))
+                        {
+                            new_angle = get_angle(&data[i]);
+                            // ESP_LOGI(IMU_LOG_TAG, "ANG,X:%-3.3f,Y:%-3.3f,Z:%-3.3f\n", new_angle.x, new_angle.y, new_angle.z);
+
+                            // Send mouse move over BLE
+                            if ((abs((int)(100 * (new_angle.y - pre_angle.y))) > 2) || (abs((int)(100 * (new_angle.z - pre_angle.z)))) > 2)
+                            {
+                                int y, z;
+                                y = (new_angle.y - pre_angle.y) / 0.02;
+                                z = (new_angle.z - pre_angle.z) / 0.02;
+                                esp_hidd_send_mouse_value(hid_conn_id, 0, -z, y);
+                                pre_angle = new_angle;
+                                ESP_LOGI(IMU_LOG_TAG, "M:x=%d,y=%d.", z, y);
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    ESP_LOGI(IMU_LOG_TAG, "Read less data than 33.");
+                    continue;
+                }
             }
         }
         else
@@ -660,5 +672,5 @@ void app_main(void)
     // Init UART from IMU
     init_UART_for_IMU();
 
-    xTaskCreate(&hid_demo_task, "hid_task", 2048 *2, NULL, 5, NULL);
+    xTaskCreate(&hid_demo_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }

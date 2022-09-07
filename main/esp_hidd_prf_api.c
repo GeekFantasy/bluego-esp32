@@ -28,6 +28,9 @@
 // HID mouse input report length
 #define HID_MOUSE_IN_RPT_LEN        5
 
+// HID touch screen report length
+#define HID_TOUCH_SCREEN_IN_RPT_LEN        12
+
 // HID consumer control input report length
 #define HID_CC_IN_RPT_LEN           2
 
@@ -138,5 +141,27 @@ void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mi
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
                         HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT, HID_MOUSE_IN_RPT_LEN, buffer);
+    return;
+}
+
+void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint16_t touch_x, uint16_t touch_y, uint16_t touch_width, uint16_t touch_height)
+{
+    uint8_t buffer[HID_TOUCH_SCREEN_IN_RPT_LEN];
+
+    buffer[0] = 0x21 | touch_down;  // Buttons
+    buffer[1] = 0x00;               // Constant
+    buffer[2] = touch_x;            // X low byte
+    buffer[3] = touch_x >> 8;       // X High byte
+    buffer[4] = touch_y;            // y low byte
+    buffer[5] = touch_y >> 8;       // y High byte
+    buffer[6] = touch_width;        // Touch width low byte
+    buffer[7] = touch_width >> 8;   // Touch width high byte
+    buffer[8] = touch_height;       // Touch height Low byte
+    buffer[9] = touch_height >> 8;  // Touch height high byte
+    buffer[10] = 0x00;              // Constant
+    buffer[11] = 0x00;              // Constant
+
+    hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
+                        HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT, HID_TOUCH_SCREEN_IN_RPT_LEN, buffer);
     return;
 }
