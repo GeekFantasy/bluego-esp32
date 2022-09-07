@@ -205,18 +205,18 @@ static const uint8_t hidReportMap[] = {
     0x95, 0x0a,       //     REPORT_COUNT (10)            36
     0x81, 0x03,       //     INPUT (Cnst,Ary,Abs)         38
     0x05, 0x01,       //     USAGE_PAGE (Generic Desktop) 40
-    0x26, 0xff, 0x7f, //     LOGICAL_MAXIMUM (32767)      42
+    0x26, 0x10, 0x27, //     LOGICAL_MAXIMUM (32767)      42
     0x75, 0x10,       //     REPORT_SIZE (16)             45
     0x95, 0x01,       //     REPORT_COUNT (1)             47
     0xa4,             //     PUSH                         49
-    0x55, 0x0d,       //     UNIT_EXPONENT (-3)           50
+    //0x55, 0x0E,       //     UNIT_EXPONENT (-2)         50
     0x65, 0x00,       //     UNIT (None)                  52
     0x09, 0x30,       //     USAGE (X)                    54
     0x35, 0x00,       //     PHYSICAL_MINIMUM (0)         56
-    0x46, 0x00, 0x00, //     PHYSICAL_MAXIMUM (0)         58
+    0x46, 0x10, 0x27, //     PHYSICAL_MAXIMUM (10000)     58
     0x81, 0x02,       //     INPUT (Data,Var,Abs)         61
     0x09, 0x31,       //     USAGE (Y)                    63
-    0x46, 0x00, 0x00, //     PHYSICAL_MAXIMUM (0)         65
+    0x46, 0x10, 0x27, //     PHYSICAL_MAXIMUM (10000)     65
     0x81, 0x02,       //     INPUT (Data,Var,Abs)         68
     0xb4,             //     POP                          70
     0x05, 0x0d,       //     USAGE PAGE (Digitizers)      71

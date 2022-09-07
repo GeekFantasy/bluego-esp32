@@ -442,7 +442,7 @@ void hid_demo_task(void *pvParameters)
             {
                 for (size_t j = 0; j < 1000; j++)
                 {
-                    esp_hidd_send_touch_value(hid_conn_id, 1, 6000 + 10 * j, 6000 + 10 * j, 100, 100);
+                    esp_hidd_send_touch_value(hid_conn_id, 1, 0 + 10 * j, 00 + 10 * j, 100, 100);
                     vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
             }
