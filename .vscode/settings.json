@@ -34,7 +34,8 @@
         "stream_buffer.h": "c",
         "event_groups.h": "c",
         "string_view": "c",
-        "esp_log.h": "c"
+        "esp_log.h": "c",
+        "imu.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3"
