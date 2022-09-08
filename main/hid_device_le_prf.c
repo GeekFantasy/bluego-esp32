@@ -183,53 +183,6 @@ static const uint8_t hidReportMap[] = {
     0xC0,             // End Collection
 #endif
 
-    // Report discriptor for touch screen Stylus version
-    // this version works but it shows a pointer on the screen.
-    // 0x05, 0x0d,       // USAGE_PAGE (Digitizers)          0
-    // 0x09, 0x04,       // USAGE (Touch Screen)             2
-    // 0xa1, 0x01,       // COLLECTION (Application)         4
-    // 0x85, 0x05,       //   REPORT_ID (Touch)              6
-    // 0x09, 0x20,       //   USAGE (Stylus)                 8
-    // 0xa1, 0x00,       //   COLLECTION (Physical)          10
-    // 0x09, 0x42,       //     USAGE (Tip Switch)           12
-    // 0x15, 0x00,       //     LOGICAL_MINIMUM (0)          14
-    // 0x25, 0x01,       //     LOGICAL_MAXIMUM (1)          16
-    // 0x75, 0x01,       //     REPORT_SIZE (1)              18
-    // 0x95, 0x01,       //     REPORT_COUNT (1)             20
-    // 0x81, 0x02,       //     INPUT (Data,Var,Abs)         22
-    // 0x95, 0x03,       //     REPORT_COUNT (3)             24
-    // 0x81, 0x03,       //     INPUT (Cnst,Ary,Abs)         26
-    // 0x09, 0x32,       //     USAGE (In Range)             28
-    // 0x09, 0x37,       //     USAGE (Data Valid-Finger)    30
-    // 0x95, 0x02,       //     REPORT_COUNT (2)             32
-    // 0x81, 0x02,       //     INPUT (Data,Var,Abs)         34
-    // 0x95, 0x0a,       //     REPORT_COUNT (10)            36
-    // 0x81, 0x03,       //     INPUT (Cnst,Ary,Abs)         38
-    // 0x05, 0x01,       //     USAGE_PAGE (Generic Desktop) 40
-    // 0x26, 0x10, 0x27, //     LOGICAL_MAXIMUM (32767)      42
-    // 0x75, 0x10,       //     REPORT_SIZE (16)             45
-    // 0x95, 0x01,       //     REPORT_COUNT (1)             47
-    // 0xa4,             //     PUSH                         49
-    // //0x55, 0x0E,       //     UNIT_EXPONENT (-2)         50
-    // 0x65, 0x00,       //     UNIT (None)                  52
-    // 0x09, 0x30,       //     USAGE (X)                    54
-    // 0x35, 0x00,       //     PHYSICAL_MINIMUM (0)         56
-    // 0x46, 0x10, 0x27, //     PHYSICAL_MAXIMUM (10000)     58
-    // 0x81, 0x02,       //     INPUT (Data,Var,Abs)         61
-    // 0x09, 0x31,       //     USAGE (Y)                    63
-    // 0x46, 0x10, 0x27, //     PHYSICAL_MAXIMUM (10000)     65
-    // 0x81, 0x02,       //     INPUT (Data,Var,Abs)         68
-    // 0xb4,             //     POP                          70
-    // 0x05, 0x0d,       //     USAGE PAGE (Digitizers)      71
-    // 0x09, 0x60,       //     USAGE (Width)                73
-    // 0x09, 0x61,       //     USAGE (Height)               75
-    // 0x95, 0x02,       //     REPORT_COUNT (2)             77
-    // 0x81, 0x02,       //     INPUT (Data,Var,Abs)         79
-    // 0x95, 0x01,       //     REPORT_COUNT (1)             81
-    // 0x81, 0x03,       //     INPUT (Cnst,Ary,Abs)         83/85
-    // 0xc0,             //   END_COLLECTION                 0/1
-    // 0xc0,             // END_COLLECTION                   0/1
-
     // Descriptor for real finger touch
     0x05, 0x0d,                   // USAGE_PAGE (Digitizers)
     0x09, 0x04,                   // USAGE (Touch Screen)
@@ -250,17 +203,17 @@ static const uint8_t hidReportMap[] = {
     0x95, 0x01,                   //       REPORT_COUNT (1)
     0x81, 0x02,                   //       INPUT (Data,Var,Abs)
     0x05, 0x01,                   //       USAGE_PAGE (Generic Desk..
-    0x26, 0x17, 0x01,             //       LOGICAL_MAXIMUM (279)
+    0x26, 0xB4, 0x00,             //       LOGICAL_MAXIMUM (180) // need to adujust according to screen ration 
     0x75, 0x10,                   //       REPORT_SIZE (16)
     0x55, 0x0e,                   //       UNIT_EXPONENT (-2)
     0x65, 0x13,                   //       UNIT(Inch,EngLinear)
     0x09, 0x30,                   //       USAGE (X)
     0x35, 0x00,                   //       PHYSICAL_MINIMUM (0)
-    0x46, 0xA0, 0x05,             //       PHYSICAL_MAXIMUM (1440)
+    0x46, 0x84, 0x03,             //       PHYSICAL_MAXIMUM (900) // need to adujust according to screen resolution vbut not necessarily to be the same
     0x95, 0x01,                   //       REPORT_COUNT (1)
     0x81, 0x02,                   //       INPUT (Data,Var,Abs)
-    0x26, 0x6D, 0x02,             //       LOGICAL_MAXIMUM (621)
-    0x46, 0x80, 0x0C,             //       PHYSICAL_MAXIMUM (3200)
+    0x26, 0x68, 0x01,             //       LOGICAL_MAXIMUM (360) // need to adujust according to screen ration
+    0x46, 0x68, 0x01,             //       PHYSICAL_MAXIMUM (1800) // need to adujust according to screen resolution but not necessarily to be the same
     0x09, 0x31,                   //       USAGE (Y)
     0x81, 0x02,                   //       INPUT (Data,Var,Abs)
     0x05, 0x0d,                   //       USAGE_PAGE (Digitizers)

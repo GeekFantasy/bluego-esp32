@@ -26,24 +26,7 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "IMU.h"
-/**
- * Brief:
- * This example Implemented BLE HID device profile related functions, in which the HID device
- * has 4 Reports (1 is mouse, 2 is keyboard and LED, 3 is Consumer Devices, 4 is Vendor devices).
- * Users can choose different reports according to their own application scenarios.
- * BLE HID profile inheritance and USB HID class.
- */
 
-/**
- * Note:
- * 1. Win10 does not support vendor report , So SUPPORT_REPORT_VENDOR is always set to FALSE, it defines in hidd_le_prf_int.h
- * 2. Update connection parameters are not allowed during iPhone HID encryption, slave turns
- * off the ability to automatically update connection parameters during encryption.
- * 3. After our HID device is connected, the iPhones write 1 to the Report Characteristic Configuration Descriptor,
- * even if the HID encryption is not completed. This should actually be written 1 after the HID encryption is completed.
- * we modify the permissions of the Report Characteristic Configuration Descriptor to `ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE_ENCRYPTED`.
- * if you got `GATT_INSUF_ENCRYPTION` error, please ignore.
- */
 
 #define HID_DEMO_TAG "HID_DEMO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -423,11 +406,9 @@ void hid_demo_task(void *pvParameters)
 {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     angle pre_angle = {0}, new_angle = {0};
-    uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 0;
+    uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 1;
     int length, rec_len, i , j;
     int is_touch = 1;
-    uint16_t scan_time;
-    uint32_t scan_start_time;
 
     while (1)
     {
@@ -435,23 +416,17 @@ void hid_demo_task(void *pvParameters)
         {
             if (is_touch)
             {
-                scan_time = 2000;
-                scan_start_time = esp_log_timestamp();
-                contact_id++;
-
-                esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 140 , 450 , 1, 1);
+                esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90 , 300 , 1, 1);
                 vTaskDelay(200 / portTICK_PERIOD_MS);
-                // esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 140 , 450 , 1, 1);
-                // vTaskDelay(200 / portTICK_PERIOD_MS);
-                //esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, scan_time, 110 , 150 , 1, 1);
-                for (j = 1; j <= 30; j++)
+  
+                for (j = 1; j <= 20; j++)
                 {
-                    //scan_time = 10 * (esp_log_timestamp() - scan_start_time);
-                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 140 , 450 - 10 * j, 1, 1);
+
+                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90 , 300 - 10 * j, 1, 1);
                     vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
 
-                esp_hidd_send_touch_value(hid_conn_id, 0, 1, contact_id, 0, 140, 150, 0, 0);
+                esp_hidd_send_touch_value(hid_conn_id, 0, 1, contact_id, 0, 90, 100, 0, 0);
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
             }
             else
