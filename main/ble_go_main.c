@@ -423,9 +423,11 @@ void hid_demo_task(void *pvParameters)
 {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     angle pre_angle = {0}, new_angle = {0};
-    uint8_t data[2 * READ_BUFF_SIZE] = {0};
-    int length, rec_len, i;
+    uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 0;
+    int length, rec_len, i , j;
     int is_touch = 1;
+    uint16_t scan_time;
+    uint32_t scan_start_time;
 
     while (1)
     {
@@ -433,13 +435,24 @@ void hid_demo_task(void *pvParameters)
         {
             if (is_touch)
             {
-                for (size_t j = 0; j <= 30; j++)
+                scan_time = 2000;
+                scan_start_time = esp_log_timestamp();
+                contact_id++;
+
+                esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 140 , 450 , 1, 1);
+                vTaskDelay(200 / portTICK_PERIOD_MS);
+                // esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 140 , 450 , 1, 1);
+                // vTaskDelay(200 / portTICK_PERIOD_MS);
+                //esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, scan_time, 110 , 150 , 1, 1);
+                for (j = 1; j <= 30; j++)
                 {
-                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, 140, 450 - 10*j, 10, 10);
+                    //scan_time = 10 * (esp_log_timestamp() - scan_start_time);
+                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 140 , 450 - 10 * j, 1, 1);
                     vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
-                esp_hidd_send_touch_value(hid_conn_id, 0, 1, 140, 150, 0, 0);
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+                esp_hidd_send_touch_value(hid_conn_id, 0, 1, contact_id, 0, 140, 150, 0, 0);
+                vTaskDelay(3000 / portTICK_PERIOD_MS);
             }
             else
             {

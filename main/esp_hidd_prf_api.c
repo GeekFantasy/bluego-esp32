@@ -144,8 +144,9 @@ void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mi
     return;
 }
 
-void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t contact_id,  uint16_t touch_x, uint16_t touch_y, uint16_t touch_width, uint16_t touch_height)
+void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t contact_count,  uint8_t contact_id, uint16_t scan_time, uint16_t touch_x, uint16_t touch_y, uint16_t touch_width, uint16_t touch_height)
 {
+    printf("ID:%d,x:%d,y:%d,count:%d,down:%d,time:%d\n", contact_id, touch_x, touch_y, contact_count,touch_down, scan_time);
     uint8_t buffer[HID_TOUCH_SCREEN_IN_RPT_LEN];
 
     buffer[0] = touch_down;         // Buttons
@@ -158,9 +159,9 @@ void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t con
     buffer[7] = touch_width >> 8;   // Touch width high byte
     buffer[8] = touch_height;       // Touch height Low byte
     buffer[9] = touch_height >> 8;  // Touch height high byte
-    buffer[10] = 0x64;              // scan time low
-    buffer[11] = 0x00;              // scan time high
-    buffer[12] = 0x01;              // contact count
+    buffer[10] = scan_time;         // scan time low
+    buffer[11] = scan_time >> 8;    // scan time high
+    buffer[12] = contact_count;     // contact count
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
                         HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT, HID_TOUCH_SCREEN_IN_RPT_LEN, buffer);
