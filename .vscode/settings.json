@@ -38,5 +38,6 @@
         "imu.h": "c"
     },
     "idf.flashType": "UART",
-    "idf.portWin": "COM3"
+    "idf.portWin": "COM3",
+    "idf.flashBaudRate": "460800"
 }

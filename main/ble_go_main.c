@@ -647,13 +647,13 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     // Initialize PAJ7620
-    paj7620Init();
+    //paj7620Init();
 
     // Initialize PAJ7620 interrupt
-    initPaj7620Interrupt();
+    //initPaj7620Interrupt();
 
     // Init UART from IMU
-    init_UART_for_IMU();
+    //init_UART_for_IMU();
 
     xTaskCreate(&hid_demo_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }
