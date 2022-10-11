@@ -26,6 +26,7 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "IMU.h"
+#include "mpu6500.h"
 
 
 #define HID_DEMO_TAG "HID_DEMO"
@@ -409,9 +410,19 @@ void hid_demo_task(void *pvParameters)
     uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 1;
     int length, rec_len, i , j;
     int is_touch = 1;
+    uint8_t gyro_data[6] = {0};
+    uint16_t x, y, z;
 
     while (1)
     {
+        mpu6500_GYR_read(gyro_data);
+        x = *(gyro_data + 0);
+        y = *(gyro_data + 2);
+        z = *(gyro_data + 4);
+        printf("GYRO X:%d\nGYRO Y:%d\nGYRO Z:%d\n", x, y, z);
+
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+
         if (sec_conn)
         {
             if (is_touch)
@@ -654,6 +665,10 @@ void app_main(void)
 
     // Init UART from IMU
     //init_UART_for_IMU();
+
+    //init MPU6500
+    mpu6500_init();
+    mpu6500_who_am_i();
 
     xTaskCreate(&hid_demo_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }
