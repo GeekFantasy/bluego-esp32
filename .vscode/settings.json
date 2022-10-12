@@ -40,5 +40,6 @@
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
-    "idf.flashBaudRate": "460800"
+    "idf.flashBaudRate": "460800",
+    "cmake.configureOnOpen": false
 }
