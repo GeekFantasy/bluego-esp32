@@ -25,9 +25,9 @@
 #include "paj7620.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "driver/adc.h"
 #include "IMU.h"
 #include "mpu6500.h"
-
 
 #define HID_DEMO_TAG "HID_DEMO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -408,10 +408,11 @@ void hid_demo_task(void *pvParameters)
     vTaskDelay(100 / portTICK_PERIOD_MS);
     angle pre_angle = {0}, new_angle = {0};
     uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 1;
-    int length, rec_len, i , j;
+    int length, rec_len, i, j;
     int is_touch = 1;
     uint8_t gyro_data[6] = {0};
     uint16_t x, y, z;
+    int read_raw;
 
     while (1)
     {
@@ -421,19 +422,30 @@ void hid_demo_task(void *pvParameters)
         z = *(gyro_data + 4);
         printf("GYRO X:%d\nGYRO Y:%d\nGYRO Z:%d\n", x, y, z);
 
+        
+        esp_err_t r = adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
+        if (r == ESP_OK)
+        {
+            printf("ADC: %d\n", read_raw);
+        }
+        else if (r == ESP_ERR_TIMEOUT)
+        {
+            printf("ADC2 used by Wi-Fi.\n");
+        }
+
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
         if (sec_conn)
         {
             if (is_touch)
             {
-                esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90 , 300 , 1, 1);
+                esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90, 300, 1, 1);
                 vTaskDelay(200 / portTICK_PERIOD_MS);
-  
+
                 for (j = 1; j <= 20; j++)
                 {
 
-                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90 , 300 - 10 * j, 1, 1);
+                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90, 300 - 10 * j, 1, 1);
                     vTaskDelay(10 / portTICK_PERIOD_MS);
                 }
 
@@ -588,6 +600,11 @@ void init_UART_for_IMU()
     ESP_ERROR_CHECK(uart_set_pin(IMU_UART_PORT_NUM, IMU_UART_TXD, IMU_UART_RXD, IMU_UART_RTS, IMU_UART_CTS));
 }
 
+void init_adc()
+{
+    adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11);
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -658,17 +675,19 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     // Initialize PAJ7620
-    //paj7620Init();
+    // paj7620Init();
 
     // Initialize PAJ7620 interrupt
-    //initPaj7620Interrupt();
+    // initPaj7620Interrupt();
 
     // Init UART from IMU
-    //init_UART_for_IMU();
+    // init_UART_for_IMU();
 
-    //init MPU6500
+    // init MPU6500
     mpu6500_init();
     mpu6500_who_am_i();
+
+    init_adc();
 
     xTaskCreate(&hid_demo_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }

@@ -36,7 +36,8 @@
         "string_view": "c",
         "esp_log.h": "c",
         "imu.h": "c",
-        "mpu6500.h": "c"
+        "mpu6500.h": "c",
+        "string.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
