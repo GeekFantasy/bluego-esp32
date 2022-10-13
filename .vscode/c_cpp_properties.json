@@ -14,6 +14,7 @@
                 "UNICODE",
                 "_UNICODE"
             ],
+            "compilerPath": "${config:idf.toolsPathWin}/tools/xtensa-esp32-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "browse": {
@@ -25,7 +26,8 @@
                     "${workspaceFolder}"
                 ],
                 "limitSymbolsToIncludedHeaders": false
-            }
+            },
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4
