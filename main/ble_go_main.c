@@ -433,6 +433,8 @@ void hid_demo_task(void *pvParameters)
             printf("ADC2 used by Wi-Fi.\n");
         }
 
+        readpaj7620();
+
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
         if (sec_conn)
@@ -602,7 +604,17 @@ void init_UART_for_IMU()
 
 void init_adc()
 {
-    adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11);
+    esp_err_t ret;
+    ret = adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11);
+    if(ret)
+    {
+        ESP_LOGE(HID_DEMO_TAG, "ADC intilese failed. \n");
+    }
+    else
+    {
+        ESP_LOGE(HID_DEMO_TAG, "ADC intilese successfully\n");
+    }
+
 }
 
 void app_main(void)
@@ -675,10 +687,10 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     // Initialize PAJ7620
-    // paj7620Init();
+    paj7620Init();
 
     // Initialize PAJ7620 interrupt
-    // initPaj7620Interrupt();
+    initPaj7620Interrupt();
 
     // Init UART from IMU
     // init_UART_for_IMU();
