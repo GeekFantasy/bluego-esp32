@@ -56,7 +56,7 @@
 #define ACK_VAL    0x0         /*!< I2C ack value */
 #define NACK_VAL   0x1         /*!< I2C nack value */
 
-#define INTERRUPT_PIN 36       /*!< I2C Interrupt pin */ 
+#define INTERRUPT_PIN 37       /*!< I2C Interrupt pin */ 
 
 #define I2C_MASTER_SCL_IO 19               /*!< gpio number for I2C master clock */
 #define I2C_MASTER_SDA_IO 22               /*!< gpio number for I2C master data  */

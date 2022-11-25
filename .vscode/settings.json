@@ -37,7 +37,11 @@
         "esp_log.h": "c",
         "imu.h": "c",
         "mpu6500.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "bitset": "cpp",
+        "memory": "cpp",
+        "random": "cpp",
+        "future": "cpp"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

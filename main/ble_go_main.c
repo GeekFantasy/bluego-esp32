@@ -411,17 +411,30 @@ void hid_demo_task(void *pvParameters)
     int length, rec_len, i, j;
     int is_touch = 1;
     uint8_t gyro_data[6] = {0};
-    uint16_t x, y, z;
+    uint8_t accesl_data[6] = {0};
+    accel_raw acc_r;
+    gyro_raw gyro_r;
+    accel acc;
+    gyro gyro;
     int read_raw;
+    float gx = 0, gy = 0, gz = 0;
 
     while (1)
     {
-        mpu6500_GYR_read(gyro_data);
-        x = *(gyro_data + 0);
-        y = *(gyro_data + 2);
-        z = *(gyro_data + 4);
-        printf("GYRO X:%d\nGYRO Y:%d\nGYRO Z:%d\n", x, y, z);
-
+        mpu6500_motion_read(&acc_r, &gyro_r);
+        // acc.x = acc_r.x / 32768.0 * 16 * 9.7944;
+        // acc.y = acc_r.y / 32768.0 * 16 * 9.7944;
+        // acc.z = acc_r.z / 32768.0 * 16 * 9.7944;
+        // printf("ACCEL X:%f, \nACCEL Y:%f,\nACCEL Z:%f\n", acc.x, acc.y , acc.z);
+        
+        gyro.x = gyro_r.x / 32768.0 * 500;
+        gyro.y = gyro_r.y / 32768.0 * 500;
+        gyro.z = gyro_r.z / 32768.0 * 500;
+        gx += gyro.x;
+        gy += gyro.y;
+        gz += gyro.z;
+        printf("GYRO Dynamic X:%f, \nGYRO Dynamic Y:%f, \nGYRO Dynamic Z:%f \n", gyro.x, gyro.y, gyro.z);
+        printf("GYRO Accumul X:%f, \nGYRO Accumul Y:%f, \nGYRO Accumul Z:%f \n", gx, gy, gz);
         
         esp_err_t r = adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
         if (r == ESP_OK)
@@ -554,7 +567,7 @@ esp_err_t initPaj7620Interrupt()
     io_conf.pull_down_en = 0;
     // enable pull-up mode
     io_conf.pull_up_en = 1;
-
+ 
     err = gpio_config(&io_conf);
     if (err != ESP_OK)
     {
