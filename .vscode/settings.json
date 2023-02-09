@@ -41,7 +41,12 @@
         "bitset": "cpp",
         "memory": "cpp",
         "random": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "math.h": "c",
+        "esp_timer.h": "c",
+        "time.h": "c",
+        "rtc.h": "c",
+        "rtc_clk_common.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

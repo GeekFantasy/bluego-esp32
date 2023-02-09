@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <math.h>
 #include "driver/i2c.h"
 #include "esp_log.h"
 #include "mpu6500.h"
@@ -334,9 +335,9 @@ esp_err_t mpu6500_GYR_read(gyro* gyro)
     gyro->y = gyro_r.y / 32768.0 * GYRO_FULL_SCALE;
     gyro->z = gyro_r.z / 32768.0 * GYRO_FULL_SCALE;
 
-    if(gyro->x <= GYRO_JITTER_LIMIT) gyro->x = 0;
-    if(gyro->y <= GYRO_JITTER_LIMIT) gyro->y = 0;
-    if(gyro->z <= GYRO_JITTER_LIMIT) gyro->z = 0;
+    if(abs(gyro->x) <= GYRO_JITTER_LIMIT) gyro->x = 0;
+    if(abs(gyro->y) <= GYRO_JITTER_LIMIT) gyro->y = 0;
+    if(abs(gyro->z) <= GYRO_JITTER_LIMIT) gyro->z = 0;
 
     return err;
 }

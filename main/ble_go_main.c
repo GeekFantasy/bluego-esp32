@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -66,7 +67,6 @@ void set_gesture(gesture_state *gs, int gesture)
 }
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
-
 
 static uint8_t hidd_service_uuid128[] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -407,10 +407,10 @@ void readpaj7620()
 void hid_demo_task(void *pvParameters)
 {
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    angle pre_angle = {0}, new_angle = {0};
+    angle angle_diff = {0};
     uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 1;
     int length, rec_len, i, j;
-    int is_touch = 1;
+    int is_touch = 0;
     uint8_t gyro_data[6] = {0};
     uint8_t accesl_data[6] = {0};
 
@@ -419,31 +419,20 @@ void hid_demo_task(void *pvParameters)
     int read_raw;
     float gx = 0, gy = 0, gz = 0;
 
+    struct timeval tv_now;
+    int64_t time_us_old = 0;
+    int64_t time_us_now = 0;
+    int64_t time_us_diff = 0;
+
     while (1)
     {
-        mpu6500_GYR_read(&gyro);
-    
-        printf("GYRO, %f, %f, %f\n",gyro.x, gyro.y, gyro.z);
-        //printf("GYRO Accumul X:%f, \nGYRO Accumul Y:%f, \nGYRO Accumul Z:%f \n", gx, gy, gz);
-        
         esp_err_t r = adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-        // if (r == ESP_OK)
-        // {
-        //     printf("ADC: %d\n", read_raw);
-        // }
-        // else if (r == ESP_ERR_TIMEOUT)
-        // {
-        //     printf("ADC2 used by Wi-Fi.\n");
-        // }
-
-        readpaj7620();
-
+        //readpaj7620();
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
-        sec_conn = 0; // temp disable below code.
         if (sec_conn)
         {
-            if (is_touch)
+            if (is_touch) //  for sending gestures to device
             {
                 esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90, 300, 1, 1);
                 vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -458,14 +447,32 @@ void hid_demo_task(void *pvParameters)
                 esp_hidd_send_touch_value(hid_conn_id, 0, 1, contact_id, 0, 90, 100, 0, 0);
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
             }
-            else
+            else // for sending mouse movement to device
             {
-               
+                mpu6500_GYR_read(&gyro);
+                gettimeofday(&tv_now, NULL);
+                time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
+                time_us_diff = time_us_now - time_us_old;
+                time_us_old = time_us_now;
+                if (time_us_diff <= 100 * 1000)
+                {
+                    angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
+                    angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
+                    angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
+
+                    //ESP_LOGI(IMU_LOG_TAG, "A:%d,%d", abs(angle_diff.x) 100, abs(angle_diff.z) * 100);
+
+                    if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
+                    {
+                        int x, z;
+                        x = angle_diff.x / 0.02;
+                        z = angle_diff.z / 0.02;
+                        esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
+                        ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z,time_us_diff);
+                    }
+                }
+                //printf("GYRO, %f, %f, %f, %lld\n", gyro.x, gyro.y, gyro.z, time_us_diff);
             }
-        }
-        else
-        {
-           
         }
     }
 }
@@ -490,7 +497,7 @@ esp_err_t initPaj7620Interrupt()
     io_conf.pull_down_en = 0;
     // enable pull-up mode
     io_conf.pull_up_en = 1;
- 
+
     err = gpio_config(&io_conf);
     if (err != ESP_OK)
     {
@@ -542,15 +549,14 @@ void init_adc()
 {
     esp_err_t ret;
     ret = adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11);
-    if(ret)
+    if (ret)
     {
-        ESP_LOGE(HID_DEMO_TAG, "ADC intilese failed. \n");
+        ESP_LOGI(HID_DEMO_TAG, "ADC intilese failed. \n");
     }
     else
     {
-        ESP_LOGE(HID_DEMO_TAG, "ADC intilese successfully\n");
+        ESP_LOGI(HID_DEMO_TAG, "ADC intilese successfully\n");
     }
-
 }
 
 void app_main(void)
