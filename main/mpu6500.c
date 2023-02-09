@@ -5,6 +5,21 @@
 #include "esp_log.h"
 #include "mpu6500.h"
 
+// Output value that exceeds jitter limt or 0
+#define GYRO_JITTER_LIMIT    0.1
+// define the full gyro scale to use
+#define GYRO_FULL_SCALE  GYRO_SCALE_1000
+
+#if (GYRO_FULL_SCALE == GYRO_SCALE_250)
+#define GYRO_FS_SETTING  GYRO_FS_250DPS
+#elif (GYRO_FULL_SCALE == GYRO_SCALE_500)
+#define GYRO_FS_SETTING  GYRO_FS_500DPS
+#elif (GYRO_FULL_SCALE == GYRO_SCALE_1000)
+#define GYRO_FS_SETTING  GYRO_FS_1000DPS
+#else
+#define GYRO_FS_SETTING  GYRO_FS_2000DPS
+#endif
+
 int mpu_i2c_master_port = 0;
 
 int mpu_i2c_master_init(void)
@@ -66,6 +81,7 @@ void mpu6500_init(void)
     gyro_r.x = -gyro_r.x;
     gyro_r.y = -gyro_r.y;
     gyro_r.z = -gyro_r.z;
+
     if(mpu6500_set_gyro_offset(&gyro_r))
     {
         ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro offset with error.");
@@ -75,7 +91,7 @@ void mpu6500_init(void)
         ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro offset successfully.");
     }
 
-     gyro_original = mpu6500_get_gyro_offset();
+    gyro_original = mpu6500_get_gyro_offset();
     ESP_LOGI(MPU6500_TAG, "Set gyro offset is, x = %d, y = %d, z = %d.", gyro_original.x, gyro_original.y, gyro_original.z);
 
     if(mpu6500_set_clock_source(CLOCK_PLL)) 
@@ -87,7 +103,7 @@ void mpu6500_init(void)
         ESP_LOGI(MPU6500_TAG, "MPU6500 set clock source successfully...");
     }
 
-    if(mpu6500_set_gyro_full_scale(GYRO_FS_500DPS)) 
+    if(mpu6500_set_gyro_full_scale(GYRO_FS_SETTING)) 
     {
         ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro scale with error.");
     }
@@ -294,7 +310,7 @@ esp_err_t mpu6500_set_sample_rate(uint16_t rate)
     return err_code; 
 }
 
-esp_err_t mpu6500_GYR_read(uint8_t GYR_DATA[])
+esp_err_t mpu6500_GYR_read_raw(uint8_t GYR_DATA[])
 {
     ESP_ERROR_CHECK(mpu6500_read_reg(MPU6500_GYRO_XOUT_H, &GYR_DATA[0], 1));
     ESP_ERROR_CHECK(mpu6500_read_reg(MPU6500_GYRO_XOUT_L, &GYR_DATA[1], 1));
@@ -306,7 +322,26 @@ esp_err_t mpu6500_GYR_read(uint8_t GYR_DATA[])
     return ESP_OK;
 }
 
-esp_err_t mpu6500_ACC_read(uint8_t ACC_DATA[])
+esp_err_t mpu6500_GYR_read(gyro* gyro)
+{
+    gyro_raw gyro_r;
+    accel_raw acc_r;
+    esp_err_t err = 0;
+
+    err = mpu6500_motion_read_raw(&acc_r, &gyro_r);
+        
+    gyro->x = gyro_r.x / 32768.0 * GYRO_FULL_SCALE;
+    gyro->y = gyro_r.y / 32768.0 * GYRO_FULL_SCALE;
+    gyro->z = gyro_r.z / 32768.0 * GYRO_FULL_SCALE;
+
+    if(gyro->x <= GYRO_JITTER_LIMIT) gyro->x = 0;
+    if(gyro->y <= GYRO_JITTER_LIMIT) gyro->y = 0;
+    if(gyro->z <= GYRO_JITTER_LIMIT) gyro->z = 0;
+
+    return err;
+}
+
+esp_err_t mpu6500_ACC_read_raw(uint8_t ACC_DATA[])
 {
     ESP_ERROR_CHECK(mpu6500_read_reg(MPU6500_ACCEL_XOUT_H, &ACC_DATA[0], 1));
     ESP_ERROR_CHECK(mpu6500_read_reg(MPU6500_ACCEL_XOUT_L, &ACC_DATA[1], 1));
@@ -318,7 +353,7 @@ esp_err_t mpu6500_ACC_read(uint8_t ACC_DATA[])
     return ESP_OK;
 }
 
-esp_err_t mpu6500_motion_read(accel_raw* accel, gyro_raw* gyro)
+esp_err_t mpu6500_motion_read_raw(accel_raw* accel, gyro_raw* gyro)
 {
     uint8_t buffer[14];
     ESP_ERROR_CHECK(mpu6500_read_reg(MPU6500_ACCEL_XOUT_H, buffer, sizeof(buffer)));

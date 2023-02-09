@@ -31,6 +31,7 @@
 
 #define HID_DEMO_TAG "HID_DEMO"
 #define IMU_LOG_TAG "IMU DATA"
+#define HIDD_DEVICE_NAME "ESP32 HID"
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 static uint16_t hid_conn_id = 0;
@@ -66,7 +67,7 @@ void set_gesture(gesture_state *gs, int gesture)
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 
-#define HIDD_DEVICE_NAME "ESP32 HID"
+
 static uint8_t hidd_service_uuid128[] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     // first uuid, 16bit, [12],[13] is the value
@@ -412,8 +413,7 @@ void hid_demo_task(void *pvParameters)
     int is_touch = 1;
     uint8_t gyro_data[6] = {0};
     uint8_t accesl_data[6] = {0};
-    accel_raw acc_r;
-    gyro_raw gyro_r;
+
     accel acc;
     gyro gyro;
     int read_raw;
@@ -421,35 +421,26 @@ void hid_demo_task(void *pvParameters)
 
     while (1)
     {
-        mpu6500_motion_read(&acc_r, &gyro_r);
-        // acc.x = acc_r.x / 32768.0 * 16 * 9.7944;
-        // acc.y = acc_r.y / 32768.0 * 16 * 9.7944;
-        // acc.z = acc_r.z / 32768.0 * 16 * 9.7944;
-        // printf("ACCEL X:%f, \nACCEL Y:%f,\nACCEL Z:%f\n", acc.x, acc.y , acc.z);
-        
-        gyro.x = gyro_r.x / 32768.0 * 500;
-        gyro.y = gyro_r.y / 32768.0 * 500;
-        gyro.z = gyro_r.z / 32768.0 * 500;
-        gx += gyro.x;
-        gy += gyro.y;
-        gz += gyro.z;
-        printf("GYRO Dynamic X:%f, \nGYRO Dynamic Y:%f, \nGYRO Dynamic Z:%f \n", gyro.x, gyro.y, gyro.z);
-        printf("GYRO Accumul X:%f, \nGYRO Accumul Y:%f, \nGYRO Accumul Z:%f \n", gx, gy, gz);
+        mpu6500_GYR_read(&gyro);
+    
+        printf("GYRO, %f, %f, %f\n",gyro.x, gyro.y, gyro.z);
+        //printf("GYRO Accumul X:%f, \nGYRO Accumul Y:%f, \nGYRO Accumul Z:%f \n", gx, gy, gz);
         
         esp_err_t r = adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-        if (r == ESP_OK)
-        {
-            printf("ADC: %d\n", read_raw);
-        }
-        else if (r == ESP_ERR_TIMEOUT)
-        {
-            printf("ADC2 used by Wi-Fi.\n");
-        }
+        // if (r == ESP_OK)
+        // {
+        //     printf("ADC: %d\n", read_raw);
+        // }
+        // else if (r == ESP_ERR_TIMEOUT)
+        // {
+        //     printf("ADC2 used by Wi-Fi.\n");
+        // }
 
         readpaj7620();
 
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
+        sec_conn = 0; // temp disable below code.
         if (sec_conn)
         {
             if (is_touch)
@@ -469,80 +460,12 @@ void hid_demo_task(void *pvParameters)
             }
             else
             {
-                // Create stream buffer for receiving uart data
-                // UART_stream = xStreamBufferCreate(100, DATA_FRAME_LEN);
-
-                // xTaskCreate(send_mouse_move_task, "send movement", 1024 * 2, (void *)&UART_stream, 1, &send_movement_task);
-                // xTaskCreate(receive_imu_uart_task, "receive uart", 1024 * 2, (void *)&UART_stream, 1, &receive_uart_task);
-
-                // Read UART data from IMU
-                ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
-                ESP_LOGI(IMU_LOG_TAG, "Blen: %d", length);
-                if (length < READ_BUFF_SIZE)
-                {
-                    ESP_LOGI(IMU_LOG_TAG, "Wait 5 ms...\n");
-                    vTaskDelay(pdMS_TO_TICKS(5));
-                    continue;
-                }
-                // Read data from the UART
-                rec_len = uart_read_bytes(IMU_UART_PORT_NUM, data, 2 * READ_BUFF_SIZE, 0);
-                if (rec_len >= READ_BUFF_SIZE)
-                {
-                    // Get  agnle from IMU Data
-                    for (i = 0; i < (rec_len - READ_BUFF_SIZE + 1); i++)
-                    {
-                        if ((data[i] == 0x55) && (data[i + 1] == 0x53))
-                        {
-                            new_angle = get_angle(&data[i]);
-                            // ESP_LOGI(IMU_LOG_TAG, "ANG,X:%-3.3f,Y:%-3.3f,Z:%-3.3f\n", new_angle.x, new_angle.y, new_angle.z);
-
-                            // Send mouse move over BLE
-                            if ((abs((int)(100 * (new_angle.y - pre_angle.y))) > 2) || (abs((int)(100 * (new_angle.z - pre_angle.z)))) > 2)
-                            {
-                                int y, z;
-                                y = (new_angle.y - pre_angle.y) / 0.02;
-                                z = (new_angle.z - pre_angle.z) / 0.02;
-                                esp_hidd_send_mouse_value(hid_conn_id, 0, -z, y);
-                                pre_angle = new_angle;
-                                ESP_LOGI(IMU_LOG_TAG, "M:x=%d,y=%d.", z, y);
-                            }
-                            else
-                            {
-                                continue;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    ESP_LOGI(IMU_LOG_TAG, "Read less data than 33.");
-                    continue;
-                }
+               
             }
         }
         else
         {
-            // // delete stream after ble closed
-            // if (UART_stream != null)
-            // {
-            //     vStreamBufferDelete(UART_stream);
-            //     UART_stream = NULL:
-            // }
-
-            // // delete receive UART and check IMU task after ble closed
-            // if (receive_uart_task == NULL)
-            // {
-            //     vTaskDelete(receive_uart_task);
-            //     receive_uart_task = NULL;
-            // }
-            // if (send_movement_task == NULL)
-            // {
-            //     vTaskDelete(send_movement_task);
-            //     send_movement_task = NULL;
-            // }
-
-            vTaskDelay(pdMS_TO_TICKS(200));
-            // delay 200 ms
+           
         }
     }
 }

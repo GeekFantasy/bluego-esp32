@@ -123,6 +123,12 @@
 #define FIFO_R_W        (0x74)
 #define WHO_AM_I        (0x75)
 
+//------------------------------------------------------------------------------
+#define GYRO_SCALE_250    250
+#define GYRO_SCALE_500    500
+#define GYRO_SCALE_1000   1000
+#define GYRO_SCALE_2000   2000
+
 /*! Clock Source */
 typedef enum {
     CLOCK_INTERNAL = 0,  //!< Internal oscillator: 20MHz for MPU6500 and 8MHz for MPU6050
@@ -187,9 +193,10 @@ uint8_t mpu6500_read_reg(uint8_t reg_addr,uint8_t data[], uint8_t data_len);
 uint8_t mpu6500_write_bit(uint8_t reg_addr, uint8_t bit_num, uint8_t data);
 uint8_t mpu6500_write_bits(uint8_t reg_addr, uint8_t bit_start, uint8_t length, uint8_t data);
 
-esp_err_t mpu6500_GYR_read(uint8_t GYR_DATA[]);
-esp_err_t mpu6500_ACC_read(uint8_t ACC_DATA[]);
-esp_err_t mpu6500_motion_read(accel_raw* acc, gyro_raw* gyro);
+esp_err_t mpu6500_GYR_read_raw(uint8_t GYR_DATA[]);
+esp_err_t mpu6500_GYR_read(gyro* gyro);
+esp_err_t mpu6500_ACC_read_raw(uint8_t ACC_DATA[]);
+esp_err_t mpu6500_motion_read_raw(accel_raw* acc, gyro_raw* gyro);
 esp_err_t mpu6500_reset();
 esp_err_t mpu6500_set_sleep(bool enable);
 esp_err_t mpu6500_set_clock_source(clock_src_t clockSrc);
