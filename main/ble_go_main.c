@@ -461,7 +461,7 @@ void hid_demo_task(void *pvParameters)
                     angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
 
                     //ESP_LOGI(IMU_LOG_TAG, "A:%d,%d", abs(angle_diff.x) 100, abs(angle_diff.z) * 100);
-
+                    // pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
                     if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
                     {
                         int x, z;
