@@ -27,7 +27,6 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
-#include "IMU.h"
 #include "mpu6500.h"
 #include "hid_touch_gestures.h"
 

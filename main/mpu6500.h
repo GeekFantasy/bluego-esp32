@@ -184,6 +184,14 @@ typedef struct
     float x, y, z;
 } accel;
 
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+    float temp;
+} angle;
+
 typedef uint16_t fifo_config_t;
 
 void mpu6500_init(void);
