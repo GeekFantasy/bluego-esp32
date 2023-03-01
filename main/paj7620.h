@@ -118,7 +118,7 @@ typedef enum {
 #define GES_WAVE_FLAG				PAJ7620_VAL(1,0)
 
 #define GES_REACTION_TIME    50       // You can adjust the reaction time according to the actual circumstance.
-#define GES_ENTRY_TIME      0      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
+#define GES_ENTRY_TIME      10      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
 #define GES_QUIT_TIME     0
 
 /*

@@ -46,7 +46,10 @@
         "esp_timer.h": "c",
         "time.h": "c",
         "rtc.h": "c",
-        "rtc_clk_common.h": "c"
+        "rtc_clk_common.h": "c",
+        "paj7620.h": "c",
+        "hid_touch_gestures.h": "c",
+        "task.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

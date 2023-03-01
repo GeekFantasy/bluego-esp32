@@ -29,6 +29,7 @@
 #include "driver/adc.h"
 #include "IMU.h"
 #include "mpu6500.h"
+#include "hid_touch_gestures.h"
 
 #define HID_DEMO_TAG "HID_DEMO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -49,7 +50,7 @@ typedef struct
 
 gesture_state generic_gs;
 
-int is_gesture_available(gesture_state gs)
+int gesture_available(gesture_state gs)
 {
     return gs.available;
 }
@@ -202,12 +203,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 
 void readpaj7620()
 {
-    // put your main code here, to run repeatedly:
-    uint8_t data = 0, data1 = 0, error;
+    uint8_t data = 0, error;
 
-    //  Serial.print("Interrup is triggered:");
-    //  Serial.println(isr);
-    // ESP_LOGI(HID_DEMO_TAG, "Enter A New paj7620 read loop...");
+    // ESP_LOGI(HID_DEMO_TAG, "Gesture Int value: %d", isr);
 
     if (isr)
     {
@@ -226,21 +224,18 @@ void readpaj7620()
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
-                    // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
-                    // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
                     set_gesture(&generic_gs, GES_RIGHT_FLAG);
-                    // Serial.println("Right");
                     ESP_LOGI(HID_DEMO_TAG, "Right");
                 }
                 break;
@@ -250,21 +245,18 @@ void readpaj7620()
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
-                    // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
-                    // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
                     set_gesture(&generic_gs, GES_LEFT_FLAG);
-                    // Serial.println("Left");
                     ESP_LOGI(HID_DEMO_TAG, "Left");
                 }
                 break;
@@ -274,21 +266,18 @@ void readpaj7620()
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
-                    // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
-                    // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
                     set_gesture(&generic_gs, GES_UP_FLAG);
-                    // Serial.println("Up");
                     ESP_LOGI(HID_DEMO_TAG, "Up");
                 }
                 break;
@@ -298,52 +287,44 @@ void readpaj7620()
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
-                    // Serial.println("Forward");
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
                     delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
-                    // Serial.println("Backward");
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
                     delay(GES_QUIT_TIME);
                 }
                 else
                 {
                     set_gesture(&generic_gs, GES_DOWN_FLAG);
-                    // Serial.println("Down");
                     ESP_LOGI(HID_DEMO_TAG, "Down");
                 }
                 break;
             case GES_FORWARD_FLAG:
                 set_gesture(&generic_gs, GES_FORWARD_FLAG);
-                // Serial.println("Forward");
                 ESP_LOGI(HID_DEMO_TAG, "Forward");
                 delay(GES_QUIT_TIME);
                 break;
             case GES_BACKWARD_FLAG:
                 set_gesture(&generic_gs, GES_BACKWARD_FLAG);
-                // Serial.println("Backward");
                 ESP_LOGI(HID_DEMO_TAG, "Backward");
                 delay(GES_QUIT_TIME);
                 break;
             case GES_CLOCKWISE_FLAG:
                 set_gesture(&generic_gs, GES_CLOCKWISE_FLAG);
-                // Serial.println("Clockwise");
                 ESP_LOGI(HID_DEMO_TAG, "Clockwise");
                 break;
             case GES_COUNT_CLOCKWISE_FLAG:
                 set_gesture(&generic_gs, GES_COUNT_CLOCKWISE_FLAG);
-                // Serial.println("anti-clockwise");
                 ESP_LOGI(HID_DEMO_TAG, "anti-clockwise");
                 break;
             default:
-                paj7620ReadReg(0x44, 1, &data1);
-                if (data1 == GES_WAVE_FLAG)
+                paj7620ReadReg(0x44, 1, &data);
+                if (data == GES_WAVE_FLAG)
                 {
                     set_gesture(&generic_gs, GES_WAVE_FLAG);
-                    // Serial.println("wave");
                     ESP_LOGI(HID_DEMO_TAG, "wave");
                 }
                 break;
@@ -354,63 +335,13 @@ void readpaj7620()
     delay(GES_REACTION_TIME);
 }
 
-// void receive_imu_uart_task(void *pvParam)
-// {
-//     StreamBufferHandle_t *sbh = (StreamBufferHandle_t)pvParam;
-//     size_t length = 0, recv_len = 0;
-//     uint8_t data[2 * READ_BUFF_SIZE] = {0};
-
-//     if (pvParam == NULL)
-//     {
-//         ESP_LOGI(IMU_LOG_TAG, "Failed to get stream buffer, delete the task.");
-//         vTaskDelete(NULL);
-//     }
-
-//     while (1)
-//     {
-//         // Read UART data from IMU
-//         ESP_ERROR_CHECK(uart_get_buffered_data_len(IMU_UART_PORT_NUM, (size_t *)&length));
-//         ESP_LOGI(IMU_LOG_TAG, "Buffer len: %d", length);
-//         if (length < READ_BUFF_SIZE)
-//         {
-//             ESP_LOGI(IMU_LOG_TAG, "Wait 5 ms...");
-//             vTaskDelay(5 / portTICK_PERIOD_MS);
-//             continue;
-//         }
-
-//         recv_len = uart_read_bytes(IMU_UART_PORT_NUM, data, 2 * READ_BUFF_SIZE, 0);
-//         if (recv_len > 0)
-//         {
-//             xStreamBufferSend(*sbh, data, recv_len, 0);
-//             ESP_LOGI(IMU_LOG_TAG, "Sent q data.");
-//         }
-//     }
-// }
-
-// void send_mouse_move_task(void *pvParam)
-// {
-//     StreamBufferHandle_t *sbh = (StreamBufferHandle_t)pvParam;
-//     uint8_t rec_data[2* READ_BUFF_SIZE] = {0};
-
-//     if (pvParam == NULL)
-//     {
-//         ESP_LOGI(IMU_LOG_TAG, "Failed to get stream buffer, delete the task\n");
-//         vTaskDelete(NULL);
-//     }
-
-//     while (1)
-//     {
-
-//     }
-// }
-
 void hid_demo_task(void *pvParameters)
 {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    delay(100);
     angle angle_diff = {0};
     uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 1;
     int length, rec_len, i, j;
-    int is_touch = 0;
+    int is_touch = 1;
     uint8_t gyro_data[6] = {0};
     uint8_t accesl_data[6] = {0};
 
@@ -427,25 +358,20 @@ void hid_demo_task(void *pvParameters)
     while (1)
     {
         esp_err_t r = adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-        //readpaj7620();
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+
+        readpaj7620();
+
+        delay(10);
 
         if (sec_conn)
         {
             if (is_touch) //  for sending gestures to device
             {
-                esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90, 300, 1, 1);
-                vTaskDelay(200 / portTICK_PERIOD_MS);
-
-                for (j = 1; j <= 20; j++)
-                {
-
-                    esp_hidd_send_touch_value(hid_conn_id, 1, 1, contact_id, 0, 90, 300 - 10 * j, 1, 1);
-                    vTaskDelay(10 / portTICK_PERIOD_MS);
-                }
-
-                esp_hidd_send_touch_value(hid_conn_id, 0, 1, contact_id, 0, 90, 100, 0, 0);
-                vTaskDelay(3000 / portTICK_PERIOD_MS);
+               if(gesture_available(generic_gs))
+               {
+                    get_gesture(&generic_gs);
+                    send_touch_gesture(hid_conn_id, generic_gs.gesture);
+               }
             }
             else // for sending mouse movement to device
             {
@@ -454,24 +380,24 @@ void hid_demo_task(void *pvParameters)
                 time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
                 time_us_diff = time_us_now - time_us_old;
                 time_us_old = time_us_now;
-                if (time_us_diff <= 100 * 1000)
+                if (time_us_diff > 100 * 1000) // if the time exceed 100ms, shorten it to 100ms to avoid big movement
                 {
-                    angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
-                    angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
-                    angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
-
-                    //ESP_LOGI(IMU_LOG_TAG, "A:%d,%d", abs(angle_diff.x) 100, abs(angle_diff.z) * 100);
-                    // pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
-                    if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
-                    {
-                        int x, z;
-                        x = angle_diff.x / 0.02;
-                        z = angle_diff.z / 0.02;
-                        esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
-                        ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z,time_us_diff);
-                    }
+                    time_us_diff = 100 * 1000;
                 }
-                //printf("GYRO, %f, %f, %f, %lld\n", gyro.x, gyro.y, gyro.z, time_us_diff);
+
+                angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
+                angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
+                angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
+
+                //  pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
+                if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
+                {
+                    int x, z;
+                    x = angle_diff.x / 0.02;
+                    z = angle_diff.z / 0.02;
+                    esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
+                    ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z, time_us_diff);
+                }
             }
         }
     }
@@ -522,29 +448,6 @@ esp_err_t initPaj7620Interrupt()
     return err;
 }
 
-void init_UART_for_IMU()
-{
-    /* Configure parameters of an UART driver,
-     * communication pins and install the driver */
-    uart_config_t uart_config = {
-        .baud_rate = IMU_UART_BAUD_RATE,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = UART_SCLK_APB,
-    };
-    int intr_alloc_flags = 0;
-
-#if CONFIG_UART_ISR_IN_IRAM
-    intr_alloc_flags = ESP_INTR_FLAG_IRAM;
-#endif
-
-    ESP_ERROR_CHECK(uart_driver_install(IMU_UART_PORT_NUM, BUF_SIZE * 2, 0, 0, NULL, intr_alloc_flags));
-    ESP_ERROR_CHECK(uart_param_config(IMU_UART_PORT_NUM, &uart_config));
-    ESP_ERROR_CHECK(uart_set_pin(IMU_UART_PORT_NUM, IMU_UART_TXD, IMU_UART_RXD, IMU_UART_RTS, IMU_UART_CTS));
-}
-
 void init_adc()
 {
     esp_err_t ret;
@@ -563,7 +466,6 @@ void app_main(void)
 {
     esp_err_t ret;
 
-    // Initialize NVS.
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
@@ -633,9 +535,6 @@ void app_main(void)
 
     // Initialize PAJ7620 interrupt
     initPaj7620Interrupt();
-
-    // Init UART from IMU
-    // init_UART_for_IMU();
 
     // init MPU6500
     mpu6500_init();
