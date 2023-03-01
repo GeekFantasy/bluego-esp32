@@ -7,6 +7,23 @@
 
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
+int gesture_available(gesture_state gs)
+{
+    return gs.available;
+}
+
+int get_gesture(gesture_state *gs)
+{
+    gs->available = 0;
+    return gs->gesture;
+}
+
+void set_gesture(gesture_state *gs, int gesture)
+{
+    gs->available = 1;
+    gs->gesture = gesture;
+}
+
 void send_touch_gesture(uint16_t hid_conn_id, int gesture)
 {
     switch (gesture)
@@ -22,7 +39,7 @@ void send_touch_gesture(uint16_t hid_conn_id, int gesture)
             break;
         case GES_RIGHT_FLAG:
             send_slide_right(hid_conn_id);
-            Break;
+            break;
         case GES_CLOCKWISE_FLAG:
             send_double_tap(hid_conn_id);
             break;  

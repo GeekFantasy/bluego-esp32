@@ -42,30 +42,9 @@ int isr = 0;
 // static bool send_volum_up = false;
 #define CHAR_DECLARATION_SIZE (sizeof(uint8_t))
 
-typedef struct
-{
-    int available;
-    int gesture;
-} gesture_state;
-
 gesture_state generic_gs;
 
-int gesture_available(gesture_state gs)
-{
-    return gs.available;
-}
 
-int get_gesture(gesture_state *gs)
-{
-    gs->available = 0;
-    return gs->gesture;
-}
-
-void set_gesture(gesture_state *gs, int gesture)
-{
-    gs->available = 1;
-    gs->gesture = gesture;
-}
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 

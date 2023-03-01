@@ -5,6 +5,18 @@
 #define TOUCH_DELAY    20
 #define TAP_DELAY      80
 
+typedef struct
+{
+    int available;
+    int gesture;
+} gesture_state;
+
+
+int gesture_available(gesture_state gs);
+int get_gesture(gesture_state *gs);
+void set_gesture(gesture_state *gs, int gesture);
+
+
 void send_slide_up(uint16_t hid_conn_id);
 void send_slide_down(uint16_t hid_conn_id);
 void send_slide_left(uint16_t hid_conn_id);
