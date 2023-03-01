@@ -39,12 +39,7 @@
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
 int isr = 0;
-// static bool send_volum_up = false;
-#define CHAR_DECLARATION_SIZE (sizeof(uint8_t))
-
 gesture_state generic_gs;
-
-
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 
@@ -95,8 +90,6 @@ static esp_ble_adv_params_t hidd_adv_params = {
     .channel_map = ADV_CHNL_ALL,
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
-
-// PAJ7620 interrupt flag.
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
 {
@@ -314,74 +307,6 @@ void readpaj7620()
     delay(GES_REACTION_TIME);
 }
 
-void hid_demo_task(void *pvParameters)
-{
-    delay(100);
-    angle angle_diff = {0};
-    uint8_t data[2 * READ_BUFF_SIZE] = {0}, contact_id = 1;
-    int length, rec_len, i, j;
-    int is_touch = 1;
-    uint8_t gyro_data[6] = {0};
-    uint8_t accesl_data[6] = {0};
-
-    accel acc;
-    gyro gyro;
-    int read_raw;
-    float gx = 0, gy = 0, gz = 0;
-
-    struct timeval tv_now;
-    int64_t time_us_old = 0;
-    int64_t time_us_now = 0;
-    int64_t time_us_diff = 0;
-
-    while (1)
-    {
-        esp_err_t r = adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-
-        readpaj7620();
-
-        delay(10);
-
-        if (sec_conn)
-        {
-            if (is_touch) //  for sending gestures to device
-            {
-               if(gesture_available(generic_gs))
-               {
-                    get_gesture(&generic_gs);
-                    send_touch_gesture(hid_conn_id, generic_gs.gesture);
-               }
-            }
-            else // for sending mouse movement to device
-            {
-                mpu6500_GYR_read(&gyro);
-                gettimeofday(&tv_now, NULL);
-                time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
-                time_us_diff = time_us_now - time_us_old;
-                time_us_old = time_us_now;
-                if (time_us_diff > 100 * 1000) // if the time exceed 100ms, shorten it to 100ms to avoid big movement
-                {
-                    time_us_diff = 100 * 1000;
-                }
-
-                angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
-                angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
-                angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
-
-                //  pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
-                if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
-                {
-                    int x, z;
-                    x = angle_diff.x / 0.02;
-                    z = angle_diff.z / 0.02;
-                    esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
-                    ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z, time_us_diff);
-                }
-            }
-        }
-    }
-}
-
 static void paj7620_event_handler(void *arg)
 {
     isr = 1;
@@ -438,6 +363,68 @@ void init_adc()
     else
     {
         ESP_LOGI(HID_DEMO_TAG, "ADC intilese successfully\n");
+    }
+}
+
+void hid_main_task(void *pvParameters)
+{
+    delay(100);
+    angle angle_diff = {0};
+    int is_touch = 1;    
+
+    gyro gyro;
+    int read_raw;
+
+    struct timeval tv_now;
+    int64_t time_us_old = 0;
+    int64_t time_us_now = 0;
+    int64_t time_us_diff = 0;
+
+    while (1)
+    {
+        adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
+
+        readpaj7620();
+
+        delay(10);
+
+        if (sec_conn)
+        {
+            if (is_touch) //  for sending gestures to device
+            {
+               if(gesture_available(generic_gs))
+               {
+                    get_gesture(&generic_gs);
+                    send_touch_gesture(hid_conn_id, generic_gs.gesture);
+               }
+            }
+            else // for sending mouse movement to device
+            {
+                mpu6500_GYR_read(&gyro);
+                gettimeofday(&tv_now, NULL);
+                time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
+                time_us_diff = time_us_now - time_us_old;
+                time_us_old = time_us_now;
+                if (time_us_diff > 100 * 1000) // if the time exceed 100ms, shorten it to 100ms to avoid big movement
+                {
+                    time_us_diff = 100 * 1000;
+                }
+
+                angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
+                angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
+                angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
+
+                //  pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
+                if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
+                {
+                    int x, z;
+                    x = angle_diff.x / 0.02;
+                    z = angle_diff.z / 0.02;
+                    esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
+                    ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z, time_us_diff);
+                }
+            }
+        }
     }
 }
 
@@ -511,7 +498,6 @@ void app_main(void)
 
     // Initialize PAJ7620
     paj7620Init();
-
     // Initialize PAJ7620 interrupt
     initPaj7620Interrupt();
 
@@ -521,5 +507,5 @@ void app_main(void)
 
     init_adc();
 
-    xTaskCreate(&hid_demo_task, "hid_task", 2048 * 2, NULL, 5, NULL);
+    xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }
