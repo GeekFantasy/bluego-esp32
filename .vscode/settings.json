@@ -49,7 +49,9 @@
         "rtc_clk_common.h": "c",
         "paj7620.h": "c",
         "hid_touch_gestures.h": "c",
-        "task.h": "c"
+        "task.h": "c",
+        "string": "c",
+        "operations.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

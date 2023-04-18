@@ -29,16 +29,31 @@
 #include "driver/adc.h"
 #include "mpu6500.h"
 #include "hid_touch_gestures.h"
+#include "operations.h"
 
 #define HID_DEMO_TAG "HID_DEMO"
 #define IMU_LOG_TAG "IMU DATA"
 #define HIDD_DEVICE_NAME "ESP32 HID"
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
+const TickType_t time_delay_for_mfs = 50;
+const TickType_t time_delay_for_ges = 50;
+const TickType_t time_delay_for_gyro = 10;
+const TickType_t tick_delay_msg_send = 10;
+
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
 int isr = 0;
 gesture_state generic_gs;
+
+QueueHandle_t oper_queue;
+
+typedef struct
+{
+    uint16_t oper_key;
+    int8_t point_x;
+    int8_t point_y;
+} oper_message;
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 
@@ -306,6 +321,63 @@ void readpaj7620()
     delay(GES_REACTION_TIME);
 }
 
+int read_ges_from_paj7620()
+{
+    uint8_t data = 0, error;
+    uint16_t ges_key = 0;
+
+    if (isr)
+    {
+        error = paj7620ReadReg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
+        isr = 0;
+
+        if (!error)
+        {
+            switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
+            {
+            case GES_RIGHT_FLAG:
+                ges_key = OPER_KEY_GES_RIGHT;
+            case GES_LEFT_FLAG:
+                ges_key = OPER_KEY_GES_LEFT;
+            case GES_UP_FLAG:
+                ges_key = OPER_KEY_GES_UP;
+            case GES_DOWN_FLAG:
+                ges_key = OPER_KEY_GES_DOWN;
+
+                delay(GES_ENTRY_TIME);
+                paj7620ReadReg(0x43, 1, &data);
+                // I don't differentiate forward and backward in the device so just combine them into one operation
+                if (data == GES_FORWARD_FLAG || data == GES_BACKWARD_FLAG)
+                {
+                    ges_key = OPER_KEY_GES_FORWOARD;
+                }
+                break;
+            case GES_FORWARD_FLAG: // combine 2 operations as one
+            case GES_BACKWARD_FLAG:
+                ges_key = OPER_KEY_GES_FORWOARD;
+                break;
+            case GES_CLOCKWISE_FLAG:
+                ges_key = OPER_KEY_GES_CLK;
+                break;
+            case GES_COUNT_CLOCKWISE_FLAG:
+                ges_key = OPER_KEY_GES_ACLK;
+                break;
+            default:
+                paj7620ReadReg(0x44, 1, &data);
+                if (data == GES_WAVE_FLAG)
+                {
+                    // gesture = GES_WAVE_FLAG;
+                    ges_key = 0;
+                }
+                break;
+            }
+        }
+    }
+
+    // delay(GES_REACTION_TIME);
+    return ges_key;
+}
+
 static void paj7620_event_handler(void *arg)
 {
     isr = 1;
@@ -365,11 +437,85 @@ void init_adc()
     }
 }
 
+/// @brief Task for checking the multiple function switch
+/// @param pvParameters
+void multi_fun_switch_task(void *pvParameters)
+{
+    int read_raw;
+    oper_message op_msg;
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    while (1)
+    {
+        adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
+        if (read_raw)
+        {
+            op_msg.oper_key = OPER_KEY_MFS_UP;
+        }
+        else if (read_raw)
+        {
+            op_msg.oper_key = OPER_KEY_MFS_DOWN;
+        }
+        else if (read_raw)
+        {
+            op_msg.oper_key = OPER_KEY_MFS_LEFT;
+        }
+        else if (read_raw)
+        {
+            op_msg.oper_key = OPER_KEY_MFS_RIGHT;
+        }
+        else
+        {
+            op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
+        }
+
+        if (oper_queue != NULL)
+        {
+            xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+        }
+
+        vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+    }
+}
+
+/// @brief Task for checking the gesture detector pay7620
+/// @param pvParameters
+void gesture_detect_task(void *pvParameters)
+{ 
+    uint16_t ges_key;
+    oper_message op_msg;
+    TickType_t last_wake_time = xTaskGetTickCount();
+
+    while (1)
+    {
+        ges_key = read_ges_from_paj7620();
+        if (ges_key != 0 && oper_queue != NULL)
+        {
+            op_msg.oper_key = ges_key;
+            xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+        }
+        vTaskDelayUntil(&last_wake_time, time_delay_for_ges);
+    }
+}
+
+/// @brief Task for checking the gyro from the imu MPU6500
+/// @param pvParameters
+void imu_gyro_task(void *pvParameters)
+{
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    while (1)
+    {
+
+        vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);
+    }
+}
+
 void hid_main_task(void *pvParameters)
 {
     delay(100);
     angle angle_diff = {0};
-    int is_touch = 1;    
+    int is_touch = 1;
 
     gyro gyro;
     int read_raw;
@@ -381,21 +527,15 @@ void hid_main_task(void *pvParameters)
 
     while (1)
     {
-        adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-
-        readpaj7620();
-
-        delay(10);
-
         if (sec_conn)
         {
             if (is_touch) //  for sending gestures to device
             {
-               if(gesture_available(generic_gs))
-               {
+                if (gesture_available(generic_gs))
+                {
                     get_gesture(&generic_gs);
                     send_touch_gesture(hid_conn_id, generic_gs.gesture);
-               }
+                }
             }
             else // for sending mouse movement to device
             {
@@ -505,6 +645,26 @@ void app_main(void)
     mpu6500_who_am_i();
 
     init_adc();
+
+    // 写入operations record
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK)
+    {
+        return;
+    }
+
+    for (int i = 0; i < MAX_OPER_NUM; i++)
+    {
+        write_oper_to_nvs(handle, device_operations[i]);
+    }
+
+    nvs_close(handle);
+
+    // 读取NVS_Record
+    read_all_operations();
+
+    oper_queue = xQueueCreate(10, sizeof(oper_message));
 
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }

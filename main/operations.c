@@ -1,5 +1,6 @@
 #include "operations.h"
 #include "esp_log.h"
+#include "paj7620.h"
 
 #define OPERATIONS_TAG "BLUEGO_OPERATIONS"
 
@@ -66,4 +67,14 @@ void read_all_operations()
     }
 
     nvs_close(handle);
+}
+
+uint16_t get_oper_code(int oper_key)
+{
+    if(oper_key >= 0 && oper_key < MAX_OPER_NUM)
+    {
+        return device_operations[oper_key].value;
+    }
+
+    return INVALID_OPER_CODE;
 }
