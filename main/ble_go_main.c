@@ -46,7 +46,7 @@ static bool sec_conn = false;
 int isr = 0;
 gesture_state generic_gs;
 
-QueueHandle_t oper_queue;
+QueueHandle_t oper_queue = NULL;
 
 typedef struct
 {
@@ -337,20 +337,15 @@ int read_ges_from_paj7620()
             {
             case GES_RIGHT_FLAG:
                 ges_key = OPER_KEY_GES_RIGHT;
+                break;
             case GES_LEFT_FLAG:
                 ges_key = OPER_KEY_GES_LEFT;
+                break;
             case GES_UP_FLAG:
                 ges_key = OPER_KEY_GES_UP;
+                break;
             case GES_DOWN_FLAG:
                 ges_key = OPER_KEY_GES_DOWN;
-
-                delay(GES_ENTRY_TIME);
-                paj7620ReadReg(0x43, 1, &data);
-                // I don't differentiate forward and backward in the device so just combine them into one operation
-                if (data == GES_FORWARD_FLAG || data == GES_BACKWARD_FLAG)
-                {
-                    ges_key = OPER_KEY_GES_FORWOARD;
-                }
                 break;
             case GES_FORWARD_FLAG: // combine 2 operations as one
             case GES_BACKWARD_FLAG:
@@ -447,54 +442,72 @@ void multi_fun_switch_task(void *pvParameters)
 
     while (1)
     {
-        adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-        if (read_raw)
+        if (sec_conn)
         {
-            op_msg.oper_key = OPER_KEY_MFS_UP;
-        }
-        else if (read_raw)
-        {
-            op_msg.oper_key = OPER_KEY_MFS_DOWN;
-        }
-        else if (read_raw)
-        {
-            op_msg.oper_key = OPER_KEY_MFS_LEFT;
-        }
-        else if (read_raw)
-        {
-            op_msg.oper_key = OPER_KEY_MFS_RIGHT;
+            adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
+            if (read_raw)
+            {
+                op_msg.oper_key = OPER_KEY_MFS_UP;
+            }
+            else if (read_raw)
+            {
+                op_msg.oper_key = OPER_KEY_MFS_DOWN;
+            }
+            else if (read_raw)
+            {
+                op_msg.oper_key = OPER_KEY_MFS_LEFT;
+            }
+            else if (read_raw)
+            {
+                op_msg.oper_key = OPER_KEY_MFS_RIGHT;
+            }
+            else
+            {
+                op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
+            }
+
+            if (oper_queue != NULL)
+            {
+                xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+            }
+
+            vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
         }
         else
         {
-            op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
+            delay(200);
         }
-
-        if (oper_queue != NULL)
-        {
-            xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-        }
-
-        vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
     }
 }
 
 /// @brief Task for checking the gesture detector pay7620
 /// @param pvParameters
 void gesture_detect_task(void *pvParameters)
-{ 
+{
     uint16_t ges_key;
     oper_message op_msg;
     TickType_t last_wake_time = xTaskGetTickCount();
+    ESP_LOGI(HID_DEMO_TAG, "Entering gesture detect task");
 
     while (1)
     {
-        ges_key = read_ges_from_paj7620();
-        if (ges_key != 0 && oper_queue != NULL)
+        if (sec_conn)
         {
-            op_msg.oper_key = ges_key;
-            xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+            ges_key = read_ges_from_paj7620();
+
+            if (ges_key != 0 && oper_queue != NULL)
+            {
+                op_msg.oper_key = ges_key;
+                xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+                ESP_LOGI(HID_DEMO_TAG, "Message send with key: %d.", op_msg.oper_key);
+            }
+
+            vTaskDelayUntil(&last_wake_time, time_delay_for_ges);
         }
-        vTaskDelayUntil(&last_wake_time, time_delay_for_ges);
+        else
+        {
+            delay(200);
+        }
     }
 }
 
@@ -504,41 +517,86 @@ void imu_gyro_task(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
-    while (1)
-    {
-
-        vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);
-    }
-}
-
-void hid_main_task(void *pvParameters)
-{
-    delay(100);
     angle angle_diff = {0};
-    int is_touch = 1;
-
     gyro gyro;
-    int read_raw;
 
     struct timeval tv_now;
     int64_t time_us_old = 0;
     int64_t time_us_now = 0;
     int64_t time_us_diff = 0;
 
+    oper_message op_msg;
+    ESP_LOGI(HID_DEMO_TAG, "Entering gyro detect task");
+
     while (1)
     {
         if (sec_conn)
         {
-            if (is_touch) //  for sending gestures to device
+            mpu6500_GYR_read(&gyro);
+            gettimeofday(&tv_now, NULL);
+            time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
+            time_us_diff = time_us_now - time_us_old;
+            time_us_old = time_us_now;
+            if (time_us_diff > 100 * 1000) // if the time exceed 100ms, shorten it to 100ms to avoid big movement
             {
-                if (gesture_available(generic_gs))
-                {
-                    get_gesture(&generic_gs);
-                    send_touch_gesture(hid_conn_id, generic_gs.gesture);
-                }
+                time_us_diff = 100 * 1000;
             }
-            else // for sending mouse movement to device
+
+            angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
+            angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
+            angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
+
+            //  pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
+            if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
             {
+                int x, z;
+                x = angle_diff.x / 0.02; // Ever 0.02 degree movement are counted as 1 pixel movement on screen
+                z = angle_diff.z / 0.02;
+                // esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
+                op_msg.oper_key = OPER_KEY_IMU_GYRO;
+                op_msg.point_x = -z; // gyro z axis is used as x on screen
+                op_msg.point_y = -x; // gyro x axis is used as y on screen
+                xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", op_msg.point_x, op_msg.point_y, time_us_diff);
+            }
+
+            vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);
+        }
+        else
+        {
+            delay(200);
+        }
+    }
+}
+
+void hid_main_task(void *pvParameters)
+{
+    delay(100);
+
+    oper_message op_msg;
+    uint16_t oper_code;
+
+    while (1)
+    {
+        if (sec_conn)
+        {
+            if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
+            {
+                ESP_LOGI(HID_DEMO_TAG, "msg key:%d", op_msg.oper_key);
+                oper_code = get_oper_code(op_msg.oper_key);
+                send_operation(hid_conn_id, oper_code, op_msg.point_x, op_msg.point_y);
+            }
+
+            if (0) //  for sending gestures to device
+            {
+                angle angle_diff = {0};
+                gyro gyro;
+
+                struct timeval tv_now;
+                int64_t time_us_old = 0;
+                int64_t time_us_now = 0;
+                int64_t time_us_diff = 0;
+
                 mpu6500_GYR_read(&gyro);
                 gettimeofday(&tv_now, NULL);
                 time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
@@ -563,6 +621,10 @@ void hid_main_task(void *pvParameters)
                     ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z, time_us_diff);
                 }
             }
+        }
+        else
+        {
+            delay(200);
         }
     }
 }
@@ -665,6 +727,24 @@ void app_main(void)
     read_all_operations();
 
     oper_queue = xQueueCreate(10, sizeof(oper_message));
+
+    if (get_oper_code(OPER_KEY_IMU) == 1)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");
+        xTaskCreate(&imu_gyro_task, "imu_gyro_check", 2048, NULL, 1, NULL);
+    }
+
+    if (get_oper_code(OPER_KEY_MFS) == 1)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
+        xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
+    }
+
+    if (get_oper_code(OPER_KEY_GES) == 1)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
+        xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
+    }
 
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }
