@@ -48,6 +48,11 @@ esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
         return hidd_status;
     }
 
+    if(esp_ble_gatts_app_register(MODE_APP_ID))
+    {
+        ESP_LOGE(HID_LE_PRF_TAG, "APP with id %x register failed.", MODE_APP_ID);
+    }
+
     esp_ble_gatts_app_register(BATTRAY_APP_ID);
 
     if((hidd_status = esp_ble_gatts_app_register(HIDD_APP_ID)) != ESP_OK) {
