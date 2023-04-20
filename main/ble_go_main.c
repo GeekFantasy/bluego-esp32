@@ -710,7 +710,7 @@ void app_main(void)
 
     // 写入operations record
     nvs_handle_t handle;
-    esp_err_t err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
     if (err != ESP_OK)
     {
         return;
@@ -725,6 +725,13 @@ void app_main(void)
 
     // 读取NVS_Record
     read_all_operations();
+
+    // test string parse
+    if(update_operations_tab(data_buff, data_len))
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation tables.");
+    }
+
 
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
@@ -745,6 +752,7 @@ void app_main(void)
         ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
         xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
     }
+
 
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }

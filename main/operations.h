@@ -48,7 +48,8 @@ enum
     OPER_KEY_GES_ACLK
 };
 
-#define STORAGE_NAMESPACE "operations"
+#define OPER_STORAGE_NAMESPACE "operations"
+#define CURRENT_MODE_KEY "curr_mode"
 #define MAX_OPER_NUM 16
 
 typedef struct
@@ -59,6 +60,8 @@ typedef struct
 
 // 定义一个数组，用于存储NVS_Record
 extern operation device_operations[];
+extern uint8_t data_buff[];
+extern int data_len;
 
 esp_err_t nvs_init();
 void write_oper_to_nvs(nvs_handle_t handle, operation record);
@@ -66,5 +69,8 @@ void read_oper_from_nvs(nvs_handle_t handle, operation *record);
 void read_all_operations();
 uint16_t get_oper_code(int oper_key);
 void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, uint8_t point_y);
+esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode);
+esp_err_t read_curr_mode_from_nvs(uint8_t* curr_mode);
+esp_err_t update_operations_tab(const uint8_t* data, int data_len);
 
 #endif
