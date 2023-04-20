@@ -726,11 +726,11 @@ void app_main(void)
     // 读取NVS_Record
     read_all_operations();
 
-    // test string parse
-    if(update_operations_tab(data_buff, data_len))
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation tables.");
-    }
+    // // test string parse
+    // if(update_operations_tab(data_buff, data_len))
+    // {
+    //     ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation tables.");
+    // }
 
 
     oper_queue = xQueueCreate(10, sizeof(oper_message));
