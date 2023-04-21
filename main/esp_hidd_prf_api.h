@@ -30,6 +30,7 @@ typedef enum {
     ESP_HIDD_EVENT_BLE_CONNECT,
     ESP_HIDD_EVENT_BLE_DISCONNECT,
     ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT,
+    ESP_MODE_SETTING_UPDATED,
 } esp_hidd_cb_event_t;
 
 /// HID config status

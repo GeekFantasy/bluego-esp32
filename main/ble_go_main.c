@@ -44,6 +44,7 @@ const TickType_t tick_delay_msg_send = 10;
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
 int isr = 0;
+uint8_t curr_mode;
 gesture_state generic_gs;
 
 QueueHandle_t oper_queue = NULL;
@@ -72,8 +73,8 @@ static uint8_t hidd_service_uuid128[] = {
     0x10,
     0x00,
     0x00,
-    0x12,
-    0x18,
+    0x00,
+    0xef,
     0x00,
     0x00,
 };
@@ -145,6 +146,13 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
     {
         ESP_LOGI(HID_DEMO_TAG, "%s, ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT", __func__);
         ESP_LOG_BUFFER_HEX(HID_DEMO_TAG, param->vendor_write.data, param->vendor_write.length);
+        break;
+    }
+    case ESP_MODE_SETTING_UPDATED:
+    {
+        ESP_LOGI(HID_DEMO_TAG, "%s, ESP_MODE_SETTING_UPDATED", __func__); 
+        esp_restart();
+        break;
     }
     default:
         break;
@@ -708,25 +716,18 @@ void app_main(void)
 
     init_adc();
 
-    // 写入operations record
-    nvs_handle_t handle;
-    esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
-    if (err != ESP_OK)
+    if(read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
     {
-        return;
+        curr_mode = 1;
+        write_curr_mode_to_nvs(curr_mode);
+        write_all_operations_to_nvs();
+        ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
     }
-
-    for (int i = 0; i < MAX_OPER_NUM; i++)
-    {
-        write_oper_to_nvs(handle, device_operations[i]);
-    }
-
-    nvs_close(handle);
 
     // 读取NVS_Record
     read_all_operations();
 
-    // // test string parse
+    // test string parse
     // if(update_operations_tab(data_buff, data_len))
     // {
     //     ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation tables.");
@@ -752,7 +753,6 @@ void app_main(void)
         ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
         xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
     }
-
 
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }

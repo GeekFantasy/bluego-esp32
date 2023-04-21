@@ -808,13 +808,18 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     {
         ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_EXEC_WRITE_EVT. ");
         esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
-
         ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id,param->write.trans_id, param->write.handle);
+
+        bool need_reboot = false;
 
         if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
         {
             esp_log_buffer_hex(HID_LE_PRF_TAG, mode_setting_prep_write_env.prepare_buf, mode_setting_prep_write_env.prepare_len);
             // TODO need to save data here
+            ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT: Begin to update the operation table.");
+            update_operations_tab(mode_setting_prep_write_env.prepare_buf, mode_setting_prep_write_env.prepare_len);
+            write_all_operations_to_nvs();
+            need_reboot = true;
         }
         else
         {
@@ -827,6 +832,11 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             mode_setting_prep_write_env.prepare_buf = NULL;
         }
         mode_setting_prep_write_env.prepare_len = 0;
+
+        if (need_reboot == true && hidd_le_env.hidd_cb != NULL)
+        {
+            (hidd_le_env.hidd_cb)(ESP_MODE_SETTING_UPDATED, NULL);
+        }
 
         break;
     }
@@ -914,7 +924,6 @@ bool hidd_clcb_dealloc(uint16_t conn_id)
 
     return false;
 }
-
 static struct gatts_profile_inst gatt_profile_tab[PROFILE_NUM] = {
     [HID_PROFILE_APP_IDX] = {
         .gatts_cb = esp_hidd_prf_cb_hd,

@@ -8,21 +8,21 @@
 
 operation device_operations[MAX_OPER_NUM] = {
     {"imu", 1},
-    {"imu_gyro", 0x0201},
+    {"imu_gyro", 201},
     {"mfs", 0},
-    {"mfs_up", 0x0101},
-    {"mfs_down", 0x0102},
-    {"mfs_left", 0x0103},
-    {"mfs_right", 0x0104},
-    {"mfs_middle", 0x0105},
+    {"mfs_up", 101},
+    {"mfs_down", 102},
+    {"mfs_left", 103},
+    {"mfs_right", 104},
+    {"mfs_middle", 105},
     {"ges", 1},
-    {"ges_up", 0x0101},
-    {"ges_down", 0x0102},
-    {"ges_left", 0x0103},
-    {"ges_right", 0x0104},
-    {"ges_forward", 0x0105},
-    {"ges_clk", 0x0106},
-    {"ges_aclk", 0x0107}};
+    {"ges_up", 101},
+    {"ges_down", 102},
+    {"ges_left", 103},
+    {"ges_right", 104},
+    {"ges_forward", 105},
+    {"ges_clk", 106},
+    {"ges_aclk", 107}};
 
 uint8_t data_buff[] = {'i', 'm', 'u', ':', 0x00, 0x00, ',', 'i','m','u','_','g','y','r','o',':', 0x3, 0x3, ',','m','f','s',':',0x02, 0x0};
 int data_len = sizeof(data_buff);
@@ -44,8 +44,15 @@ esp_err_t nvs_init()
 // 写入NVS_Record
 void write_oper_to_nvs(nvs_handle_t handle, operation record)
 {
-    nvs_set_u16(handle, record.key, record.value);
-    ESP_LOGE(OPERATIONS_TAG, "write key %s,value = %d", record.key, record.value);
+    if(nvs_set_u16(handle, record.key, record.value))
+    {
+        ESP_LOGE(OPERATIONS_TAG, "Failed to write key %s,value = %d", record.key, record.value);
+    }
+    else
+    {
+        ESP_LOGE(OPERATIONS_TAG, "Write key %s,value = %d", record.key, record.value);
+    }
+    
     nvs_commit(handle);
 }
 
@@ -88,6 +95,25 @@ esp_err_t read_curr_mode_from_nvs(uint8_t* curr_mode)
     nvs_close(handle);
 
     return err;
+}
+
+// 把所有的operation写入 nvs
+void write_all_operations_to_nvs()
+{
+    // 写入operations record
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK)
+    {
+        return;
+    }
+
+    for (int i = 0; i < MAX_OPER_NUM; i++)
+    {
+        write_oper_to_nvs(handle, device_operations[i]);
+    }
+
+    nvs_close(handle);
 }
 
 // 读取所有NVS_Record
