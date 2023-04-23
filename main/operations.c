@@ -196,7 +196,7 @@ void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, u
 {
     //ESP_LOGI(OPERATIONS_TAG, "Send OP with oper_code %d", oper_code);
     switch (oper_code)
-    {
+    {    
     case OP_CODE_MOUSE_POINTOR:
         esp_hidd_send_mouse_value(hid_conn_id, 0, point_x, point_y);
         break;

@@ -11,6 +11,11 @@
 // define the full gyro scale to use
 #define GYRO_FULL_SCALE  GYRO_SCALE_1000
 
+// The average gyro offset tested
+#define GYRO_OFFSET_X         85
+#define GYRO_OFFSET_y         3
+#define GYRO_OFFSET_z         -10
+
 #if (GYRO_FULL_SCALE == GYRO_SCALE_250)
 #define GYRO_FS_SETTING  GYRO_FS_250DPS
 #elif (GYRO_FULL_SCALE == GYRO_SCALE_500)
@@ -71,17 +76,19 @@ void mpu6500_init(void)
         ESP_LOGI(MPU6500_TAG, "MPU6500 wake up moduleset successfully...");
     }
 
+    // This piece of code used to calc the offset of the MPU.
+    // If the MPU has offset, please use it to check it
     gyro_raw gyro_r;
-    mpu6500_compute_gyro_offset(&gyro_r);
-    ESP_LOGI(MPU6500_TAG, "MPU6500 gyro offset: x = %d , y = %d , z = %d .", gyro_r.x, gyro_r.y, gyro_r.z);
+    // mpu6500_compute_gyro_offset(&gyro_r);
+    // ESP_LOGI(MPU6500_TAG, "MPU6500 gyro offset: x = %d , y = %d , z = %d .", gyro_r.x, gyro_r.y, gyro_r.z);
 
-    gyro_raw gyro_original;
-    gyro_original = mpu6500_get_gyro_offset();
-    ESP_LOGI(MPU6500_TAG, "Original gyro offset is, x = %d, y = %d, z = %d.", gyro_original.x, gyro_original.y, gyro_original.z);
+    // gyro_raw gyro_original;
+    // gyro_original = mpu6500_get_gyro_offset();
+    // ESP_LOGI(MPU6500_TAG, "Original gyro offset is, x = %d, y = %d, z = %d.", gyro_original.x, gyro_original.y, gyro_original.z);
 
-    gyro_r.x = -gyro_r.x;
-    gyro_r.y = -gyro_r.y;
-    gyro_r.z = -gyro_r.z;
+    gyro_r.x = GYRO_OFFSET_X;
+    gyro_r.y = GYRO_OFFSET_y;
+    gyro_r.z = GYRO_OFFSET_z;
 
     if(mpu6500_set_gyro_offset(&gyro_r))
     {
@@ -92,8 +99,8 @@ void mpu6500_init(void)
         ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro offset successfully.");
     }
 
-    gyro_original = mpu6500_get_gyro_offset();
-    ESP_LOGI(MPU6500_TAG, "Set gyro offset is, x = %d, y = %d, z = %d.", gyro_original.x, gyro_original.y, gyro_original.z);
+    gyro_r = mpu6500_get_gyro_offset();
+    ESP_LOGI(MPU6500_TAG, "Set gyro offset is, x = %d, y = %d, z = %d.", gyro_r.x, gyro_r.y, gyro_r.z);
 
     if(mpu6500_set_clock_source(CLOCK_PLL)) 
     {

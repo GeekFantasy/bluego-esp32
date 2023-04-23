@@ -5,6 +5,8 @@
 #include "nvs.h"
 #include <string.h>
 
+#define OP_CODE_RESTART_DEVICE      000
+
 #define OP_CODE_PHONE_SLIDE_UP      101
 #define OP_CODE_PHONE_SLIDE_DOWN    102
 #define OP_CODE_PHONE_SLIDE_LEFT    103
@@ -22,6 +24,7 @@
 #define OP_CODE_KEYBOARD_KEY_LEFT   303
 #define OP_CODE_KEYBOARD_KEY_RIGHT  304
 #define OP_CODE_KEYBOARD_KEY_SPACE  305
+
 #define OP_CODE_KEYBOARD_KEY_ENTER  306
 
 #define INVALID_OPER_CODE 0xFF
@@ -47,6 +50,8 @@ enum
     OPER_KEY_GES_CLK,
     OPER_KEY_GES_ACLK
 };
+
+#define OPER_KEY_ESP_RESTART     0XFFFF
 
 #define OPER_STORAGE_NAMESPACE "operations"
 #define CURRENT_MODE_KEY "curr_mode"

@@ -150,8 +150,10 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
     }
     case ESP_MODE_SETTING_UPDATED:
     {
+        oper_message op_msg;
+        op_msg.oper_key = OPER_KEY_ESP_RESTART;
         ESP_LOGI(HID_DEMO_TAG, "%s, ESP_MODE_SETTING_UPDATED", __func__); 
-        esp_restart();
+        xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
         break;
     }
     default:
@@ -591,8 +593,16 @@ void hid_main_task(void *pvParameters)
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
                 ESP_LOGI(HID_DEMO_TAG, "msg key:%d", op_msg.oper_key);
-                oper_code = get_oper_code(op_msg.oper_key);
-                send_operation(hid_conn_id, oper_code, op_msg.point_x, op_msg.point_y);
+                if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
+                {
+                    oper_code = get_oper_code(op_msg.oper_key);
+                    send_operation(hid_conn_id, oper_code, op_msg.point_x, op_msg.point_y);
+                }
+                else
+                {
+                    delay(100);
+                    esp_restart();
+                }
             }
 
             if (0) //  for sending gestures to device
