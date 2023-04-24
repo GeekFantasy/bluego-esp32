@@ -6,15 +6,15 @@
 
 #define OPERATIONS_TAG "BLUEGO_OPERATIONS"
 
-operation device_operations[MAX_OPER_NUM] = {
+operation device_operations[OPER_KEY_MAX_NUM] = {
     {"imu", 1},
     {"imu_gyro", 201},
     {"mfs", 0},
-    {"mfs_up", 101},
-    {"mfs_down", 102},
-    {"mfs_left", 103},
-    {"mfs_right", 104},
-    {"mfs_middle", 105},
+    {"mfs_up", 301},
+    {"mfs_down", 302},
+    {"mfs_left", 303},
+    {"mfs_right", 304},
+    {"mfs_middle", 305},
     {"ges", 1},
     {"ges_up", 101},
     {"ges_down", 102},
@@ -108,7 +108,7 @@ void write_all_operations_to_nvs()
         return;
     }
 
-    for (int i = 0; i < MAX_OPER_NUM; i++)
+    for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
     {
         write_oper_to_nvs(handle, device_operations[i]);
     }
@@ -126,7 +126,7 @@ void read_all_operations()
         return;
     }
 
-    for (int i = 0; i < MAX_OPER_NUM; i++)
+    for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
     {
         read_oper_from_nvs(handle, &device_operations[i]);
     }
@@ -136,7 +136,7 @@ void read_all_operations()
 
 uint16_t get_oper_code(int oper_key)
 {
-    if (oper_key >= 0 && oper_key < MAX_OPER_NUM)
+    if (oper_key >= 0 && oper_key < OPER_KEY_MAX_NUM)
     {
         return device_operations[oper_key].value;
     }
@@ -147,7 +147,7 @@ uint16_t get_oper_code(int oper_key)
 esp_err_t update_operation(operation* op)
 { 
     esp_err_t err = 1;
-    for(int i = 0; i < MAX_OPER_NUM; i++)  
+    for(int i = 0; i < OPER_KEY_MAX_NUM; i++)  
     {
         if(strcmp(device_operations[i].key, op->key)==0)
         {
@@ -194,7 +194,7 @@ esp_err_t update_operations_tab(const uint8_t* data, int data_len)
 
 void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, uint8_t point_y)
 {
-    //ESP_LOGI(OPERATIONS_TAG, "Send OP with oper_code %d", oper_code);
+    ESP_LOGI(OPERATIONS_TAG, "Send OP with oper_code %d", oper_code);
     switch (oper_code)
     {    
     case OP_CODE_MOUSE_POINTOR:

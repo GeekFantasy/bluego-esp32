@@ -31,9 +31,9 @@
 #include "hid_touch_gestures.h"
 #include "operations.h"
 
-#define HID_DEMO_TAG "HID_DEMO"
+#define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
-#define HIDD_DEVICE_NAME "ESP32 HID"
+#define HIDD_DEVICE_NAME "Bluego"
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 const TickType_t time_delay_for_mfs = 50;
@@ -452,7 +452,7 @@ void multi_fun_switch_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn)
+        if (sec_conn && get_oper_code(OPER_KEY_MFS) == 1)
         {
             adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
             if (read_raw)
@@ -471,15 +471,15 @@ void multi_fun_switch_task(void *pvParameters)
             {
                 op_msg.oper_key = OPER_KEY_MFS_RIGHT;
             }
-            else
-            {
-                op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
-            }
+            // else
+            // {
+            //     op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
+            // }
 
-            if (oper_queue != NULL)
-            {
-                xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-            }
+            // if (oper_queue != NULL)
+            // {
+            //     xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+            // }
 
             vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
         }
@@ -501,7 +501,7 @@ void gesture_detect_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn)
+        if (sec_conn && get_oper_code(OPER_KEY_GES) == 1)
         {
             ges_key = read_ges_from_paj7620();
 
@@ -540,7 +540,7 @@ void imu_gyro_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn)
+        if (sec_conn && (get_oper_code(OPER_KEY_IMU) == 1))
         {
             mpu6500_GYR_read(&gyro);
             gettimeofday(&tv_now, NULL);
@@ -600,8 +600,8 @@ void hid_main_task(void *pvParameters)
                 }
                 else
                 {
-                    delay(100);
-                    esp_restart();
+                    //delay(100);
+                    //esp_restart();  // Restart is not necessary 
                 }
             }
 
@@ -746,23 +746,14 @@ void app_main(void)
 
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
-    if (get_oper_code(OPER_KEY_IMU) == 1)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");
-        xTaskCreate(&imu_gyro_task, "imu_gyro_check", 2048, NULL, 1, NULL);
-    }
+    ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");
+    xTaskCreate(&imu_gyro_task, "imu_gyro_check", 2048, NULL, 1, NULL);
 
-    if (get_oper_code(OPER_KEY_MFS) == 1)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
-        xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
-    }
+    ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
+    xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
 
-    if (get_oper_code(OPER_KEY_GES) == 1)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
-        xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
-    }
+    ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
+    xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
 
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }
