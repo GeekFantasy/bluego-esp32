@@ -52,9 +52,7 @@ QueueHandle_t oper_queue = NULL;
 typedef struct
 {
     uint16_t oper_key;
-    int8_t point_x;
-    int8_t point_y;
-    int8_t wheel;
+    oper_param oper_param;
 } oper_message;
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
@@ -566,11 +564,13 @@ void imu_gyro_task(void *pvParameters)
                 z = angle_diff.z / 0.02;
                 y = angle_diff.y / 3.6;
                 op_msg.oper_key = OPER_KEY_IMU_GYRO;
-                op_msg.point_x = -z; // gyro z axis is used as x on screen
-                op_msg.point_y = -x; // gyro x axis is used as y on screen
-                op_msg.wheel = y; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse_pointer.point_x = -z; // gyro z axis is used as x on screen
+                op_msg.oper_param.mouse_pointer.point_y = -x; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse_pointer.wheel = y; // gyro x axis is used as y on screen
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.point_x, op_msg.point_y, op_msg.wheel, time_us_diff);
+                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.oper_param.mouse_pointer.point_x, 
+                op_msg.oper_param.mouse_pointer.point_y,
+                 op_msg.oper_param.mouse_pointer.wheel, time_us_diff);
             }
 
             vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);
@@ -605,7 +605,7 @@ void hid_main_task(void *pvParameters)
                 if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
                 {
                     oper_code = get_oper_code(op_msg.oper_key);
-                    send_operation(hid_conn_id, oper_code, op_msg.point_x, op_msg.point_y, op_msg.wheel);
+                    send_operation(hid_conn_id, oper_code, op_msg.oper_param);
                 }
                 else
                 {

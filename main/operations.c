@@ -198,14 +198,24 @@ esp_err_t update_operations_tab(const uint8_t* data, int data_len)
     return err;
 }
 
-void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, uint8_t point_y, uint8_t wheel)
+
+void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_parm)
 {
     ESP_LOGI(OPERATIONS_TAG, "Send OP with oper_code %d", oper_code);
     switch (oper_code)
     {    
     case OP_CODE_MOUSE_POINTOR:
-        esp_hidd_send_mouse_value(hid_conn_id, 0, point_x, point_y, wheel);
+        esp_hidd_send_mouse_value(hid_conn_id, 0, op_parm.mouse_pointer.point_x, 
+            op_parm.mouse_pointer.point_y, op_parm.mouse_pointer.wheel);
         break;
+    case OP_CODE_MOUSE_LEFT_CLICK:
+        esp_hidd_send_mouse_value(hid_conn_id, 0, op_parm.mouse_pointer.point_x, 
+            op_parm.mouse_pointer.point_y, op_parm.mouse_pointer.wheel);
+        break;
+    case OP_CODE_MOUSE_RIGHT_CLICK:
+        esp_hidd_send_mouse_value(hid_conn_id, 0, op_parm.mouse_pointer.point_x, 
+            op_parm.mouse_pointer.point_y, op_parm.mouse_pointer.wheel);
+        break;    
     case OP_CODE_PHONE_SLIDE_UP:
         send_slide_up(hid_conn_id);
         break;
@@ -219,9 +229,13 @@ void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, u
         send_slide_right(hid_conn_id);
         break;
     case OP_CODE_PHONE_TAP:
-        send_double_tap(hid_conn_id);
+        send_tap(hid_conn_id);
         break;
     case OP_CODE_PHONE_DOUBLE_TAP:
+        send_double_tap(hid_conn_id);
+        send_back(hid_conn_id);
+        break;
+    case OP_CODE_PHONE_BACK:
         send_back(hid_conn_id);
         break;
     default:
