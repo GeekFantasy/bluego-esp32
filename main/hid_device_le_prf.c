@@ -735,7 +735,8 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         break;
     }
     case ESP_GATTS_READ_EVT:
-    {
+    { // F**k, Windows is capricious, so please make sure to return something for a characteristic, or even other services would get block
+      // Android is good.
         ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_READ_EVT. ");
         ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_READ_EVT, conn_id: %d, trans_id: %d, read handle: %d.", param->read.conn_id,param->read.trans_id, param->read.handle);
         if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle read for current mode char
@@ -752,7 +753,15 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         }
         else if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING])  // handle read for mode setting char
         {
-            
+            esp_gatt_rsp_t rsp;
+            memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+            uint8_t curr_mode = 0;
+            read_curr_mode_from_nvs(&curr_mode);
+            rsp.attr_value.handle = param->read.handle;
+            rsp.attr_value.len = 1;
+            rsp.attr_value.value[0] = curr_mode;
+            esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                        ESP_GATT_OK, &rsp);
         }
         break;
     }
@@ -953,7 +962,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
                 gatt_profile_tab[MODE_PROFILE_APP_IDX].gatts_if = gatts_if;
             }
             
-            ESP_LOGI(HID_LE_PRF_TAG, "Assign gatt_if:%d to app id: %d", gatts_if, param->reg.app_id);
+            ESP_LOGI(HID_LE_PRF_TAG, "Assign gatt_if:%d to app id: %x", gatts_if, param->reg.app_id);
         }
         else
         {
