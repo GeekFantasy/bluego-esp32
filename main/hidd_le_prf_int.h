@@ -48,7 +48,7 @@
 #define HID_RPT_ID_KEY_IN        2   // Keyboard input report ID
 #define HID_RPT_ID_CC_IN         3   //Consumer Control input report ID
 #define HID_RPT_ID_VENDOR_OUT    4   // Vendor output report ID
-#define HID_RPT_ID_TOUCH_SCREEN  5   // Vendor output report ID
+#define HID_RPT_ID_TOUCH_SCREEN  5   // Touch screen input report ID
 #define HID_RPT_ID_LED_OUT       0  // LED output report ID
 #define HID_RPT_ID_FEATURE       0  // Feature report ID
 

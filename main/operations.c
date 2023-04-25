@@ -61,8 +61,14 @@ void read_oper_from_nvs(nvs_handle_t handle, operation *record)
 {
     if (record != NULL)
     {
-        nvs_get_u16(handle, record->key, &(record->value));
-        ESP_LOGE(OPERATIONS_TAG, "Read key %s, value = %x", record->key, record->value);
+        if (nvs_get_u16(handle, record->key, &(record->value)))
+        {
+            ESP_LOGE(OPERATIONS_TAG, "Failed to read key %s, original value = %d", record->key, record->value);
+        }
+        else
+        {
+            ESP_LOGI(OPERATIONS_TAG, "Read key %s, value = %d", record->key, record->value);
+        }
     }
 }
 
