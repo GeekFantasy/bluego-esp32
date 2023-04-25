@@ -54,6 +54,7 @@ typedef struct
     uint16_t oper_key;
     int8_t point_x;
     int8_t point_y;
+    int8_t wheel;
 } oper_message;
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
@@ -556,18 +557,20 @@ void imu_gyro_task(void *pvParameters)
             angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
             angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
 
-            //  pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
-            if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
+            // pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
+            // So the below means the angle change exceed 0.02 degree will be recognized mouse movement
+            if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2) || (abs(100 * angle_diff.y) >= 360))
             {
-                int x, z;
-                x = angle_diff.x / 0.02; // Ever 0.02 degree movement are counted as 1 pixel movement on screen
+                int x, y, z;
+                x = angle_diff.x / 0.02; // Every 0.02 degree movement are counted as 1 pixel movement on screen
                 z = angle_diff.z / 0.02;
-                // esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
+                y = angle_diff.y / 3.6;
                 op_msg.oper_key = OPER_KEY_IMU_GYRO;
                 op_msg.point_x = -z; // gyro z axis is used as x on screen
                 op_msg.point_y = -x; // gyro x axis is used as y on screen
+                op_msg.wheel = y; // gyro x axis is used as y on screen
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", op_msg.point_x, op_msg.point_y, time_us_diff);
+                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.point_x, op_msg.point_y, op_msg.wheel, time_us_diff);
             }
 
             vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);
@@ -590,53 +593,24 @@ void hid_main_task(void *pvParameters)
     {
         if (sec_conn)
         {
+            // uint8_t key_vaule = {HID_KEY_A};
+            // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
+            // esp_hidd_send_consumer_value()
+            // esp_hidd_send_mouse_value(hid_conn_id, 0, 0, 0, 1);
+            // delay(200);
+
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
                 ESP_LOGI(HID_DEMO_TAG, "msg key:%d", op_msg.oper_key);
                 if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
                 {
                     oper_code = get_oper_code(op_msg.oper_key);
-                    send_operation(hid_conn_id, oper_code, op_msg.point_x, op_msg.point_y);
+                    send_operation(hid_conn_id, oper_code, op_msg.point_x, op_msg.point_y, op_msg.wheel);
                 }
                 else
                 {
                     //delay(100);
                     //esp_restart();  // Restart is not necessary 
-                }
-            }
-
-            if (0) //  for sending gestures to device
-            {
-                angle angle_diff = {0};
-                gyro gyro;
-
-                struct timeval tv_now;
-                int64_t time_us_old = 0;
-                int64_t time_us_now = 0;
-                int64_t time_us_diff = 0;
-
-                mpu6500_GYR_read(&gyro);
-                gettimeofday(&tv_now, NULL);
-                time_us_now = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
-                time_us_diff = time_us_now - time_us_old;
-                time_us_old = time_us_now;
-                if (time_us_diff > 100 * 1000) // if the time exceed 100ms, shorten it to 100ms to avoid big movement
-                {
-                    time_us_diff = 100 * 1000;
-                }
-
-                angle_diff.x = (float)time_us_diff / 1000000 * gyro.x;
-                angle_diff.y = (float)time_us_diff / 1000000 * gyro.y;
-                angle_diff.z = (float)time_us_diff / 1000000 * gyro.z;
-
-                //  pay attention to the abs, it only apply to int, and the float will be convert to int when passing in
-                if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2))
-                {
-                    int x, z;
-                    x = angle_diff.x / 0.02;
-                    z = angle_diff.z / 0.02;
-                    esp_hidd_send_mouse_value(hid_conn_id, 0, -z, -x);
-                    ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%lld", x, z, time_us_diff);
                 }
             }
         }

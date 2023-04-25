@@ -76,7 +76,7 @@ void read_oper_from_nvs(nvs_handle_t handle, operation *record);
 void write_all_operations_to_nvs();
 void read_all_operations();
 uint16_t get_oper_code(int oper_key);
-void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, uint8_t point_y);
+void send_operation(uint16_t hid_conn_id, uint16_t oper_code, uint8_t point_x, uint8_t point_y, uint8_t wheel);
 esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode);
 esp_err_t read_curr_mode_from_nvs(uint8_t* curr_mode);
 esp_err_t update_operations_tab(const uint8_t* data, int data_len);
