@@ -5,7 +5,7 @@
 #include "hid_touch_gestures.h"
 #include "hid_dev.h"
 
-#define OPERATIONS_TAG "BLUEGO_OPERATIONS"
+#define OPERATIONS_TAG "BG_OPER"
 
 operation device_operations[OPER_KEY_MAX_NUM] = {
     {"imu", 0},
@@ -213,7 +213,7 @@ void send_keyboard_key(uint16_t hid_conn_id, uint8_t key, oper_param op_param)
 
 void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_param)
 {
-    ESP_LOGI(OPERATIONS_TAG, "Send OP with oper_code %d", oper_code);
+    ESP_LOGI(OPERATIONS_TAG, "send op code: %d", oper_code);
     switch (oper_code)
     {    
     case OP_CODE_MOUSE_POINTOR:

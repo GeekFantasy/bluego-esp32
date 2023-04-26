@@ -616,12 +616,10 @@ void imu_gyro_task(void *pvParameters)
                 y = angle_diff.y / 3.6;
                 op_msg.oper_key = OPER_KEY_IMU_GYRO;
                 op_msg.oper_param.mouse.point_x = -z; // gyro z axis is used as x on screen
-                op_msg.oper_param.mouse.point_y = -x; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse.point_y = x; // gyro x axis is used as y on screen
                 op_msg.oper_param.mouse.wheel = y; // gyro x axis is used as y on screen
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.oper_param.mouse.point_x, 
-                op_msg.oper_param.mouse.point_y,
-                 op_msg.oper_param.mouse.wheel, time_us_diff);
+                //ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.oper_param.mouse.point_x, op_msg.oper_param.mouse.point_y,op_msg.oper_param.mouse.wheel, time_us_diff);
             }
 
             vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);
