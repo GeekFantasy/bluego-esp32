@@ -36,6 +36,13 @@
 #define HIDD_DEVICE_NAME "Bluego"
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
+#define SWITCH_KEY_UP_LEVEL      216
+#define SWITCH_KEY_DOWN_LEVEL    588
+#define SWITCH_KEY_LEFT_LEVEL    780
+#define SWITCH_KEY_RIGHT_LEVEL   429
+#define SWITCH_KEY_MIDDLE_LEVEL  280
+#define SWITCH_KEY_RANGE         10
+
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 50;
 const TickType_t time_delay_for_gyro = 10;
@@ -446,41 +453,84 @@ void init_adc()
 void multi_fun_switch_task(void *pvParameters)
 {
     int read_raw;
-    oper_message op_msg;
+    oper_message op_msg = {0};
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while (1)
     {
-        if (sec_conn && get_oper_code(OPER_KEY_MFS) == 1)
+        if (sec_conn && get_oper_code(OPER_KEY_MFS) == 1 && oper_queue != NULL)
         {
             adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
-            if (read_raw)
+            //ESP_LOGE(HID_DEMO_TAG, "The data from adc is: %d", read_raw);
+
+            // Handle key down event for key-up
+            if (read_raw > (SWITCH_KEY_UP_LEVEL - SWITCH_KEY_RANGE) 
+                && read_raw < (SWITCH_KEY_UP_LEVEL + SWITCH_KEY_RANGE))
             {
+                //Make sure only send once for a key down event
+                if(op_msg.oper_param.key_state.pressed == 1 && op_msg.oper_key == OPER_KEY_MFS_UP)
+                {
+                    vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+                    continue;
+                }
+                op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_key = OPER_KEY_MFS_UP;
             }
-            else if (read_raw)
+            else if (read_raw > (SWITCH_KEY_DOWN_LEVEL - SWITCH_KEY_RANGE) 
+                && read_raw < (SWITCH_KEY_DOWN_LEVEL + SWITCH_KEY_RANGE))
             {
+                if(op_msg.oper_param.key_state.pressed == 1 && op_msg.oper_key == OPER_KEY_MFS_DOWN)
+                {
+                    vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+                    continue;
+                }
+                op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_key = OPER_KEY_MFS_DOWN;
             }
-            else if (read_raw)
+            else if (read_raw > (SWITCH_KEY_LEFT_LEVEL - SWITCH_KEY_RANGE) 
+                && read_raw < (SWITCH_KEY_LEFT_LEVEL + SWITCH_KEY_RANGE))
             {
+                if(op_msg.oper_param.key_state.pressed == 1 && op_msg.oper_key == OPER_KEY_MFS_LEFT)
+                {
+                    vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+                    continue;
+                }
+                op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_key = OPER_KEY_MFS_LEFT;
             }
-            else if (read_raw)
+            else if (read_raw > (SWITCH_KEY_RIGHT_LEVEL - SWITCH_KEY_RANGE) 
+                && read_raw < (SWITCH_KEY_RIGHT_LEVEL + SWITCH_KEY_RANGE))
             {
+                if(op_msg.oper_param.key_state.pressed == 1 && op_msg.oper_key == OPER_KEY_MFS_RIGHT)
+                {
+                    vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+                    continue;
+                }
+                op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_key = OPER_KEY_MFS_RIGHT;
             }
-            // else
-            // {
-            //     op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
-            // }
+            else if (read_raw > (SWITCH_KEY_MIDDLE_LEVEL - SWITCH_KEY_RANGE) 
+                && read_raw < (SWITCH_KEY_MIDDLE_LEVEL + SWITCH_KEY_RANGE))
+            {
+                if(op_msg.oper_param.key_state.pressed == 1 && op_msg.oper_key == OPER_KEY_MFS_MIDDLE)
+                {
+                    vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+                    continue;
+                }
+                op_msg.oper_param.key_state.pressed = 1;
+                op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
+            }
+            else
+            {   // handle key up event 
+                if(op_msg.oper_param.key_state.pressed == 0) // make sure only set  once 
+                {
+                    vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+                    continue;
+                }
+                op_msg.oper_param.key_state.pressed = 0;
+            }
 
-            // if (oper_queue != NULL)
-            // {
-            //     xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-            // }
-
-            vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
+            xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
         }
         else
         {
@@ -507,6 +557,7 @@ void gesture_detect_task(void *pvParameters)
             if (ges_key != 0 && oper_queue != NULL)
             {
                 op_msg.oper_key = ges_key;
+                op_msg.oper_param.key_state.pressed = 1;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
                 ESP_LOGI(HID_DEMO_TAG, "Message send with key: %d.", op_msg.oper_key);
             }
@@ -564,13 +615,13 @@ void imu_gyro_task(void *pvParameters)
                 z = angle_diff.z / 0.02;
                 y = angle_diff.y / 3.6;
                 op_msg.oper_key = OPER_KEY_IMU_GYRO;
-                op_msg.oper_param.mouse_pointer.point_x = -z; // gyro z axis is used as x on screen
-                op_msg.oper_param.mouse_pointer.point_y = -x; // gyro x axis is used as y on screen
-                op_msg.oper_param.mouse_pointer.wheel = y; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse.point_x = -z; // gyro z axis is used as x on screen
+                op_msg.oper_param.mouse.point_y = -x; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse.wheel = y; // gyro x axis is used as y on screen
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.oper_param.mouse_pointer.point_x, 
-                op_msg.oper_param.mouse_pointer.point_y,
-                 op_msg.oper_param.mouse_pointer.wheel, time_us_diff);
+                ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.oper_param.mouse.point_x, 
+                op_msg.oper_param.mouse.point_y,
+                 op_msg.oper_param.mouse.wheel, time_us_diff);
             }
 
             vTaskDelayUntil(&xLastWakeTime, time_delay_for_gyro);

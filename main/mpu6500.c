@@ -6,6 +6,8 @@
 #include "esp_log.h"
 #include "mpu6500.h"
 
+#define MPU500_CALC_OFFSET
+
 // Output value that exceeds jitter limt or 0
 #define GYRO_JITTER_LIMIT    0.1
 // define the full gyro scale to use
@@ -76,19 +78,27 @@ void mpu6500_init(void)
         ESP_LOGI(MPU6500_TAG, "MPU6500 wake up moduleset successfully...");
     }
 
-    // This piece of code used to calc the offset of the MPU.
-    // If the MPU has offset, please use it to check it
     gyro_raw gyro_r;
-    // mpu6500_compute_gyro_offset(&gyro_r);
-    // ESP_LOGI(MPU6500_TAG, "MPU6500 gyro offset: x = %d , y = %d , z = %d .", gyro_r.x, gyro_r.y, gyro_r.z);
 
-    // gyro_raw gyro_original;
-    // gyro_original = mpu6500_get_gyro_offset();
-    // ESP_LOGI(MPU6500_TAG, "Original gyro offset is, x = %d, y = %d, z = %d.", gyro_original.x, gyro_original.y, gyro_original.z);
+    // This piece of code used to calc the offset of the MPU.
+    // For the first time please use below code to caculate the offset. Need to keep the board steady when caculating or it gets wrong offset
+#ifdef MPU500_CALC_OFFSET
+    mpu6500_compute_gyro_offset(&gyro_r);
+    ESP_LOGI(MPU6500_TAG, "MPU6500 gyro offset: x = %d , y = %d , z = %d .", gyro_r.x, gyro_r.y, gyro_r.z);
+    gyro_r.x = -gyro_r.x;
+    gyro_r.y = -gyro_r.y;
+    gyro_r.z = -gyro_r.z;
 
+    gyro_raw gyro_original;
+    gyro_original = mpu6500_get_gyro_offset();
+    ESP_LOGI(MPU6500_TAG, "Original gyro offset is, x = %d, y = %d, z = %d.", gyro_original.x, gyro_original.y, gyro_original.z);
+
+#else    
+    // Use the code below to use predefined offset
     gyro_r.x = GYRO_OFFSET_X;
     gyro_r.y = GYRO_OFFSET_y;
     gyro_r.z = GYRO_OFFSET_z;
+#endif // #endif MPU500_CALC_OFFSET
 
     if(mpu6500_set_gyro_offset(&gyro_r))
     {

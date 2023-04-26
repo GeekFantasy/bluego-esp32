@@ -3,19 +3,20 @@
 #include "paj7620.h"
 #include "esp_hidd_prf_api.h"
 #include "hid_touch_gestures.h"
+#include "hid_dev.h"
 
 #define OPERATIONS_TAG "BLUEGO_OPERATIONS"
 
 operation device_operations[OPER_KEY_MAX_NUM] = {
-    {"imu", 1},
+    {"imu", 0},
     {"imu_gyro", 201},
-    {"mfs", 0},
+    {"mfs", 1},
     {"mfs_up", 301},
     {"mfs_down", 302},
     {"mfs_left", 303},
     {"mfs_right", 304},
     {"mfs_middle", 305},
-    {"ges", 1},
+    {"ges", 0},
     {"ges_up", 101},
     {"ges_down", 102},
     {"ges_left", 103},
@@ -26,6 +27,7 @@ operation device_operations[OPER_KEY_MAX_NUM] = {
 
 uint8_t data_buff[] = {'i', 'm', 'u', ':', 0x00, 0x00, ',', 'i','m','u','_','g','y','r','o',':', 0x3, 0x3, ',','m','f','s',':',0x02, 0x0};
 int data_len = sizeof(data_buff);
+uint8_t mouse_key_state = 0; // store the state of 3 mouse key
 
 // 初始化NVS
 esp_err_t nvs_init()
@@ -198,48 +200,100 @@ esp_err_t update_operations_tab(const uint8_t* data, int data_len)
     return err;
 }
 
+void send_keyboard_key(uint16_t hid_conn_id, uint8_t key, oper_param op_param)
+{
+    uint8_t key_vaule = {0};
+    if (op_param.key_state.pressed)
+    {
+        key_vaule = key;
+    }
+    esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
+}
 
-void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_parm)
+
+void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_param)
 {
     ESP_LOGI(OPERATIONS_TAG, "Send OP with oper_code %d", oper_code);
     switch (oper_code)
     {    
     case OP_CODE_MOUSE_POINTOR:
-        esp_hidd_send_mouse_value(hid_conn_id, 0, op_parm.mouse_pointer.point_x, 
-            op_parm.mouse_pointer.point_y, op_parm.mouse_pointer.wheel);
+        esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, op_param.mouse.point_x, 
+            op_param.mouse.point_y, op_param.mouse.wheel);
         break;
     case OP_CODE_MOUSE_LEFT_CLICK:
-        esp_hidd_send_mouse_value(hid_conn_id, 0, op_parm.mouse_pointer.point_x, 
-            op_parm.mouse_pointer.point_y, op_parm.mouse_pointer.wheel);
+        if(op_param.key_state.pressed){
+            mouse_key_state |= MOUSE_LEFT_KEY_SET_MASK;
+        }
+        else{
+            mouse_key_state &= MOUSE_LEFT_KEY_CLEAR_MASK;
+        }
+        esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
         break;
     case OP_CODE_MOUSE_RIGHT_CLICK:
-        esp_hidd_send_mouse_value(hid_conn_id, 0, op_parm.mouse_pointer.point_x, 
-            op_parm.mouse_pointer.point_y, op_parm.mouse_pointer.wheel);
-        break;    
+        if(op_param.key_state.pressed){
+            mouse_key_state |= MOUSE_RIGHT_KEY_SET_MASK;
+        }            
+        else{
+            mouse_key_state &= MOUSE_RIGHT_KEY_CLEAR_MASK;
+        }
+        esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+        break;
+    case OP_CODE_MOUSE_MIDDLE_CLICK:
+        if(op_param.key_state.pressed){
+            mouse_key_state |= MOUSE_MIDDLE_KEY_SET_MASK;
+        }            
+        else{
+            mouse_key_state &= MOUSE_MIDDLE_KEY_CLEAR_MASK;
+        }          
+        esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+        break;      
     case OP_CODE_PHONE_SLIDE_UP:
-        send_slide_up(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_slide_up(hid_conn_id);
         break;
     case OP_CODE_PHONE_SLIDE_DOWN:
-        send_slide_down(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_slide_down(hid_conn_id);
         break;
     case OP_CODE_PHONE_SLIDE_LEFT:
-        send_slide_left(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_slide_left(hid_conn_id);
         break;
     case OP_CODE_PHONE_SLIDE_RIGHT:
-        send_slide_right(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_slide_right(hid_conn_id);
         break;
     case OP_CODE_PHONE_TAP:
-        send_tap(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_tap(hid_conn_id);
         break;
     case OP_CODE_PHONE_DOUBLE_TAP:
-        send_double_tap(hid_conn_id);
-        send_back(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_double_tap(hid_conn_id);
         break;
     case OP_CODE_PHONE_BACK:
-        send_back(hid_conn_id);
+        if(op_param.key_state.pressed)
+            send_back(hid_conn_id);
         break;
+    case OP_CODE_KEYBOARD_KEY_UP:
+        send_keyboard_key(hid_conn_id, HID_KEY_UP_ARROW, op_param);
+        break;
+    case OP_CODE_KEYBOARD_KEY_DOWN:
+        send_keyboard_key(hid_conn_id, HID_KEY_DOWN_ARROW, op_param);
+        break;
+    case OP_CODE_KEYBOARD_KEY_LEFT:
+        send_keyboard_key(hid_conn_id, HID_KEY_LEFT_ARROW, op_param);
+        break;
+    case OP_CODE_KEYBOARD_KEY_RIGHT:
+        send_keyboard_key(hid_conn_id, HID_KEY_RIGHT_ARROW, op_param);
+        break;
+    case OP_CODE_KEYBOARD_KEY_SPACE:
+        send_keyboard_key(hid_conn_id, HID_KEY_SPACEBAR, op_param);
+        break;
+    case OP_CODE_KEYBOARD_KEY_ENTER:
+        send_keyboard_key(hid_conn_id, HID_KEY_RETURN, op_param);
+        break;        
     default:
-        send_tap(hid_conn_id);
         break;
     }
 }

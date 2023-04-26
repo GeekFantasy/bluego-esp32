@@ -18,6 +18,7 @@
 #define OP_CODE_MOUSE_POINTOR       201
 #define OP_CODE_MOUSE_LEFT_CLICK    202
 #define OP_CODE_MOUSE_RIGHT_CLICK   203
+#define OP_CODE_MOUSE_MIDDLE_CLICK  204
 
 #define OP_CODE_KEYBOARD_KEY_UP     301
 #define OP_CODE_KEYBOARD_KEY_DOWN   302
@@ -28,6 +29,13 @@
 #define OP_CODE_KEYBOARD_KEY_ENTER  306
 
 #define INVALID_OPER_CODE 0xFF
+
+#define MOUSE_LEFT_KEY_SET_MASK         0X01;
+#define MOUSE_LEFT_KEY_CLEAR_MASK       0XFE; 
+#define MOUSE_RIGHT_KEY_SET_MASK        0X02;
+#define MOUSE_RIGHT_KEY_CLEAR_MASK      0XFD;
+#define MOUSE_MIDDLE_KEY_SET_MASK       0X04;
+#define MOUSE_MIDDLE_KEY_CLEAR_MASK     0XFB;
 
 enum
 {
@@ -71,12 +79,12 @@ typedef union
         uint8_t point_x;
         uint8_t point_y;
         uint8_t wheel;
-    }mouse_pointer;
+    }mouse;
     struct {
-        uint8_t left_key_down;
-        uint8_t right_key_down;
-    }mouse_key;
+        uint8_t pressed;
+    }key_state;
 }oper_param;
+
 
 // 定义一个数组，用于存储NVS_Record
 extern operation device_operations[];
@@ -89,7 +97,7 @@ void read_oper_from_nvs(nvs_handle_t handle, operation *record);
 void write_all_operations_to_nvs();
 void read_all_operations();
 uint16_t get_oper_code(int oper_key);
-void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_parm);
+void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_param);
 esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode);
 esp_err_t read_curr_mode_from_nvs(uint8_t* curr_mode);
 esp_err_t update_operations_tab(const uint8_t* data, int data_len);

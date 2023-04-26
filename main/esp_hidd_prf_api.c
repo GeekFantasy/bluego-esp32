@@ -136,7 +136,7 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
 
 void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y, int8_t wheel)
 {
-    ESP_LOGI(HID_LE_PRF_TAG, "Send Mouse, X:%d,Y:%d",mickeys_x, mickeys_y);
+    ESP_LOGI(HID_LE_PRF_TAG, "Send Mouse,B:%x X:%d,Y:%d,W:%d",mouse_button, mickeys_x, mickeys_y, wheel);
     uint8_t buffer[HID_MOUSE_IN_RPT_LEN];
 
     buffer[0] = mouse_button;   // Buttons
