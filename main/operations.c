@@ -292,6 +292,24 @@ void send_operation(uint16_t hid_conn_id, uint16_t oper_code, oper_param op_para
         break;
     case OP_CODE_KEYBOARD_KEY_ENTER:
         send_keyboard_key(hid_conn_id, HID_KEY_RETURN, op_param);
+        break;
+    case OP_CODE_CONSUMER_VOLUME_UP:
+        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_UP, op_param.key_state.pressed);
+        break;
+    case OP_CODE_CONSUMER_VOLUME_DOWN:
+        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_VOLUME_DOWN, op_param.key_state.pressed);
+        break;
+    case OP_CODE_CONSUMER_MUTE:
+        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_MUTE, op_param.key_state.pressed);
+        break;
+    case OP_CODE_CONSUMER_POWER:
+        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_POWER, op_param.key_state.pressed);
+        break;
+    case OP_CODE_CONSUMER_RESET:
+        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_RESET, op_param.key_state.pressed);
+        break;
+    case OP_CODE_CONSUMER_SLEEP:
+        esp_hidd_send_consumer_value(hid_conn_id, HID_CONSUMER_SLEEP, op_param.key_state.pressed);
         break;        
     default:
         break;
