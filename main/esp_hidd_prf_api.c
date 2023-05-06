@@ -28,6 +28,9 @@
 // HID mouse input report length
 #define HID_MOUSE_IN_RPT_LEN        5
 
+// HID touch screen report length
+#define HID_TOUCH_SCREEN_IN_RPT_LEN        13
+
 // HID consumer control input report length
 #define HID_CC_IN_RPT_LEN           2
 
@@ -43,6 +46,11 @@ esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
 
     if((hidd_status = hidd_register_cb()) != ESP_OK) {
         return hidd_status;
+    }
+
+    if(esp_ble_gatts_app_register(MODE_APP_ID))
+    {
+        ESP_LOGE(HID_LE_PRF_TAG, "APP with id %x register failed.", MODE_APP_ID);
     }
 
     esp_ble_gatts_app_register(BATTRAY_APP_ID);
@@ -126,17 +134,42 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
     return;
 }
 
-void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y)
+void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y, int8_t wheel)
 {
+    ESP_LOGD(HID_LE_PRF_TAG, "Send Mouse,B:%x X:%d,Y:%d,W:%d",mouse_button, mickeys_x, mickeys_y, wheel);
     uint8_t buffer[HID_MOUSE_IN_RPT_LEN];
 
     buffer[0] = mouse_button;   // Buttons
     buffer[1] = mickeys_x;           // X
     buffer[2] = mickeys_y;           // Y
-    buffer[3] = 0;           // Wheel
+    buffer[3] = wheel;           // Wheel
     buffer[4] = 0;           // AC Pan
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
                         HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT, HID_MOUSE_IN_RPT_LEN, buffer);
+    return;
+}
+
+void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t contact_count,  uint8_t contact_id, uint16_t scan_time, uint16_t touch_x, uint16_t touch_y, uint16_t touch_width, uint16_t touch_height)
+{
+    printf("ID:%d,x:%d,y:%d,count:%d,down:%d,time:%d\n", contact_id, touch_x, touch_y, contact_count,touch_down, scan_time);
+    uint8_t buffer[HID_TOUCH_SCREEN_IN_RPT_LEN];
+
+    buffer[0] = touch_down;         // Buttons
+    buffer[1] = contact_id;         // Contact Identifier
+    buffer[2] = touch_x;            // X low byte
+    buffer[3] = touch_x >> 8;       // X High byte
+    buffer[4] = touch_y;            // y low byte
+    buffer[5] = touch_y >> 8;       // y High byte
+    buffer[6] = touch_width;        // Touch width low byte
+    buffer[7] = touch_width >> 8;   // Touch width high byte
+    buffer[8] = touch_height;       // Touch height Low byte
+    buffer[9] = touch_height >> 8;  // Touch height high byte
+    buffer[10] = scan_time;         // scan time low
+    buffer[11] = scan_time >> 8;    // scan time high
+    buffer[12] = contact_count;     // contact count
+
+    hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
+                        HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT, HID_TOUCH_SCREEN_IN_RPT_LEN, buffer);
     return;
 }

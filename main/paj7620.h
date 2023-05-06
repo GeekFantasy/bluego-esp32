@@ -56,12 +56,12 @@
 #define ACK_VAL    0x0         /*!< I2C ack value */
 #define NACK_VAL   0x1         /*!< I2C nack value */
 
-#define INTERRUPT_PIN 25       /*!< I2C Interrupt pin */
+#define INTERRUPT_PIN 37       /*!< I2C Interrupt pin */ 
 
-#define I2C_MASTER_SCL_IO 22               /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO 21               /*!< gpio number for I2C master data  */
+#define I2C_MASTER_SCL_IO 19               /*!< gpio number for I2C master clock */
+#define I2C_MASTER_SDA_IO 22               /*!< gpio number for I2C master data  */
 
-#define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
+#define I2C_MASTER_NUM I2C_NUM_1   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
 
@@ -118,7 +118,7 @@ typedef enum {
 #define GES_WAVE_FLAG				PAJ7620_VAL(1,0)
 
 #define GES_REACTION_TIME    50       // You can adjust the reaction time according to the actual circumstance.
-#define GES_ENTRY_TIME      0      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
+#define GES_ENTRY_TIME      10      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
 #define GES_QUIT_TIME     0
 
 /*

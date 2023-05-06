@@ -30,6 +30,7 @@ typedef enum {
     ESP_HIDD_EVENT_BLE_CONNECT,
     ESP_HIDD_EVENT_BLE_DISCONNECT,
     ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT,
+    ESP_MODE_SETTING_UPDATED,
 } esp_hidd_cb_event_t;
 
 /// HID config status
@@ -158,7 +159,9 @@ void esp_hidd_send_consumer_value(uint16_t conn_id, uint8_t key_cmd, bool key_pr
 
 void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask, uint8_t *keyboard_cmd, uint8_t num_key);
 
-void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y);
+void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y, int8_t wheel);
+
+void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t contact_count,  uint8_t contact_id, uint16_t scan_time, uint16_t touch_x, uint16_t touch_y, uint16_t touch_width, uint16_t touch_height);
 
 #ifdef __cplusplus
 }

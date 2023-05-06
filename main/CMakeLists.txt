@@ -1,4 +1,4 @@
-idf_component_register(SRCS "paj7620.c" "ble_hidd_demo_main.c"
+idf_component_register(SRCS "bluego_main.c" "operations.c" "hid_touch_gestures.c" "mpu6500.c" "paj7620.c"
                             "esp_hidd_prf_api.c"
                             "hid_dev.c"
                             "hid_device_le_prf.c"
