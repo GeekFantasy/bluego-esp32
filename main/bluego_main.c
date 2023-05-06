@@ -41,11 +41,11 @@
 #define SWITCH_KEY_LEFT_LEVEL    780
 #define SWITCH_KEY_RIGHT_LEVEL   429
 #define SWITCH_KEY_MIDDLE_LEVEL  280
-#define SWITCH_KEY_RANGE         10
+#define SWITCH_KEY_RANGE         35
 
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 50;
-const TickType_t time_delay_for_gyro = 10;
+const TickType_t time_delay_for_gyro = 0;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
