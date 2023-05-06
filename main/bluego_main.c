@@ -36,7 +36,7 @@
 #define HIDD_DEVICE_NAME "Bluego"
 #define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
-#define SWITCH_KEY_UP_LEVEL      216
+#define SWITCH_KEY_UP_LEVEL      135
 #define SWITCH_KEY_DOWN_LEVEL    588
 #define SWITCH_KEY_LEFT_LEVEL    780
 #define SWITCH_KEY_RIGHT_LEVEL   429
