@@ -45,7 +45,7 @@
 
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 50;
-const TickType_t time_delay_for_gyro = 0;
+const TickType_t time_delay_for_gyro = 10;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
