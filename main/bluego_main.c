@@ -1,9 +1,3 @@
-/* This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this software is
-   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -399,7 +393,7 @@ static void paj7620_event_handler(void *arg)
     // ESP_LOGI(HID_DEMO_TAG, "Paj7620 interrup triggered.");
 }
 
-esp_err_t initPaj7620Interrupt()
+esp_err_t init_paj7620_interrupt()
 {
     esp_err_t err = 0;
     gpio_config_t io_conf = {};
@@ -749,7 +743,7 @@ void app_main(void)
     // Initialize PAJ7620
     paj7620_init();
     // Initialize PAJ7620 interrupt
-    initPaj7620Interrupt();
+    init_paj7620_interrupt();
 
     // init MPU6500
     mpu6500_init();
