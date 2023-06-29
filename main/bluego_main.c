@@ -34,7 +34,7 @@
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
 #define HIDD_DEVICE_NAME "Bluego"
-#define delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
+#define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 #define SWITCH_KEY_UP_LEVEL      135
 #define SWITCH_KEY_DOWN_LEVEL    588
@@ -44,8 +44,9 @@
 #define SWITCH_KEY_RANGE         35
 
 const TickType_t time_delay_for_mfs = 50;
-const TickType_t time_delay_for_ges = 50;
+const TickType_t time_delay_for_ges = 100;
 const TickType_t time_delay_for_gyro = 10;
+const TickType_t time_delay_when_idle = 500;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
@@ -60,6 +61,7 @@ typedef struct
 {
     uint16_t oper_key;
     oper_param oper_param;
+    uint8_t oper_type;
 } oper_message;
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
@@ -211,29 +213,29 @@ void readpaj7620()
 
     if (isr)
     {
-        error = paj7620ReadReg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
+        error = paj7620_read_reg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
         // ESP_LOGI(HID_DEMO_TAG, "READ Gesture, error：%d", error);
 
         isr = 0;
 
         if (!error)
         {
-            switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
+            switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620_read_reg(0x43, 1, &data).
             {
             case GES_RIGHT_FLAG:
-                delay(GES_ENTRY_TIME);
-                paj7620ReadReg(0x43, 1, &data);
+                Delay(GES_ENTRY_TIME);
+                paj7620_read_reg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else
                 {
@@ -242,19 +244,19 @@ void readpaj7620()
                 }
                 break;
             case GES_LEFT_FLAG:
-                delay(GES_ENTRY_TIME);
-                paj7620ReadReg(0x43, 1, &data);
+                Delay(GES_ENTRY_TIME);
+                paj7620_read_reg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else
                 {
@@ -263,19 +265,19 @@ void readpaj7620()
                 }
                 break;
             case GES_UP_FLAG:
-                delay(GES_ENTRY_TIME);
-                paj7620ReadReg(0x43, 1, &data);
+                Delay(GES_ENTRY_TIME);
+                paj7620_read_reg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else
                 {
@@ -284,19 +286,19 @@ void readpaj7620()
                 }
                 break;
             case GES_DOWN_FLAG:
-                delay(GES_ENTRY_TIME);
-                paj7620ReadReg(0x43, 1, &data);
+                Delay(GES_ENTRY_TIME);
+                paj7620_read_reg(0x43, 1, &data);
                 if (data == GES_FORWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_FORWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Forward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else if (data == GES_BACKWARD_FLAG)
                 {
                     set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                     ESP_LOGI(HID_DEMO_TAG, "Backward");
-                    delay(GES_QUIT_TIME);
+                    Delay(GES_QUIT_TIME);
                 }
                 else
                 {
@@ -307,12 +309,12 @@ void readpaj7620()
             case GES_FORWARD_FLAG:
                 set_gesture(&generic_gs, GES_FORWARD_FLAG);
                 ESP_LOGI(HID_DEMO_TAG, "Forward");
-                delay(GES_QUIT_TIME);
+                Delay(GES_QUIT_TIME);
                 break;
             case GES_BACKWARD_FLAG:
                 set_gesture(&generic_gs, GES_BACKWARD_FLAG);
                 ESP_LOGI(HID_DEMO_TAG, "Backward");
-                delay(GES_QUIT_TIME);
+                Delay(GES_QUIT_TIME);
                 break;
             case GES_CLOCKWISE_FLAG:
                 set_gesture(&generic_gs, GES_CLOCKWISE_FLAG);
@@ -323,7 +325,7 @@ void readpaj7620()
                 ESP_LOGI(HID_DEMO_TAG, "anti-clockwise");
                 break;
             default:
-                paj7620ReadReg(0x44, 1, &data);
+                paj7620_read_reg(0x44, 1, &data);
                 if (data == GES_WAVE_FLAG)
                 {
                     set_gesture(&generic_gs, GES_WAVE_FLAG);
@@ -334,7 +336,7 @@ void readpaj7620()
         }
     }
 
-    delay(GES_REACTION_TIME);
+    Delay(GES_REACTION_TIME);
 }
 
 int read_ges_from_paj7620()
@@ -344,28 +346,30 @@ int read_ges_from_paj7620()
 
     if (isr)
     {
-        error = paj7620ReadReg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
+        error = paj7620_read_reg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
         isr = 0;
 
         if (!error)
         {
-            switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
+            switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620_read_reg(0x43, 1, &data).
             {
-            case GES_RIGHT_FLAG:
-                ges_key = OPER_KEY_GES_RIGHT;
-                break;
-            case GES_LEFT_FLAG:
+            case GES_RIGHT_FLAG: // the gestures mapping need to change according to direction of the sensor mounted
                 ges_key = OPER_KEY_GES_LEFT;
                 break;
-            case GES_UP_FLAG:
-                ges_key = OPER_KEY_GES_UP;
+            case GES_LEFT_FLAG:
+                ges_key = OPER_KEY_GES_RIGHT;
                 break;
-            case GES_DOWN_FLAG:
+            case GES_UP_FLAG:
                 ges_key = OPER_KEY_GES_DOWN;
                 break;
-            case GES_FORWARD_FLAG: // combine 2 operations as one
-            case GES_BACKWARD_FLAG:
+            case GES_DOWN_FLAG:
+                ges_key = OPER_KEY_GES_UP;
+                break;
+            case GES_FORWARD_FLAG: 
                 ges_key = OPER_KEY_GES_FORWOARD;
+                break;
+            case GES_BACKWARD_FLAG:  
+                ges_key = 0; // disable backward gesture as it always follows forward
                 break;
             case GES_CLOCKWISE_FLAG:
                 ges_key = OPER_KEY_GES_CLK;
@@ -374,7 +378,7 @@ int read_ges_from_paj7620()
                 ges_key = OPER_KEY_GES_ACLK;
                 break;
             default:
-                paj7620ReadReg(0x44, 1, &data);
+                paj7620_read_reg(0x44, 1, &data);
                 if (data == GES_WAVE_FLAG)
                 {
                     // gesture = GES_WAVE_FLAG;
@@ -385,7 +389,7 @@ int read_ges_from_paj7620()
         }
     }
 
-    // delay(GES_REACTION_TIME);
+    // Delay(GES_REACTION_TIME);
     return ges_key;
 }
 
@@ -454,20 +458,22 @@ void multi_fun_switch_task(void *pvParameters)
 {
     int read_raw;
     oper_message op_msg = {0};
+    op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
     TickType_t xLastWakeTime = xTaskGetTickCount();
+    ESP_LOGI(HID_DEMO_TAG, "Entering switch detect task");
 
     while (1)
     {
-        if (sec_conn && get_oper_code(OPER_KEY_MFS) == 1 && oper_queue != NULL)
+        if (sec_conn && get_action_code(OPER_KEY_MFS) == 1 && oper_queue != NULL)
         {
             adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
             //ESP_LOGE(HID_DEMO_TAG, "The data from adc is: %d", read_raw);
 
-            // Handle key down event for key-up
+            // Handle op_key down event for op_key-up
             if (read_raw > (SWITCH_KEY_UP_LEVEL - SWITCH_KEY_RANGE) 
                 && read_raw < (SWITCH_KEY_UP_LEVEL + SWITCH_KEY_RANGE))
             {
-                //Make sure only send once for a key down event
+                //Make sure only send once for a op_key down event
                 if(op_msg.oper_param.key_state.pressed == 1 && op_msg.oper_key == OPER_KEY_MFS_UP)
                 {
                     vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
@@ -521,7 +527,7 @@ void multi_fun_switch_task(void *pvParameters)
                 op_msg.oper_key = OPER_KEY_MFS_MIDDLE;
             }
             else
-            {   // handle key up event 
+            {   // handle op_key up event 
                 if(op_msg.oper_param.key_state.pressed == 0) // make sure only set  once 
                 {
                     vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
@@ -534,7 +540,7 @@ void multi_fun_switch_task(void *pvParameters)
         }
         else
         {
-            delay(200);
+            Delay(200);
         }
     }
 }
@@ -545,12 +551,13 @@ void gesture_detect_task(void *pvParameters)
 {
     uint16_t ges_key;
     oper_message op_msg;
+    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
     TickType_t last_wake_time = xTaskGetTickCount();
     ESP_LOGI(HID_DEMO_TAG, "Entering gesture detect task");
 
     while (1)
     {
-        if (sec_conn && get_oper_code(OPER_KEY_GES) == 1)
+        if (sec_conn && get_action_code(OPER_KEY_GES) == 1)
         {
             ges_key = read_ges_from_paj7620();
 
@@ -559,14 +566,14 @@ void gesture_detect_task(void *pvParameters)
                 op_msg.oper_key = ges_key;
                 op_msg.oper_param.key_state.pressed = 1;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(HID_DEMO_TAG, "Message send with key: %d.", op_msg.oper_key);
+                ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
             vTaskDelayUntil(&last_wake_time, time_delay_for_ges);
         }
         else
         {
-            delay(200);
+            Delay(time_delay_when_idle);
         }
     }
 }
@@ -586,11 +593,12 @@ void imu_gyro_task(void *pvParameters)
     int64_t time_us_diff = 0;
 
     oper_message op_msg;
+    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
     ESP_LOGI(HID_DEMO_TAG, "Entering gyro detect task");
 
     while (1)
     {
-        if (sec_conn && (get_oper_code(OPER_KEY_IMU) == 1))
+        if (sec_conn && (get_action_code(OPER_KEY_IMU) == 1))
         {
             mpu6500_GYR_read(&gyro);
             gettimeofday(&tv_now, NULL);
@@ -626,17 +634,17 @@ void imu_gyro_task(void *pvParameters)
         }
         else
         {
-            delay(200);
+            Delay(time_delay_when_idle);
         }
     }
 }
 
 void hid_main_task(void *pvParameters)
 {
-    delay(100);
+    Delay(100);
 
     oper_message op_msg;
-    uint16_t oper_code;
+    uint16_t action_code;
 
     while (1)
     {
@@ -646,26 +654,26 @@ void hid_main_task(void *pvParameters)
             // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
             // esp_hidd_send_consumer_value()
             // esp_hidd_send_mouse_value(hid_conn_id, 0, 0, 0, 1);
-            // delay(200);
+            // Delay(200);
 
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
-                ESP_LOGI(HID_DEMO_TAG, "msg key:%d", op_msg.oper_key);
+                ESP_LOGI(HID_DEMO_TAG, "msg op_key:%d", op_msg.oper_key);
                 if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
                 {
-                    oper_code = get_oper_code(op_msg.oper_key);
-                    send_operation(hid_conn_id, oper_code, op_msg.oper_param);
+                    action_code = get_action_code(op_msg.oper_key);
+                    send_operation_action(hid_conn_id, action_code, op_msg.oper_param, op_msg.oper_type);
                 }
                 else
                 {
-                    //delay(100);
+                    //Delay(100);
                     //esp_restart();  // Restart is not necessary 
                 }
             }
         }
         else
         {
-            delay(200);
+            Delay(time_delay_when_idle);
         }
     }
 }
@@ -722,24 +730,24 @@ void app_main(void)
     esp_ble_gap_register_callback(gap_event_handler);
     esp_hidd_register_callbacks(hidd_event_callback);
 
-    /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
+    /* set the security iocap & auth_req & op_key size & init op_key response op_key parameters to the stack*/
     esp_ble_auth_req_t auth_req = ESP_LE_AUTH_BOND; // bonding with peer device after authentication
     esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;       // set the IO capability to No output No input
-    uint8_t key_size = 16;                          // the key size should be 7~16 bytes
+    uint8_t key_size = 16;                          // the op_key size should be 7~16 bytes
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
-    /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribute to you,
-    and the response key means which key you can distribute to the Master;
-    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribute to you,
-    and the init key means which key you can distribute to the slave. */
+    /* If your BLE device act as a Slave, the init_key means you hope which types of op_key of the master should distribute to you,
+    and the response op_key means which op_key you can distribute to the Master;
+    If your BLE device act as a master, the response op_key means you hope which types of op_key of the slave should distribute to you,
+    and the init op_key means which op_key you can distribute to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     // Initialize PAJ7620
-    paj7620Init();
+    paj7620_init();
     // Initialize PAJ7620 interrupt
     initPaj7620Interrupt();
 
@@ -763,7 +771,7 @@ void app_main(void)
     // test string parse
     // if(update_operations_tab(data_buff, data_len))
     // {
-    //     ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation tables.");
+    //     ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation_action tables.");
     // }
 
 

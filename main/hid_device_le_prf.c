@@ -825,7 +825,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         {
             esp_log_buffer_hex(HID_LE_PRF_TAG, mode_setting_prep_write_env.prepare_buf, mode_setting_prep_write_env.prepare_len);
             // TODO need to save data here
-            ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT: Begin to update the operation table.");
+            ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT: Begin to update the operation_action table.");
             update_operations_tab(mode_setting_prep_write_env.prepare_buf, mode_setting_prep_write_env.prepare_len);
             write_all_operations_to_nvs();
             need_reboot = true;

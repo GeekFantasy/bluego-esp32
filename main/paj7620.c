@@ -291,12 +291,12 @@ int i2c_master_init(void)
 }
 
 /**************************************************************** 
- * Function Name: paj7620WriteReg
+ * Function Name: paj7620_write_reg
  * Description:  PAJ7620 Write reg cmd
  * Parameters: addr:reg address; cmd:function data
  * Return: error code; success: return 0
 ****************************************************************/ 
-uint8_t paj7620WriteReg(uint8_t addr, uint8_t cmd)
+uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd)
 {
 	// char i = 1;
 	// Wire.beginTransmission(PAJ7620_ID);		// start transmission to device 
@@ -327,35 +327,17 @@ uint8_t paj7620WriteReg(uint8_t addr, uint8_t cmd)
 }
 
 /**************************************************************** 
- * Function Name: paj7620ReadReg
+ * Function Name: paj7620_read_reg
  * Description:  PAJ7620 read reg data
  * Parameters: addr:reg address;
  *			   qty:number of data to read, addr continuously increase;
  *			   data[]:storage memory start address
  * Return: error code; success: return 0
 ****************************************************************/ 
-uint8_t paj7620ReadReg(uint8_t addr, uint8_t qty, uint8_t data[])
+uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[])
 {
 	uint8_t error;
-	// Wire.beginTransmission(PAJ7620_ID);
-	// Wire.write(addr);
-	// error = Wire.endTransmission();
 
-    // i2c_cmd_handle_t handle = i2c_cmd_link_create();
-    // i2c_master_start(handle);
-    // i2c_master_write_byte(handle, PAJ7620_ID << 1 | WRITE_BIT, ACK_CHECK_EN);
-    // i2c_master_write_byte(handle, addr, ACK_CHECK_EN);
-    // i2c_master_stop(handle);
-    // error = i2c_master_cmd_begin(i2c_master_port, handle, 1000 / portTICK_RATE_MS);
-    // i2c_cmd_link_delete(handle);
-
-	// if(0 != error)
-    // {
-    //     ESP_LOGI(PAJ7620_TAG, "Transmission error!!!");
-	// 	return error; //return error code
-	// }
-	
-	// Wire.requestFrom((int)PAJ7620_ID, (int)qty);
     *txBuffer = addr;
     txLength = 1;
     error = i2c_master_write_read_device(i2c_master_port, PAJ7620_ID, txBuffer, txLength, rxBuffer, qty, 50 / portTICK_RATE_MS);
@@ -365,20 +347,6 @@ uint8_t paj7620ReadReg(uint8_t addr, uint8_t qty, uint8_t data[])
         return error;
     }
 
-    
-// 	while (Wire.available()) 
-// 	{
-// 		*data = Wire.read(); 
- 
-// #ifdef debug    //debug
-//     Serial.print("addr:");   
-//     Serial.print(addr++, HEX);  
-//     Serial.print("  data:");
-//     Serial.println(*data, HEX);
-// #endif
-
-// 	data++;
-// 	}
     rxIndex = 0;
     while(rxIndex < qty)
     {
@@ -392,19 +360,19 @@ uint8_t paj7620ReadReg(uint8_t addr, uint8_t qty, uint8_t data[])
 }
 
 /**************************************************************** 
- * Function Name: paj7620SelectBank
+ * Function Name: paj7620_select_bank
  * Description:  PAJ7620 select register bank
  * Parameters: BANK0, BANK1
  * Return: none
 ****************************************************************/ 
-void paj7620SelectBank(bank_e bank)
+void paj7620_select_bank(bank_e bank)
 {
     switch(bank){
 		case BANK0:
-			paj7620WriteReg(PAJ7620_REGITER_BANK_SEL, PAJ7620_BANK0);
+			paj7620_write_reg(PAJ7620_REGITER_BANK_SEL, PAJ7620_BANK0);
 			break;
 		case BANK1:
-			paj7620WriteReg(PAJ7620_REGITER_BANK_SEL, PAJ7620_BANK1);
+			paj7620_write_reg(PAJ7620_REGITER_BANK_SEL, PAJ7620_BANK1);
 			break;
 		default:
 			break;
@@ -412,12 +380,12 @@ void paj7620SelectBank(bank_e bank)
 }
 
 /**************************************************************** 
- * Function Name: paj7620Init
+ * Function Name: paj7620_init
  * Description:  PAJ7620 REG INIT
  * Parameters: none
  * Return: error code; success: return 0
 ****************************************************************/ 
-uint8_t paj7620Init(void) 
+uint8_t paj7620_init(void) 
 {
 	//Near_normal_mode_V5_6.15mm_121017 for 940nm
 	int i = 0;
@@ -433,24 +401,20 @@ uint8_t paj7620Init(void)
 	// Serial.println("INIT SENSOR...");
     ESP_LOGI(PAJ7620_TAG, "INIT SENSOR...");
 
-	paj7620SelectBank(BANK0);
-	paj7620SelectBank(BANK0);
+	paj7620_select_bank(BANK0);
+	paj7620_select_bank(BANK0);
 
-	error = paj7620ReadReg(0, 1, &data0);
+	error = paj7620_read_reg(0, 1, &data0);
 	if (error)
 	{
 		return error;
 	}
-	error = paj7620ReadReg(1, 1, &data1);
+	error = paj7620_read_reg(1, 1, &data1);
 	if (error)
 	{
 		return error;
 	}
 	
-    // Serial.print("Addr0 =");
-	// Serial.print(data0 , HEX);
-	// Serial.print(",  Addr1 =");
-	// Serial.println(data1 , HEX);
     ESP_LOGI(PAJ7620_TAG, "Addr0 = %d", data0);
     ESP_LOGI(PAJ7620_TAG, "Addr1 = %d", data1);
 
@@ -460,16 +424,15 @@ uint8_t paj7620Init(void)
 	}
 	if ( data0 == 0x20 )
 	{
-		// Serial.println("wake-up finish.");
         ESP_LOGI(PAJ7620_TAG, "wake-up finish.");
 	}
 	
 	for (i = 0; i < INIT_REG_ARRAY_SIZE; i++) 
 	{
-		paj7620WriteReg(initRegisterArray[i][0], initRegisterArray[i][1]);
+		paj7620_write_reg(initRegisterArray[i][0], initRegisterArray[i][1]);
 	}
 	
-	paj7620SelectBank(BANK0);  //gesture flage reg in Bank0
+	paj7620_select_bank(BANK0);  //gesture flage reg in Bank0
 	
 	// Serial.println("Paj7620 initialize register finished.");
     ESP_LOGI(PAJ7620_TAG, "Paj7620 initialize register finished.");
