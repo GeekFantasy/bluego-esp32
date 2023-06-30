@@ -121,30 +121,14 @@ typedef enum {
 #define GES_ENTRY_TIME      10      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
 #define GES_QUIT_TIME     0
 
-/*
-enum {
-	// REGISTER 0
-	GES_RIGHT_FLAG			 = BIT(0),
-	GES_LEFT_FLAG			 = BIT(1),
-	GES_UP_FLAG				 = BIT(2),
-	GES_DOWN_FLAG			 = BIT(3),
-	GES_FORWARD_FLAG		 = BIT(4),
-	GES_BACKWARD_FLAG		 = BIT(5),
-	GES_CLOCKWISE_FLAG		 = BIT(6),
-	GES_COUNT_CLOCKWISE_FLAG = BIT(7),
-	//REGISTER 1
-	GES_WAVE_FLAG		= BIT(0),	
-};
-*/
-
 
 #define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
 
 
-uint8_t paj7620Init(void);
-uint8_t paj7620WriteReg(uint8_t addr, uint8_t cmd);
-uint8_t paj7620ReadReg(uint8_t addr, uint8_t qty, uint8_t data[]);
-void paj7620SelectBank(bank_e bank);
+uint8_t paj7620_init(void);
+uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd);
+uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[]);
+void paj7620_select_bank(bank_e bank);
 
 
 #endif
