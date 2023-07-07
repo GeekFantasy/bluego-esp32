@@ -16,7 +16,7 @@
 * __功能自定制__，设备同时配备了一款Android App，通过BLE连接后，通过app可以实现手势，按钮不同功能的映射，还可以实现预定制的各种功能模式间自由切换。
 
 ### 硬件信息：
-硬件的电路图，PCB以及BOM在嘉立创平台开源：https://oshwhub.com/geekfantasy/bluego-v1-0-0
+硬件的电路图，PCB以及BOM在嘉立创平台开源：https://oshwhub.com/geekfantasy/fei-shu-shou-shi-cao-kong-wai-sh
 
 
 
