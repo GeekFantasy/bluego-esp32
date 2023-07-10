@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := hidd_demos
+PROJECT_NAME := bluego
 
 COMPONENT_ADD_INCLUDEDIRS := components/include	\
 
