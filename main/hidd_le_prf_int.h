@@ -48,13 +48,15 @@
 #define HID_RPT_ID_KEY_IN        2   // Keyboard input report ID
 #define HID_RPT_ID_CC_IN         3   //Consumer Control input report ID
 #define HID_RPT_ID_VENDOR_OUT    4   // Vendor output report ID
-#define HID_RPT_ID_TOUCH_SCREEN  5   // Vendor output report ID
+#define HID_RPT_ID_TOUCH_SCREEN  5   // Touch screen input report ID
 #define HID_RPT_ID_LED_OUT       0  // LED output report ID
 #define HID_RPT_ID_FEATURE       0  // Feature report ID
 
 #define HIDD_APP_ID			0x1812//ATT_SVC_HID
 
 #define BATTRAY_APP_ID       0x180f
+
+#define MODE_APP_ID          0x00EF
 
 
 #define ATT_SVC_HID          0x1812
@@ -66,6 +68,9 @@
 #define HIDD_LE_REPORT_MAX_LEN                (255)
 /// Maximal length of Report Map Char. Value
 #define HIDD_LE_REPORT_MAP_MAX_LEN            (512)
+
+/// Maximal length of charactoristic Value
+#define HIDD_LE_CHAR_VAL_MAX_LEN            (512)
 
 /// Length of Boot Report Char. Value Maximal Length
 #define HIDD_LE_BOOT_REPORT_MAX_LEN           (8)

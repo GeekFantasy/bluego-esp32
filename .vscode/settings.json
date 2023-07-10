@@ -36,9 +36,25 @@
         "string_view": "c",
         "esp_log.h": "c",
         "imu.h": "c",
-        "mpu6500.h": "c"
+        "mpu6500.h": "c",
+        "string.h": "c",
+        "bitset": "cpp",
+        "memory": "cpp",
+        "random": "cpp",
+        "future": "cpp",
+        "math.h": "c",
+        "esp_timer.h": "c",
+        "time.h": "c",
+        "rtc.h": "c",
+        "rtc_clk_common.h": "c",
+        "paj7620.h": "c",
+        "hid_touch_gestures.h": "c",
+        "task.h": "c",
+        "string": "c",
+        "operations.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
-    "idf.flashBaudRate": "460800"
+    "idf.flashBaudRate": "460800",
+    "cmake.configureOnOpen": false
 }

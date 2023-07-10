@@ -15,6 +15,9 @@
 #include "hidd_le_prf_int.h"
 #include <string.h>
 #include "esp_log.h"
+#include "operations.h"
+
+#define PREPARE_BUF_MAX_SIZE 1024
 
 /// characteristic presentation information
 struct prf_char_pres_fmt
@@ -30,6 +33,11 @@ struct prf_char_pres_fmt
     /// Name space
     uint8_t name_space;
 };
+
+typedef struct {
+    uint8_t                 *prepare_buf;
+    int                     prepare_len;
+} prepare_type_env_t;
 
 // HID report mapping table
 static hid_report_map_t hid_rpt_map[HID_NUM_REPORTS];
@@ -251,10 +259,26 @@ enum
     BAS_IDX_NB,
 };
 
+// Mode setting service Attributes Indexes
+enum
+{
+    MSS_IDX_SVC,
+    MSS_IDX_CHAR_CURR_MODE,
+    MSS_IDX_CHAR_VAL_CURR_MODE,
+    MSS_IDX_CHAR_CFG_CURR_MODE,
+
+    MSS_IDX_CHAR_MODE_SETTING,
+    MSS_IDX_CHAR_VAL_MODE_SETTING,
+    MSS_IDX_CHAR_CFG_MODE_SETTING,
+
+    MSS_IDX_NB,
+};
+
 #define HI_UINT16(a) (((a) >> 8) & 0xFF)
 #define LO_UINT16(a) ((a)&0xFF)
-#define PROFILE_NUM 1
-#define PROFILE_APP_IDX 0
+#define PROFILE_NUM 2
+#define HID_PROFILE_APP_IDX 0
+#define MODE_PROFILE_APP_IDX 1
 
 struct gatts_profile_inst
 {
@@ -266,8 +290,10 @@ struct gatts_profile_inst
 
 hidd_le_env_t hidd_le_env;
 
+uint16_t mode_svc_hdl_tab[MSS_IDX_NB];
+
 // HID report map length
-uint8_t hidReportMapLen = sizeof(hidReportMap);
+//uint8_t hidReportMapLen = sizeof(hidReportMap);
 uint8_t hidProtocolMode = HID_PROTOCOL_MODE_REPORT;
 
 // HID report mapping table
@@ -372,6 +398,46 @@ static const esp_gatts_attr_db_t bas_att_db[BAS_IDX_NB] =
 
         // Battary level report Characteristic Declaration
         [BAS_IDX_BATT_LVL_PRES_FMT] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&char_format_uuid, ESP_GATT_PERM_READ, sizeof(struct prf_char_pres_fmt), 0, NULL}},
+};
+
+/*Mode setting Service */
+static const uint16_t GATTS_SERVICE_UUID = 0xEF00;
+static const uint16_t GATTS_CHAR_UUID_CURR_MODE = 0xEF01;
+static const uint16_t GATTS_CHAR_UUID_MODE_SETTING = 0xEF02;
+static const uint8_t current_mode_ccc[2] = {0x00, 0x00};
+static const uint8_t mode_setting_ccc[2] = {0x00, 0x00};
+static const uint8_t curr_mode_char_value[4] = {0x11, 0x22, 0x33, 0x44};
+static const uint8_t char_value_1[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+
+static const esp_gatts_attr_db_t mode_setting_att_db[MSS_IDX_NB] =
+    {
+        // Service Declaration
+        [MSS_IDX_SVC] =
+            {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(GATTS_SERVICE_UUID), (uint8_t *)&GATTS_SERVICE_UUID}},
+
+        /* Characteristic Declaration */
+        [MSS_IDX_CHAR_CURR_MODE] =
+            {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write_notify}},
+
+        /* Characteristic Value */
+        [MSS_IDX_CHAR_VAL_CURR_MODE] =
+            {{ESP_GATT_RSP_BY_APP}, {ESP_UUID_LEN_16, (uint8_t *)&GATTS_CHAR_UUID_CURR_MODE, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, HIDD_LE_CHAR_VAL_MAX_LEN, sizeof(curr_mode_char_value), (uint8_t *)curr_mode_char_value}},
+
+        /* Client Characteristic Configuration Descriptor */
+        [MSS_IDX_CHAR_CFG_CURR_MODE] =
+            {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(current_mode_ccc), (uint8_t *)current_mode_ccc}},
+
+        /* Characteristic Declaration */
+        [MSS_IDX_CHAR_MODE_SETTING] =
+            {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
+
+        /* Characteristic Value */
+        [MSS_IDX_CHAR_VAL_MODE_SETTING] =
+            {{ESP_GATT_RSP_BY_APP}, {ESP_UUID_LEN_16, (uint8_t *)&GATTS_CHAR_UUID_MODE_SETTING, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, HIDD_LE_CHAR_VAL_MAX_LEN, sizeof(char_value_1), (uint8_t *)char_value_1}},
+
+        /* Client Characteristic Configuration Descriptor */
+        [MSS_IDX_CHAR_CFG_MODE_SETTING] =
+            {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(mode_setting_ccc), (uint8_t *)mode_setting_ccc}},
 };
 
 /// Full Hid device Database Description - Used to add attributes into the database
@@ -481,16 +547,73 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         [HIDD_LE_IDX_REPORT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefFeature), sizeof(hidReportRefFeature), hidReportRefFeature}},
 };
 
+
+static struct gatts_profile_inst gatt_profile_tab[];
+static prepare_type_env_t mode_setting_prep_write_env;
 static void hid_add_id_tbl(void);
 
-void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
+void write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param)
+{
+    esp_gatt_status_t status = ESP_GATT_OK;
+
+    if (param->write.need_rsp)
+    {
+        if (prepare_write_env->prepare_buf == NULL)
+        {
+            prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
+            prepare_write_env->prepare_len = 0;
+            if (prepare_write_env->prepare_buf == NULL)
+            {
+                ESP_LOGI(HID_LE_PRF_TAG, "Gatt_server prep no mem");
+                status = ESP_GATT_NO_RESOURCES;
+            }
+        }
+        else
+        {
+            if (param->write.offset > PREPARE_BUF_MAX_SIZE)
+            {
+                status = ESP_GATT_INVALID_OFFSET;
+            }
+            else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE)
+            {
+                status = ESP_GATT_INVALID_ATTR_LEN;
+            }
+        }
+
+        ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
+        esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
+
+        esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
+        gatt_rsp->attr_value.len = param->write.len;
+        gatt_rsp->attr_value.handle = param->write.handle;
+        gatt_rsp->attr_value.offset = param->write.offset;
+        gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+        memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+        esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
+        if (response_err != ESP_OK)
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "Send response error\n");
+        }
+        free(gatt_rsp);
+        if (status != ESP_GATT_OK)
+        {
+            return;
+        }
+        memcpy(prepare_write_env->prepare_buf + param->write.offset,
+               param->write.value,
+               param->write.len);
+        prepare_write_env->prepare_len += param->write.len;
+    }
+}
+
+void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                          esp_ble_gatts_cb_param_t *param)
 {
     switch (event)
     {
     case ESP_GATTS_REG_EVT:
     {
-        ESP_LOGI(HID_LE_PRF_TAG, "esp_hidd_prf_cb_hdl is called on case: ESP_GATTS_REG_EVT.");
+        ESP_LOGI(HID_LE_PRF_TAG, "esp_hidd_prf_cb_hd is called on case: ESP_GATTS_REG_EVT.");
         esp_ble_gap_config_local_icon(ESP_BLE_APPEARANCE_GENERIC_HID);
         esp_hidd_cb_param_t hidd_param;
         hidd_param.init_finish.state = param->reg.status;
@@ -548,7 +671,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     case ESP_GATTS_WRITE_EVT:
     {
 #if (SUPPORT_REPORT_VENDOR == true)
-        ESP_LOGI(HID_LE_PRF_TAG, "esp_hidd_prf_cb_hdl, case: ESP_GATTS_WRITE_EVT");
+        ESP_LOGI(HID_LE_PRF_TAG, "esp_hidd_prf_cb_hd, case: ESP_GATTS_WRITE_EVT");
         esp_hidd_cb_param_t cb_param = {0};
         if (param->write.handle == hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_VENDOR_OUT_VAL] &&
             hidd_le_env.hidd_cb != NULL)
@@ -590,6 +713,175 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         break;
     }
 
+    default:
+        break;
+    }
+}
+
+
+void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
+                        esp_ble_gatts_cb_param_t *param)
+{
+    switch (event)
+    {
+    case ESP_GATTS_REG_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_REG_EVT.");
+        esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(mode_setting_att_db, gatts_if, MSS_IDX_NB, 0);
+        if (create_attr_ret)
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "create attr table failed, error code = %x", create_attr_ret);
+        }
+        break;
+    }
+    case ESP_GATTS_READ_EVT:
+    { // F**k, Windows is capricious, so please make sure to return something for a characteristic, or even other services would get block
+      // Android is good.
+        ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_READ_EVT. ");
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_READ_EVT, conn_id: %d, trans_id: %d, read handle: %d.", param->read.conn_id,param->read.trans_id, param->read.handle);
+        if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle read for current mode char
+        {
+            esp_gatt_rsp_t rsp;
+            memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+            uint8_t curr_mode = 0;
+            read_curr_mode_from_nvs(&curr_mode);
+            rsp.attr_value.handle = param->read.handle;
+            rsp.attr_value.len = 1;
+            rsp.attr_value.value[0] = curr_mode;
+            esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                        ESP_GATT_OK, &rsp);
+        }
+        else if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING])  // handle read for mode setting char
+        {
+            esp_gatt_rsp_t rsp;
+            memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+            uint8_t curr_mode = 0;
+            read_curr_mode_from_nvs(&curr_mode);
+            rsp.attr_value.handle = param->read.handle;
+            rsp.attr_value.len = 1;
+            rsp.attr_value.value[0] = curr_mode;
+            esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                        ESP_GATT_OK, &rsp);
+        }
+        break;
+    }
+    case ESP_GATTS_WRITE_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_WRITE_EVT. ");
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id,param->write.trans_id, param->write.handle);
+        if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle read for current mode char
+        {
+            if (!param->write.is_prep)
+            {
+                ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
+                esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
+                if (param->write.len >= 1)
+                {
+                    write_curr_mode_to_nvs(param->write.value[0]);
+                }
+
+                if (param->write.need_rsp)
+                {
+                    esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+                }
+            }
+        }
+        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING])  // handle read for mode setting char
+        {
+            if (!param->write.is_prep)
+            {
+                ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
+                esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
+                if(param->write.need_rsp)
+                {
+                    esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+                }
+            }
+            else
+            {
+                write_event_env(gatts_if, &mode_setting_prep_write_env, param);
+            }
+        }
+        else if(param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_CFG_CURR_MODE])
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT->CHAR_CFG_CURR_MODE");
+        }
+        else if(param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_CFG_MODE_SETTING])
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT->CHAR_CFG_MODE_SETTING");
+        }
+
+        break;
+    }
+    case ESP_GATTS_EXEC_WRITE_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_EXEC_WRITE_EVT. ");
+        esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id,param->write.trans_id, param->write.handle);
+
+        bool need_reboot = false;
+
+        if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC)
+        {
+            esp_log_buffer_hex(HID_LE_PRF_TAG, mode_setting_prep_write_env.prepare_buf, mode_setting_prep_write_env.prepare_len);
+            // TODO need to save data here
+            ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT: Begin to update the operation_action table.");
+            update_operations_tab(mode_setting_prep_write_env.prepare_buf, mode_setting_prep_write_env.prepare_len);
+            write_all_operations_to_nvs();
+            need_reboot = true;
+        }
+        else
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATT_PREP_WRITE_CANCEL");
+        }
+
+        if (mode_setting_prep_write_env.prepare_buf)
+        {
+            free(mode_setting_prep_write_env.prepare_buf);
+            mode_setting_prep_write_env.prepare_buf = NULL;
+        }
+        mode_setting_prep_write_env.prepare_len = 0;
+
+        if (need_reboot == true && hidd_le_env.hidd_cb != NULL)
+        {
+            (hidd_le_env.hidd_cb)(ESP_MODE_SETTING_UPDATED, NULL);
+        }
+
+        break;
+    }
+    case ESP_GATTS_CONNECT_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "Mode setting handler evnt: ESP_GATTS_CONNECT_EVT, conn_id = %x", param->connect.conn_id);
+        gatt_profile_tab[MODE_PROFILE_APP_IDX].conn_id = param->connect.conn_id;
+        break;
+    }
+    case ESP_GATTS_DISCONNECT_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "Mode setting handler event: ESP_GATTS_DISCONNECT_EVT");
+        break;
+    }
+    case ESP_GATTS_CLOSE_EVT:
+        break;
+    case ESP_GATTS_CREAT_ATTR_TAB_EVT:
+    {
+        if (param->add_attr_tab.status != ESP_GATT_OK)
+        {
+            ESP_LOGE(HID_LE_PRF_TAG, "create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+        }
+        else if (param->add_attr_tab.num_handle != MSS_IDX_NB)
+        {
+            ESP_LOGE(HID_LE_PRF_TAG, "create attribute table abnormally, num_handle (%d) \
+                        doesn't equal to MSS_IDX_NB(%d)",
+                     param->add_attr_tab.num_handle, MSS_IDX_NB);
+        }
+        else
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "create attribute table successfully, the number handle = %d\n", param->add_attr_tab.num_handle);
+            memcpy(mode_svc_hdl_tab, param->add_attr_tab.handles, sizeof(mode_svc_hdl_tab));
+            esp_ble_gatts_start_service(mode_svc_hdl_tab[MSS_IDX_SVC]);
+        }
+        break;
+    }
     default:
         break;
     }
@@ -641,13 +933,15 @@ bool hidd_clcb_dealloc(uint16_t conn_id)
 
     return false;
 }
-
-static struct gatts_profile_inst heart_rate_profile_tab[PROFILE_NUM] = {
-    [PROFILE_APP_IDX] = {
-        .gatts_cb = esp_hidd_prf_cb_hdl,
+static struct gatts_profile_inst gatt_profile_tab[PROFILE_NUM] = {
+    [HID_PROFILE_APP_IDX] = {
+        .gatts_cb = esp_hidd_prf_cb_hd,
         .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
-
+    [MODE_PROFILE_APP_IDX] = {
+        .gatts_cb = esp_mode_prf_cb_hd,
+        .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
+    },
 };
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
@@ -659,7 +953,16 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         ESP_LOGI(HID_LE_PRF_TAG, "gatts_event_handle, case: ESP_GATTS_REG_EVT");
         if (param->reg.status == ESP_GATT_OK)
         {
-            heart_rate_profile_tab[PROFILE_APP_IDX].gatts_if = gatts_if;
+            if(param->reg.app_id == HIDD_APP_ID || param->reg.app_id == BATTRAY_APP_ID )
+            {
+                gatt_profile_tab[HID_PROFILE_APP_IDX].gatts_if = gatts_if;
+            }
+            else if(param->reg.app_id == MODE_APP_ID)
+            {
+                gatt_profile_tab[MODE_PROFILE_APP_IDX].gatts_if = gatts_if;
+            }
+            
+            ESP_LOGI(HID_LE_PRF_TAG, "Assign gatt_if:%d to app id: %x", gatts_if, param->reg.app_id);
         }
         else
         {
@@ -676,11 +979,11 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         for (idx = 0; idx < PROFILE_NUM; idx++)
         {
             if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a certain gatt_if, need to call every profile cb function */
-                gatts_if == heart_rate_profile_tab[idx].gatts_if)
+                gatts_if == gatt_profile_tab[idx].gatts_if)
             {
-                if (heart_rate_profile_tab[idx].gatts_cb)
+                if (gatt_profile_tab[idx].gatts_cb)
                 {
-                    heart_rate_profile_tab[idx].gatts_cb(event, gatts_if, param);
+                    gatt_profile_tab[idx].gatts_cb(event, gatts_if, param);
                 }
             }
         }

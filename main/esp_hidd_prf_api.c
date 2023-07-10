@@ -48,6 +48,11 @@ esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
         return hidd_status;
     }
 
+    if(esp_ble_gatts_app_register(MODE_APP_ID))
+    {
+        ESP_LOGE(HID_LE_PRF_TAG, "APP with id %x register failed.", MODE_APP_ID);
+    }
+
     esp_ble_gatts_app_register(BATTRAY_APP_ID);
 
     if((hidd_status = esp_ble_gatts_app_register(HIDD_APP_ID)) != ESP_OK) {
@@ -129,14 +134,15 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
     return;
 }
 
-void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y)
+void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y, int8_t wheel)
 {
+    ESP_LOGD(HID_LE_PRF_TAG, "Send Mouse,B:%x X:%d,Y:%d,W:%d",mouse_button, mickeys_x, mickeys_y, wheel);
     uint8_t buffer[HID_MOUSE_IN_RPT_LEN];
 
     buffer[0] = mouse_button;   // Buttons
     buffer[1] = mickeys_x;           // X
     buffer[2] = mickeys_y;           // Y
-    buffer[3] = 0;           // Wheel
+    buffer[3] = wheel;           // Wheel
     buffer[4] = 0;           // AC Pan
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,

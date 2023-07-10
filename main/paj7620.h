@@ -56,12 +56,12 @@
 #define ACK_VAL    0x0         /*!< I2C ack value */
 #define NACK_VAL   0x1         /*!< I2C nack value */
 
-#define INTERRUPT_PIN 25       /*!< I2C Interrupt pin */
+#define INTERRUPT_PIN 37       /*!< I2C Interrupt pin */ 
 
-#define I2C_MASTER_SCL_IO 22               /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO 21               /*!< gpio number for I2C master data  */
+#define I2C_MASTER_SCL_IO 19               /*!< gpio number for I2C master clock */
+#define I2C_MASTER_SDA_IO 22               /*!< gpio number for I2C master data  */
 
-#define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
+#define I2C_MASTER_NUM I2C_NUM_1   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
 
@@ -118,33 +118,17 @@ typedef enum {
 #define GES_WAVE_FLAG				PAJ7620_VAL(1,0)
 
 #define GES_REACTION_TIME    50       // You can adjust the reaction time according to the actual circumstance.
-#define GES_ENTRY_TIME      0      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
+#define GES_ENTRY_TIME      10      // When you want to recognize the Forward/Backward gestures, your gestures' reaction time must less than GES_ENTRY_TIME(0.8s). 
 #define GES_QUIT_TIME     0
-
-/*
-enum {
-	// REGISTER 0
-	GES_RIGHT_FLAG			 = BIT(0),
-	GES_LEFT_FLAG			 = BIT(1),
-	GES_UP_FLAG				 = BIT(2),
-	GES_DOWN_FLAG			 = BIT(3),
-	GES_FORWARD_FLAG		 = BIT(4),
-	GES_BACKWARD_FLAG		 = BIT(5),
-	GES_CLOCKWISE_FLAG		 = BIT(6),
-	GES_COUNT_CLOCKWISE_FLAG = BIT(7),
-	//REGISTER 1
-	GES_WAVE_FLAG		= BIT(0),	
-};
-*/
 
 
 #define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
 
 
-uint8_t paj7620Init(void);
-uint8_t paj7620WriteReg(uint8_t addr, uint8_t cmd);
-uint8_t paj7620ReadReg(uint8_t addr, uint8_t qty, uint8_t data[]);
-void paj7620SelectBank(bank_e bank);
+uint8_t paj7620_init(void);
+uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd);
+uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[]);
+void paj7620_select_bank(bank_e bank);
 
 
 #endif
