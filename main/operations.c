@@ -12,14 +12,14 @@
 #define ACTION_DURATION 100
 
 operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
-    {"imu", 0},
+    {"imu", 1},
     {"imu_gyro", 201},
     {"mfs", 1},
-    {"mfs_up", 301},
-    {"mfs_down", 302},
-    {"mfs_left", 303},
-    {"mfs_right", 304},
-    {"mfs_middle", 305},
+    {"mfs_up", 204},
+    {"mfs_down", 203},
+    {"mfs_left", 0},
+    {"mfs_right", 0},
+    {"mfs_middle", 202},
     {"ges", 0},
     {"ges_up", 101},
     {"ges_down", 102},
