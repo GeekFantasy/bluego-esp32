@@ -34,9 +34,10 @@ struct prf_char_pres_fmt
     uint8_t name_space;
 };
 
-typedef struct {
-    uint8_t                 *prepare_buf;
-    int                     prepare_len;
+typedef struct
+{
+    uint8_t *prepare_buf;
+    int prepare_len;
 } prepare_type_env_t;
 
 // HID report mapping table
@@ -45,205 +46,432 @@ static hid_report_map_t hid_rpt_map[HID_NUM_REPORTS];
 // HID Report Map characteristic value
 // Keyboard report descriptor (using format for Boot interface descriptor)
 static const uint8_t hidReportMap[] = {
-    0x05, 0x01, // Usage Page (Generic Desktop)
-    0x09, 0x02, // Usage (Mouse)
-    0xA1, 0x01, // Collection (Application)
-    0x85, 0x01, // Report Id (1)
-    0x09, 0x01, //   Usage (Pointer)
-    0xA1, 0x00, //   Collection (Physical)
-    0x05, 0x09, //     Usage Page (Buttons)
-    0x19, 0x01, //     Usage Minimum (01) - Button 1
-    0x29, 0x03, //     Usage Maximum (03) - Button 3
-    0x15, 0x00, //     Logical Minimum (0)
-    0x25, 0x01, //     Logical Maximum (1)
-    0x75, 0x01, //     Report Size (1)
-    0x95, 0x03, //     Report Count (3)
-    0x81, 0x02, //     Input (Data, Variable, Absolute) - Button states
-    0x75, 0x05, //     Report Size (5)
-    0x95, 0x01, //     Report Count (1)
-    0x81, 0x01, //     Input (Constant) - Padding or Reserved bits
-    0x05, 0x01, //     Usage Page (Generic Desktop)
-    0x09, 0x30, //     Usage (X)
-    0x09, 0x31, //     Usage (Y)
-    0x09, 0x38, //     Usage (Wheel)
-    0x15, 0x81, //     Logical Minimum (-127)
-    0x25, 0x7F, //     Logical Maximum (127)
-    0x75, 0x08, //     Report Size (8)
-    0x95, 0x03, //     Report Count (3)
-    0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
-    0xC0,       //   End Collection
-    0xC0,       // End Collection
+    //     0x05, 0x01, // Usage Page (Generic Desktop)
+    //     0x09, 0x02, // Usage (Mouse)
+    //     0xA1, 0x01, // Collection (Application)
+    //     0x85, 0x01, // Report Id (1)
+    //     0x09, 0x01, //   Usage (Pointer)
+    //     0xA1, 0x00, //   Collection (Physical)
+    //     0x05, 0x09, //     Usage Page (Buttons)
+    //     0x19, 0x01, //     Usage Minimum (01) - Button 1
+    //     0x29, 0x03, //     Usage Maximum (03) - Button 3
+    //     0x15, 0x00, //     Logical Minimum (0)
+    //     0x25, 0x01, //     Logical Maximum (1)
+    //     0x75, 0x01, //     Report Size (1)
+    //     0x95, 0x03, //     Report Count (3)
+    //     0x81, 0x02, //     Input (Data, Variable, Absolute) - Button states
+    //     0x75, 0x05, //     Report Size (5)
+    //     0x95, 0x01, //     Report Count (1)
+    //     0x81, 0x01, //     Input (Constant) - Padding or Reserved bits
+    //     0x05, 0x01, //     Usage Page (Generic Desktop)
+    //     0x09, 0x30, //     Usage (X)
+    //     0x09, 0x31, //     Usage (Y)
+    //     0x09, 0x38, //     Usage (Wheel)
+    //     0x15, 0x81, //     Logical Minimum (-127)
+    //     0x25, 0x7F, //     Logical Maximum (127)
+    //     0x75, 0x08, //     Report Size (8)
+    //     0x95, 0x03, //     Report Count (3)
+    //     0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
+    //     0xC0,       //   End Collection
+    //     0xC0,       // End Collection
 
-    0x05, 0x01, // Usage Pg (Generic Desktop)
-    0x09, 0x06, // Usage (Keyboard)
-    0xA1, 0x01, // Collection: (Application)
-    0x85, 0x02, // Report Id (2)
-    //
-    0x05, 0x07, //   Usage Pg (Key Codes)
-    0x19, 0xE0, //   Usage Min (224)
-    0x29, 0xE7, //   Usage Max (231)
-    0x15, 0x00, //   Log Min (0)
-    0x25, 0x01, //   Log Max (1)
-    //
-    //   Modifier byte
-    0x75, 0x01, //   Report Size (1)
-    0x95, 0x08, //   Report Count (8)
-    0x81, 0x02, //   Input: (Data, Variable, Absolute)
-    //
-    //   Reserved byte
-    0x95, 0x01, //   Report Count (1)
-    0x75, 0x08, //   Report Size (8)
-    0x81, 0x01, //   Input: (Constant)
-    //
-    //   LED report
-    0x95, 0x05, //   Report Count (5)
-    0x75, 0x01, //   Report Size (1)
-    0x05, 0x08, //   Usage Pg (LEDs)
-    0x19, 0x01, //   Usage Min (1)
-    0x29, 0x05, //   Usage Max (5)
-    0x91, 0x02, //   Output: (Data, Variable, Absolute)
-    //
-    //   LED report padding
-    0x95, 0x01, //   Report Count (1)
-    0x75, 0x03, //   Report Size (3)
-    0x91, 0x01, //   Output: (Constant)
-    //
-    //   Key arrays (6 bytes)
-    0x95, 0x06, //   Report Count (6)
-    0x75, 0x08, //   Report Size (8)
-    0x15, 0x00, //   Log Min (0)
-    0x25, 0x65, //   Log Max (101)
-    0x05, 0x07, //   Usage Pg (Key Codes)
-    0x19, 0x00, //   Usage Min (0)
-    0x29, 0x65, //   Usage Max (101)
-    0x81, 0x00, //   Input: (Data, Array)
-    //
-    0xC0, // End Collection
-    //
-    0x05, 0x0C, // Usage Pg (Consumer Devices)
-    0x09, 0x01, // Usage (Consumer Control)
-    0xA1, 0x01, // Collection (Application)
-    0x85, 0x03, // Report Id (3)
-    0x09, 0x02, //   Usage (Numeric Key Pad)
-    0xA1, 0x02, //   Collection (Logical)
-    0x05, 0x09, //     Usage Pg (Button)
-    0x19, 0x01, //     Usage Min (Button 1)
-    0x29, 0x0A, //     Usage Max (Button 10)
-    0x15, 0x01, //     Logical Min (1)
-    0x25, 0x0A, //     Logical Max (10)
-    0x75, 0x04, //     Report Size (4)
-    0x95, 0x01, //     Report Count (1)
-    0x81, 0x00, //     Input (Data, Ary, Abs)
-    0xC0,       //   End Collection
-    0x05, 0x0C, //   Usage Pg (Consumer Devices)
-    0x09, 0x86, //   Usage (Channel)
-    0x15, 0xFF, //   Logical Min (-1)
-    0x25, 0x01, //   Logical Max (1)
-    0x75, 0x02, //   Report Size (2)
-    0x95, 0x01, //   Report Count (1)
-    0x81, 0x46, //   Input (Data, Var, Rel, Null)
-    0x09, 0xE9, //   Usage (Volume Up)
-    0x09, 0xEA, //   Usage (Volume Down)
-    0x15, 0x00, //   Logical Min (0)
-    0x75, 0x01, //   Report Size (1)
-    0x95, 0x02, //   Report Count (2)
-    0x81, 0x02, //   Input (Data, Var, Abs)
-    0x09, 0xE2, //   Usage (Mute)
-    0x09, 0x30, //   Usage (Power)
-    0x09, 0x83, //   Usage (Recall Last)
-    0x09, 0x81, //   Usage (Assign Selection)
-    0x09, 0xB0, //   Usage (Play)
-    0x09, 0xB1, //   Usage (Pause)
-    0x09, 0xB2, //   Usage (Record)
-    0x09, 0xB3, //   Usage (Fast Forward)
-    0x09, 0xB4, //   Usage (Rewind)
-    0x09, 0xB5, //   Usage (Scan Next)
-    0x09, 0xB6, //   Usage (Scan Prev)
-    0x09, 0xB7, //   Usage (Stop)
-    0x15, 0x01, //   Logical Min (1)
-    0x25, 0x0C, //   Logical Max (12)
-    0x75, 0x04, //   Report Size (4)
-    0x95, 0x01, //   Report Count (1)
-    0x81, 0x00, //   Input (Data, Ary, Abs)
-    0x09, 0x80, //   Usage (Selection)
-    0xA1, 0x02, //   Collection (Logical)
-    0x05, 0x09, //     Usage Pg (Button)
-    0x19, 0x01, //     Usage Min (Button 1)
-    0x29, 0x03, //     Usage Max (Button 3)
-    0x15, 0x01, //     Logical Min (1)
-    0x25, 0x03, //     Logical Max (3)
-    0x75, 0x02, //     Report Size (2)
-    0x81, 0x00, //     Input (Data, Ary, Abs)
-    0xC0,       //   End Collection
-    0x81, 0x03, //   Input (Const, Var, Abs)
-    0xC0,       // End Collectionq
+    //     0x05, 0x01, // Usage Pg (Generic Desktop)
+    //     0x09, 0x06, // Usage (Keyboard)
+    //     0xA1, 0x01, // Collection: (Application)
+    //     0x85, 0x02, // Report Id (2)
+    //     //
+    //     0x05, 0x07, //   Usage Pg (Key Codes)
+    //     0x19, 0xE0, //   Usage Min (224)
+    //     0x29, 0xE7, //   Usage Max (231)
+    //     0x15, 0x00, //   Log Min (0)
+    //     0x25, 0x01, //   Log Max (1)
+    //     //
+    //     //   Modifier byte
+    //     0x75, 0x01, //   Report Size (1)
+    //     0x95, 0x08, //   Report Count (8)
+    //     0x81, 0x02, //   Input: (Data, Variable, Absolute)
+    //     //
+    //     //   Reserved byte
+    //     0x95, 0x01, //   Report Count (1)
+    //     0x75, 0x08, //   Report Size (8)
+    //     0x81, 0x01, //   Input: (Constant)
+    //     //
+    //     //   LED report
+    //     0x95, 0x05, //   Report Count (5)
+    //     0x75, 0x01, //   Report Size (1)
+    //     0x05, 0x08, //   Usage Pg (LEDs)
+    //     0x19, 0x01, //   Usage Min (1)
+    //     0x29, 0x05, //   Usage Max (5)
+    //     0x91, 0x02, //   Output: (Data, Variable, Absolute)
+    //     //
+    //     //   LED report padding
+    //     0x95, 0x01, //   Report Count (1)
+    //     0x75, 0x03, //   Report Size (3)
+    //     0x91, 0x01, //   Output: (Constant)
+    //     //
+    //     //   Key arrays (6 bytes)
+    //     0x95, 0x06, //   Report Count (6)
+    //     0x75, 0x08, //   Report Size (8)
+    //     0x15, 0x00, //   Log Min (0)
+    //     0x25, 0x65, //   Log Max (101)
+    //     0x05, 0x07, //   Usage Pg (Key Codes)
+    //     0x19, 0x00, //   Usage Min (0)
+    //     0x29, 0x65, //   Usage Max (101)
+    //     0x81, 0x00, //   Input: (Data, Array)
+    //     //
+    //     0xC0, // End Collection
+    //     //
+    //     0x05, 0x0C, // Usage Pg (Consumer Devices)
+    //     0x09, 0x01, // Usage (Consumer Control)
+    //     0xA1, 0x01, // Collection (Application)
+    //     0x85, 0x03, // Report Id (3)
+    //     0x09, 0x02, //   Usage (Numeric Key Pad)
+    //     0xA1, 0x02, //   Collection (Logical)
+    //     0x05, 0x09, //     Usage Pg (Button)
+    //     0x19, 0x01, //     Usage Min (Button 1)
+    //     0x29, 0x0A, //     Usage Max (Button 10)
+    //     0x15, 0x01, //     Logical Min (1)
+    //     0x25, 0x0A, //     Logical Max (10)
+    //     0x75, 0x04, //     Report Size (4)
+    //     0x95, 0x01, //     Report Count (1)
+    //     0x81, 0x00, //     Input (Data, Ary, Abs)
+    //     0xC0,       //   End Collection
+    //     0x05, 0x0C, //   Usage Pg (Consumer Devices)
+    //     0x09, 0x86, //   Usage (Channel)
+    //     0x15, 0xFF, //   Logical Min (-1)
+    //     0x25, 0x01, //   Logical Max (1)
+    //     0x75, 0x02, //   Report Size (2)
+    //     0x95, 0x01, //   Report Count (1)
+    //     0x81, 0x46, //   Input (Data, Var, Rel, Null)
+    //     0x09, 0xE9, //   Usage (Volume Up)
+    //     0x09, 0xEA, //   Usage (Volume Down)
+    //     0x15, 0x00, //   Logical Min (0)
+    //     0x75, 0x01, //   Report Size (1)
+    //     0x95, 0x02, //   Report Count (2)
+    //     0x81, 0x02, //   Input (Data, Var, Abs)
+    //     0x09, 0xE2, //   Usage (Mute)
+    //     0x09, 0x30, //   Usage (Power)
+    //     0x09, 0x83, //   Usage (Recall Last)
+    //     0x09, 0x81, //   Usage (Assign Selection)
+    //     0x09, 0xB0, //   Usage (Play)
+    //     0x09, 0xB1, //   Usage (Pause)
+    //     0x09, 0xB2, //   Usage (Record)
+    //     0x09, 0xB3, //   Usage (Fast Forward)
+    //     0x09, 0xB4, //   Usage (Rewind)
+    //     0x09, 0xB5, //   Usage (Scan Next)
+    //     0x09, 0xB6, //   Usage (Scan Prev)
+    //     0x09, 0xB7, //   Usage (Stop)
+    //     0x15, 0x01, //   Logical Min (1)
+    //     0x25, 0x0C, //   Logical Max (12)
+    //     0x75, 0x04, //   Report Size (4)
+    //     0x95, 0x01, //   Report Count (1)
+    //     0x81, 0x00, //   Input (Data, Ary, Abs)
+    //     0x09, 0x80, //   Usage (Selection)
+    //     0xA1, 0x02, //   Collection (Logical)
+    //     0x05, 0x09, //     Usage Pg (Button)
+    //     0x19, 0x01, //     Usage Min (Button 1)
+    //     0x29, 0x03, //     Usage Max (Button 3)
+    //     0x15, 0x01, //     Logical Min (1)
+    //     0x25, 0x03, //     Logical Max (3)
+    //     0x75, 0x02, //     Report Size (2)
+    //     0x81, 0x00, //     Input (Data, Ary, Abs)
+    //     0xC0,       //   End Collection
+    //     0x81, 0x03, //   Input (Const, Var, Abs)
+    //     0xC0,       // End Collectionq
 
-#if (SUPPORT_REPORT_VENDOR == true)
-    0x06, 0xFF, 0xFF, // Usage Page(Vendor defined)
-    0x09, 0xA5,       // Usage(Vendor Defined)
-    0xA1, 0x01,       // Collection(Application)
-    0x85, 0x04,       // Report Id (4)
-    0x09, 0xA6,       // Usage(Vendor defined)
-    0x09, 0xA9,       // Usage(Vendor defined)
-    0x75, 0x08,       // Report Size
-    0x95, 0x7F,       // Report Count = 127 Btyes
-    0x91, 0x02,       // Output(Data, Variable, Absolute)
-    0xC0,             // End Collection
-#endif
+    // #if (SUPPORT_REPORT_VENDOR == true)
+    //     0x06, 0xFF, 0xFF, // Usage Page(Vendor defined)
+    //     0x09, 0xA5,       // Usage(Vendor Defined)
+    //     0xA1, 0x01,       // Collection(Application)
+    //     0x85, 0x04,       // Report Id (4)
+    //     0x09, 0xA6,       // Usage(Vendor defined)
+    //     0x09, 0xA9,       // Usage(Vendor defined)
+    //     0x75, 0x08,       // Report Size
+    //     0x95, 0x7F,       // Report Count = 127 Btyes
+    //     0x91, 0x02,       // Output(Data, Variable, Absolute)
+    //     0xC0,             // End Collection
+    // #endif
 
     // Descriptor for real finger touch
-    0x05, 0x0d,                   // USAGE_PAGE (Digitizers)
-    0x09, 0x04,                   // USAGE (Touch Screen)
-    0xa1, 0x01,                   // COLLECTION (Application)
-    0x85, 0x05,                   //   REPORT_ID (Touch)
-    0x09, 0x22,                   //   USAGE (Finger)
-    0xa1, 0x02,                   //     COLLECTION (Logical)
-    0x09, 0x42,                   //       USAGE (Tip Switch)
-    0x15, 0x00,                   //       LOGICAL_MINIMUM (0)
-    0x25, 0x01,                   //       LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                   //       REPORT_SIZE (1)
-    0x95, 0x01,                   //       REPORT_COUNT (1)
-    0x81, 0x02,                   //       INPUT (Data,Var,Abs)
-    0x95, 0x07,                   //       REPORT_COUNT (7)
-    0x81, 0x03,                   //       INPUT (Cnst,Ary,Abs)
-    0x75, 0x08,                   //       REPORT_SIZE (8)
-    0x09, 0x51,                   //       USAGE (Contact Identifier)
-    0x95, 0x01,                   //       REPORT_COUNT (1)
-    0x81, 0x02,                   //       INPUT (Data,Var,Abs)
-    0x05, 0x01,                   //       USAGE_PAGE (Generic Desk..
-    0x26, 0xB4, 0x00,             //       LOGICAL_MAXIMUM (180) // need to adujust according to screen ration 
-    0x75, 0x10,                   //       REPORT_SIZE (16)
-    0x55, 0x0e,                   //       UNIT_EXPONENT (-2)
-    0x65, 0x13,                   //       UNIT(Inch,EngLinear)
-    0x09, 0x30,                   //       USAGE (X)
-    0x35, 0x00,                   //       PHYSICAL_MINIMUM (0)
-    0x46, 0x84, 0x03,             //       PHYSICAL_MAXIMUM (900) // need to adujust according to screen resolution vbut not necessarily to be the same
-    0x95, 0x01,                   //       REPORT_COUNT (1)
-    0x81, 0x02,                   //       INPUT (Data,Var,Abs)
-    0x26, 0x68, 0x01,             //       LOGICAL_MAXIMUM (360) // need to adujust according to screen ration
-    0x46, 0x68, 0x01,             //       PHYSICAL_MAXIMUM (1800) // need to adujust according to screen resolution but not necessarily to be the same
-    0x09, 0x31,                   //       USAGE (Y)
-    0x81, 0x02,                   //       INPUT (Data,Var,Abs)
-    0x05, 0x0d,                   //       USAGE_PAGE (Digitizers)
-    0x09, 0x48,                   //       USAGE (Width)
-    0x09, 0x49,                   //       USAGE (Height)
-    0x81, 0x02,                   //       INPUT (Data,Var,Abs)
-    0xc0,                         //     END_COLLECTION
-    0x05, 0x0d,                   //   USAGE_PAGE (Digitizers)
-    0x55, 0x0C,                   //   UNIT_EXPONENT (-4)
-    0x66, 0x01, 0x10,             //   UNIT (Seconds)
-    0x47, 0xff, 0xff, 0x00, 0x00, //   PHYSICAL_MAXIMUM (65535)
-    0x27, 0xff, 0xff, 0x00, 0x00, //   LOGICAL_MAXIMUM (65535)
-    0x75, 0x10,                   //   REPORT_SIZE (16)
-    0x95, 0x01,                   //   REPORT_COUNT (1)
-    0x09, 0x56,                   //   USAGE (Scan Time)
-    0x81, 0x02,                   //   INPUT (Data,Var,Abs)
-    0x09, 0x54,                   //   USAGE (Contact count)
-    0x25, 0x7f,                   //   LOGICAL_MAXIMUM (127)
-    0x95, 0x01,                   //   REPORT_COUNT (1)
-    0x75, 0x08,                   //   REPORT_SIZE (8)
-    0x81, 0x02,                   //   INPUT (Data,Var,Abs)
-    0xc0,                         // END_COLLECTION
+    // 0x05, 0x0d,                   // USAGE_PAGE (Digitizers)
+    // 0x09, 0x04,                   // USAGE (Touch Screen)
+    // 0xa1, 0x01,                   // COLLECTION (Application)
+    // 0x85, 0x05,                   //   REPORT_ID (Touch)
+    // 0x09, 0x22,                   //   USAGE (Finger)
+    // 0xa1, 0x00,                   //     COLLECTION (Logical)
+    // 0x09, 0x42,                   //       USAGE (Tip Switch)
+    // 0x15, 0x00,                   //       LOGICAL_MINIMUM (0)
+    // 0x25, 0x01,                   //       LOGICAL_MAXIMUM (1)
+    // 0x75, 0x01,                   //       REPORT_SIZE (1)
+    // 0x95, 0x01,                   //       REPORT_COUNT (1)
+    // 0x81, 0x02,                   //       INPUT (Data,Var,Abs)
+    // 0x95, 0x07,                   //       REPORT_COUNT (7)
+    // 0x81, 0x03,                   //       INPUT (Cnst,Ary,Abs)
+    // 0x75, 0x08,                   //       REPORT_SIZE (8)
+    // 0x09, 0x51,                   //       USAGE (Contact Identifier)
+    // 0x95, 0x01,                   //       REPORT_COUNT (1)
+    // 0x81, 0x02,                   //       INPUT (Data,Var,Abs)
+    // 0x05, 0x01,                   //       USAGE_PAGE (Generic Desk..
+    // 0x26, 0xFF, 0x0F,             //       LOGICAL_MAXIMUM (180) // need to adujust according to screen ration
+    // //0x26, 0xB4, 0x00,             //       LOGICAL_MAXIMUM (180) // need to adujust according to screen ration
+    // 0x75, 0x10,                   //       REPORT_SIZE (16)
+    // 0x55, 0x0e,                   //       UNIT_EXPONENT (-2)
+    // 0x65, 0x13,                   //       UNIT(Inch,EngLinear)
+    // 0x09, 0x30,                   //       USAGE (X)
+    // 0x35, 0x00,                   //       PHYSICAL_MINIMUM (0)
+    // //0x46, 0x84, 0x03,             //       PHYSICAL_MAXIMUM (900) // need to adujust according to screen resolution vbut not necessarily to be the same
+    // 0x46, 0xFF, 0x0F,             //       PHYSICAL_MAXIMUM (900) // need to adujust according to screen resolution vbut not necessarily to be the same
+    // 0x95, 0x01,                   //       REPORT_COUNT (1)
+    // 0x81, 0x02,                   //       INPUT (Data,Var,Abs)
+    // 0x26, 0xFF, 0x0F,             //       LOGICAL_MAXIMUM (360) // need to adujust according to screen ration
+    // 0x46, 0xFF, 0x0F,             //       PHYSICAL_MAXIMUM (1800) // need to adujust according to screen resolution but not necessarily to be the same
+    // 0x09, 0x31,                   //       USAGE (Y)
+    // 0x81, 0x02,                   //       INPUT (Data,Var,Abs)
+    // 0x05, 0x0d,                   //       USAGE_PAGE (Digitizers)
+    // 0x09, 0x48,                   //       USAGE (Width)
+    // 0x09, 0x49,                   //       USAGE (Height)
+    // 0x81, 0x02,                   //       INPUT (Data,Var,Abs)
+    // 0xc0,                         //     END_COLLECTION
+    // // 0x05, 0x0d,                   //   USAGE_PAGE (Digitizers)
+    // // 0x55, 0x0C,                   //   UNIT_EXPONENT (-4)
+    // // 0x66, 0x01, 0x10,             //   UNIT (Seconds)
+    // // 0x47, 0xff, 0xff, 0x00, 0x00, //   PHYSICAL_MAXIMUM (65535)
+    // // 0x27, 0xff, 0xff, 0x00, 0x00, //   LOGICAL_MAXIMUM (65535)
+    // // 0x75, 0x10,                   //   REPORT_SIZE (16)
+    // // 0x95, 0x01,                   //   REPORT_COUNT (1)
+    // // 0x09, 0x56,                   //   USAGE (Scan Time)
+    // // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
+    // // 0x09, 0x54,                   //   USAGE (Contact count)
+    // // 0x25, 0x7f,                   //   LOGICAL_MAXIMUM (127)
+    // // 0x95, 0x01,                   //   REPORT_COUNT (1)
+    // // 0x75, 0x08,                   //   REPORT_SIZE (8)
+    // // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
+    // 0xc0,                         // END_COLLECTION
+
+    // Another finger touch
+    // 0x05, 0x0d,                    // USAGE_PAGE (Digitizers)
+    // 0x09, 0x04,                    // USAGE (Touch Screen)
+    // 0xa1, 0x01,                    // COLLECTION (Application)
+    // 0x85, 0x05,                   //   REPORT_ID (Touch)
+    // 0x09, 0x20,                    //   USAGE (Finger:22) stylus：20
+    // 0xa1, 0x00,                    //   COLLECTION (Physical)
+    // 0x09, 0x42,                    //     USAGE (Tip Switch)
+    // 0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    // 0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
+    // 0x75, 0x01,                    //     REPORT_SIZE (1)
+    // 0x95, 0x01,                    //     REPORT_COUNT (1)
+    // 0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    // 0x09 , 0x32,
+    // 0x15 , 0x00 ,
+    // 0x25 , 0x01 ,
+    // 0x81 , 0x02 ,
+    // 0x09 , 0x51 ,
+    // 0x75 , 0x05,
+    // 0x95 , 0x01 ,
+    // 0x16 , 0x00 , 0x00,
+    // 0x26 , 0x10 , 0x00,
+    // 0x81 , 0x02,
+    // 0x09 , 0x47 ,
+    // 0x75 , 0x01,
+    // 0x95 , 0x01 ,
+    // 0x15 , 0x00,
+    // 0x25 , 0x01 ,
+    // 0x81 , 0x02 ,
+    // 0x05 , 0x01 ,
+    // 0x09 , 0x30 ,
+    // 0x75 , 0x10 ,
+    // 0x95 , 0x01 ,
+    // 0x55 , 0x0D,
+    // 0x65 , 0x33,
+    // 0x35 , 0x00,
+    // 0x46 , 0x60 , 0x17 ,
+    // 0x26 , 0xFF , 0x0F ,
+    // 0x81 , 0x02 ,
+    // 0x09 , 0x31 ,
+    // 0x75 , 0x10 ,
+    // 0x95 , 0x01 ,
+    // 0x55 , 0x0D ,
+    // 0x65 , 0x33 ,
+    // 0x35 , 0x00 ,
+    // 0x46 , 0x26 , 0x0E,
+    // 0x26 , 0xFF , 0x0F ,
+    // 0x81 , 0x02 ,
+    // 0x05 , 0x0D ,
+    // 0x09 , 0x55 ,
+    // 0x25 , 0x08 ,
+    // 0x75 , 0x08 ,
+    // 0x95 , 0x01 ,
+    // 0xB1 , 0x02 ,
+    // 0xC0 ,
+    // 0xC0 ,
+
+    // 0x05, 0x0D,
+    // 0x09, 0x02,
+    // 0xA1, 0x01,
+    // 0x85, 0x02,
+    // 0x09, 0x22,
+    // 0xA1, 0x02,
+    // 0x09, 0x42,
+    // 0x15, 0x00,
+    // 0x25, 0x01,
+    // 0x75, 0x01,
+    // 0x95, 0x01,
+    // 0x81, 0x02,
+    // 0x09, 0x32,
+    // 0x81, 0x02,
+    // 0x95, 0x06,
+    // 0x81, 0x03,
+    // 0x75, 0x08,
+    // 0x09, 0x51,
+    // 0x95, 0x01,
+    // 0x81, 0x02,
+    // 0x05, 0x01,
+    // 0x26, 0xFF, 0x0F,
+    // 0x75, 0x10,
+    // 0x55, 0x0E,
+    // 0x65, 0x33,
+    // 0x09, 0x30,
+    // 0x35, 0x00,
+    // 0x46, 0xB5, 0x04,
+    // 0x81, 0x02,
+    // 0x46, 0x8A, 0x03,
+    // 0x09, 0x31,
+    // 0x81, 0x02,
+    // 0xC0,
+    // 0x05, 0x0D,
+    // 0x09, 0x54,
+    // 0x95, 0x01,
+    // 0x75, 0x08,
+    // 0x81, 0x02,
+    // 0x85, 0x08,
+    // 0x09, 0x46,
+    // 0x25, 0x05,
+    // 0xb1, 0x02,
+    // 0xC0,
+
+    // copy from ble-m3
+    // 0x05, 0x0c,
+    // 0x09, 0x01,
+    // 0xa1, 0x01,
+    // 0x85, 0x03,
+    // 0x15, 0x00,
+    // 0x25, 0x01,
+    // 0x75, 0x01,
+    // 0x95, 0x0b,
+    // 0x09, 0xea,
+    // 0x09, 0xe9,
+    // 0x0a, 0xae, 0x01,
+    // 0x81, 0x02,
+    // 0x95, 0x01,
+    // 0x75, 0x0d,
+    // 0x81, 0x03,
+    // 0xc0,
+    // 0x05, 0x0d,
+    // 0x09, 0x02,
+    // 0xa1, 0x01,
+    // 0x85, 0x05,
+    // 0x09, 0x22,
+    // 0xa1, 0x02,
+    // 0x09, 0x42,
+    // 0x15, 0x00,
+    // 0x25, 0x01,
+    // 0x75, 0x01,
+    // 0x95, 0x01,
+    // 0x81, 0x02,
+    // 0x09, 0x32,
+    // 0x81, 0x02,
+    // 0x95, 0x06,
+    // 0x81, 0x03,
+    // 0x75, 0x08,
+    // 0x09, 0x51,
+    // 0x95, 0x01,
+    // 0x81, 0x02,
+    // 0x05, 0x01,
+    // 0x26, 0xff, 0x0f,
+    // 0x75, 0x10,
+    // 0x55, 0x0e,
+    // 0x65, 0x33,
+    // 0x09, 0x30,
+    // 0x35, 0x00,
+    // 0x46, 0xb5, 0x04,
+    // 0x81, 0x02,
+    // 0x46, 0x8a, 0x03,
+    // 0x09, 0x31,
+    // 0x81, 0x02,
+    // 0xc0,
+    // 0x05, 0x0d,
+    // 0x09, 0x54,
+    // 0x95, 0x01,
+    // 0x75, 0x08,
+    // 0x81, 0x02,
+    // 0x85, 0x08,
+    // 0x09, 0x55,
+    // 0x25, 0x05,
+    // 0xb1, 0x02,
+    // 0xc0,
+
+    // cpy from jx5 --  not working on any device , wired.
+    // 0x05, 0x0C,       // Usage Page (Consumer)
+    // 0x09, 0x01,       // Usage (Consumer Control)
+    // 0xA1, 0x01,       // Collection (Application)
+    // 0x85, 0x03,       //   Report ID (3)
+    // 0x15, 0x00,       //   Logical Minimum (0)
+    // 0x25, 0x01,       //   Logical Maximum (1)
+    // 0x75, 0x01,       //   Report Size (1)
+    // 0x95, 0x0B,       //   Report Count (11)
+    // 0x09, 0xEA,       //   Usage (Volume Decrement)
+    // 0x09, 0xE9,       //   Usage (Volume Increment)
+    // 0x09, 0x30,       //   Usage (Power)
+    // 0x0A, 0xAE, 0x01, //   Usage (AL Keyboard Layout)
+    // 0x0A, 0x23, 0x02, //   Usage (AC Home)
+    // 0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    // 0x95, 0x01,       //   Report Count (1)
+    // 0x75, 0x0D,       //   Report Size (13)
+    // 0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    // 0xC0,             // End Collection
+    0x05, 0x0D,       // Usage Page (Digitizer)
+    0x09, 0x01,       // Usage (Digitizer)
+    0xA1, 0x01,       // Collection (Application)
+    0x85, 0x02,       //   Report ID (2)
+    0x09, 0x20,       //   Usage (Stylus)
+    0xA1, 0x02,       //   Collection (Logical)
+    0x09, 0x42,       //     Usage (Tip Switch)
+    0x15, 0x00,       //     Logical Minimum (0)
+    0x25, 0x01,       //     Logical Maximum (1)
+    0x75, 0x01,       //     Report Size (1)
+    0x95, 0x01,       //     Report Count (1)
+    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x09, 0x32,       //     Usage (In Range)
+    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x06,       //     Report Count (6)
+    0x81, 0x03,       //     Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x75, 0x08,       //     Report Size (8)
+    0x09, 0x51,       //     Usage (0x51)
+    0x95, 0x01,       //     Report Count (1)
+    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x01,       //     Usage Page (Generic Desktop Ctrls)
+    0x26, 0xFF, 0x0F, //     Logical Maximum (4095)
+    0x75, 0x10,       //     Report Size (16)
+    0x55, 0x0E,       //     Unit Exponent (-2)
+    0x65, 0x33,       //     Unit (System: English Linear, Length: Inch)
+    0x09, 0x30,       //     Usage (X)
+    0x35, 0x00,       //     Physical Minimum (0)
+    0x46, 0xB5, 0x04, //     Physical Maximum (1205)
+    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x46, 0x8A, 0x03, //     Physical Maximum (906)
+    0x09, 0x31,       //     Usage (Y)
+    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,             //   End Collection
+    0x05, 0x0D,       //   Usage Page (Digitizer)
+    0x09, 0x54,       //   Usage (0x54)
+    0x95, 0x01,       //   Report Count (1)
+    0x75, 0x08,       //   Report Size (8)
+    0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x85, 0x08,       //   Report ID (8)
+    0x09, 0x55,       //   Usage (0x55)
+    0x25, 0x05,       //   Logical Maximum (5)
+    0xB1, 0x02,       //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0xC0,             // End Collection
 };
 
 /// Battery Service Attributes Indexes
@@ -293,7 +521,7 @@ hidd_le_env_t hidd_le_env;
 uint16_t mode_svc_hdl_tab[MSS_IDX_NB];
 
 // HID report map length
-//uint8_t hidReportMapLen = sizeof(hidReportMap);
+// uint8_t hidReportMapLen = sizeof(hidReportMap);
 uint8_t hidProtocolMode = HID_PROTOCOL_MODE_REPORT;
 
 // HID report mapping table
@@ -547,7 +775,6 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         [HIDD_LE_IDX_REPORT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefFeature), sizeof(hidReportRefFeature), hidReportRefFeature}},
 };
 
-
 static struct gatts_profile_inst gatt_profile_tab[];
 static prepare_type_env_t mode_setting_prep_write_env;
 static void hid_add_id_tbl(void);
@@ -607,7 +834,7 @@ void write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_e
 }
 
 void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
-                         esp_ble_gatts_cb_param_t *param)
+                        esp_ble_gatts_cb_param_t *param)
 {
     switch (event)
     {
@@ -718,7 +945,6 @@ void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     }
 }
 
-
 void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                         esp_ble_gatts_cb_param_t *param)
 {
@@ -738,7 +964,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     { // F**k, Windows is capricious, so please make sure to return something for a characteristic, or even other services would get block
       // Android is good.
         ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_READ_EVT. ");
-        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_READ_EVT, conn_id: %d, trans_id: %d, read handle: %d.", param->read.conn_id,param->read.trans_id, param->read.handle);
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_READ_EVT, conn_id: %d, trans_id: %d, read handle: %d.", param->read.conn_id, param->read.trans_id, param->read.handle);
         if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle read for current mode char
         {
             esp_gatt_rsp_t rsp;
@@ -751,7 +977,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
                                         ESP_GATT_OK, &rsp);
         }
-        else if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING])  // handle read for mode setting char
+        else if (param->read.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING]) // handle read for mode setting char
         {
             esp_gatt_rsp_t rsp;
             memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
@@ -768,7 +994,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     case ESP_GATTS_WRITE_EVT:
     {
         ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_WRITE_EVT. ");
-        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id,param->write.trans_id, param->write.handle);
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle read for current mode char
         {
             if (!param->write.is_prep)
@@ -786,13 +1012,13 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 }
             }
         }
-        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING])  // handle read for mode setting char
+        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING]) // handle read for mode setting char
         {
             if (!param->write.is_prep)
             {
                 ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
                 esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
-                if(param->write.need_rsp)
+                if (param->write.need_rsp)
                 {
                     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
                 }
@@ -802,11 +1028,11 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 write_event_env(gatts_if, &mode_setting_prep_write_env, param);
             }
         }
-        else if(param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_CFG_CURR_MODE])
+        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_CFG_CURR_MODE])
         {
             ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT->CHAR_CFG_CURR_MODE");
         }
-        else if(param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_CFG_MODE_SETTING])
+        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_CFG_MODE_SETTING])
         {
             ESP_LOGI(HID_LE_PRF_TAG, "GATT_WRITE_EVT->CHAR_CFG_MODE_SETTING");
         }
@@ -817,7 +1043,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     {
         ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_EXEC_WRITE_EVT. ");
         esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
-        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id,param->write.trans_id, param->write.handle);
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_EXEC_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id, param->write.trans_id, param->write.handle);
 
         bool need_reboot = false;
 
@@ -939,8 +1165,7 @@ static struct gatts_profile_inst gatt_profile_tab[PROFILE_NUM] = {
         .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
     [MODE_PROFILE_APP_IDX] = {
-        .gatts_cb = esp_mode_prf_cb_hd,
-        .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
+        .gatts_cb = esp_mode_prf_cb_hd, .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
 };
 
@@ -953,15 +1178,15 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         ESP_LOGI(HID_LE_PRF_TAG, "gatts_event_handle, case: ESP_GATTS_REG_EVT");
         if (param->reg.status == ESP_GATT_OK)
         {
-            if(param->reg.app_id == HIDD_APP_ID || param->reg.app_id == BATTRAY_APP_ID )
+            if (param->reg.app_id == HIDD_APP_ID || param->reg.app_id == BATTRAY_APP_ID)
             {
                 gatt_profile_tab[HID_PROFILE_APP_IDX].gatts_if = gatts_if;
             }
-            else if(param->reg.app_id == MODE_APP_ID)
+            else if (param->reg.app_id == MODE_APP_ID)
             {
                 gatt_profile_tab[MODE_PROFILE_APP_IDX].gatts_if = gatts_if;
             }
-            
+
             ESP_LOGI(HID_LE_PRF_TAG, "Assign gatt_if:%d to app id: %x", gatts_if, param->reg.app_id);
         }
         else
