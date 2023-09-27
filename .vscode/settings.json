@@ -51,7 +51,11 @@
         "hid_touch_gestures.h": "c",
         "task.h": "c",
         "string": "c",
-        "operations.h": "c"
+        "operations.h": "c",
+        "esp_bt_defs.h": "c",
+        "esp_gatt_defs.h": "c",
+        "esp_gatts_api.h": "c",
+        "esp_gap_ble_api.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

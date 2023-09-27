@@ -157,7 +157,7 @@ void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t con
 
     buffer[0] = touch_down & 0x01;         // Buttons
     buffer[0] |= (touch_down << 1) & 0x02; //            set in range
-    buffer[0] |= (touch_down << 2) & 0x04; //            set in range 
+    //buffer[0] |= (touch_down << 2) & 0x04; //            set in range 
     buffer[1] = contact_id ;         // Contact Identifier
     buffer[2] = touch_x;            // X low byte
     buffer[3] = touch_x >> 8;       // X High byte
@@ -168,11 +168,11 @@ void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t con
     // buffer[7] = touch_width >> 8;   // Touch width high byte
     // buffer[8] = touch_height;       // Touch height Low byte
     // buffer[9] = touch_height >> 8;  // Touch height high byte
-    //buffer[10] = scan_time;         // scan time low
-    //buffer[11] = scan_time >> 8;    // scan time high
-    //buffer[12] = contact_count;     // contact count
+    // buffer[10] = scan_time;         // scan time low
+    // buffer[11] = scan_time >> 8;    // scan time high
+    // buffer[12] = contact_count;     // contact count
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
-                        2, HID_REPORT_TYPE_INPUT,8, buffer);
+                        1, HID_REPORT_TYPE_INPUT,7, buffer);
     return;
 }

@@ -41,7 +41,7 @@
 #define HID_MAX_APPS                 1
 
 // Number of HID reports defined in the service
-#define HID_NUM_REPORTS          9
+#define HID_NUM_REPORTS          6  // Original: 9
 
 // HID Report IDs for the service
 #define HID_RPT_ID_MOUSE_IN      1   // Mouse input report ID
@@ -102,7 +102,7 @@
 #define HID_EXT_REPORT_REF_LEN          2         // External Report Reference Descriptor
 
 // HID feature flags
-#define HID_KBD_FLAGS             HID_FLAGS_REMOTE_WAKE
+#define HID_KBD_FLAGS             HID_FLAGS_REMOTE_WAKE | HID_FLAGS_NORMALLY_CONNECTABLE //Original:HID_FLAGS_REMOTE_WAKE
 
 /* HID Report type */
 #define HID_REPORT_TYPE_INPUT       1
@@ -125,11 +125,7 @@ enum {
     HIDD_LE_IDX_HID_CTNL_PT_CHAR,
     HIDD_LE_IDX_HID_CTNL_PT_VAL,
 
-    // Report Map
-    HIDD_LE_IDX_REPORT_MAP_CHAR,
-    HIDD_LE_IDX_REPORT_MAP_VAL,
-    HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF,
-
+    
     // Protocol Mode
     HIDD_LE_IDX_PROTO_MODE_CHAR,
     HIDD_LE_IDX_PROTO_MODE_VAL,
@@ -140,12 +136,6 @@ enum {
     HIDD_LE_IDX_REPORT_MOUSE_IN_CCC,
     HIDD_LE_IDX_REPORT_MOUSE_REP_REF,
     
-    // Report touch screen input
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF,
-
     //Report Key input
     HIDD_LE_IDX_REPORT_KEY_IN_CHAR,
     HIDD_LE_IDX_REPORT_KEY_IN_VAL,
@@ -167,25 +157,36 @@ enum {
     HIDD_LE_IDX_REPORT_CC_IN_CCC,
     HIDD_LE_IDX_REPORT_CC_IN_REP_REF,
 
-    // Boot Keyboard Input Report
-    HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR,
-    HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL,
-    HIDD_LE_IDX_BOOT_KB_IN_REPORT_NTF_CFG,
+    // Report touch screen input
+    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR,
+    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL,
+    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC,
+    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF,
 
-    // Boot Keyboard Output Report
-    HIDD_LE_IDX_BOOT_KB_OUT_REPORT_CHAR,
-    HIDD_LE_IDX_BOOT_KB_OUT_REPORT_VAL,
+    // // Boot Keyboard Input Report
+    // HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR,
+    // HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL,
+    // HIDD_LE_IDX_BOOT_KB_IN_REPORT_NTF_CFG,
 
-    // Boot Mouse Input Report
-    HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_CHAR,
-    HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_VAL,
-    HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_NTF_CFG,
+    // // Boot Keyboard Output Report
+    // HIDD_LE_IDX_BOOT_KB_OUT_REPORT_CHAR,
+    // HIDD_LE_IDX_BOOT_KB_OUT_REPORT_VAL,
+
+    // // Boot Mouse Input Report
+    // HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_CHAR,
+    // HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_VAL,
+    // HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_NTF_CFG,
 
     // Report
     HIDD_LE_IDX_REPORT_CHAR,
     HIDD_LE_IDX_REPORT_VAL,
     HIDD_LE_IDX_REPORT_REP_REF,
     //HIDD_LE_IDX_REPORT_NTF_CFG,
+
+    // Report Map
+    HIDD_LE_IDX_REPORT_MAP_CHAR,
+    HIDD_LE_IDX_REPORT_MAP_VAL,
+    HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF,
 
     HIDD_LE_IDX_NB,
 };

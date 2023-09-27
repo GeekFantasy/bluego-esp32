@@ -67,22 +67,22 @@ void send_slide_up(uint16_t hid_conn_id)
         Delay(TOUCH_INTERVAL);
     }
 
-    esp_hidd_send_touch_value(hid_conn_id, 0, 1, 7, 0, 2000, 400, 0, 0);
+    esp_hidd_send_touch_value(hid_conn_id, 0, 0, 7, 0, 2000, 400, 0, 0);
     Delay(TOUCH_DELAY);
 }
 
 void send_slide_down(uint16_t hid_conn_id)
 {
-    esp_hidd_send_touch_value(hid_conn_id, 1, 1, 1, 0, 1900, 1000, 1, 1);
+    esp_hidd_send_touch_value(hid_conn_id, 1, 1, 6, 0, 1900, 1000, 1, 1);
     Delay(TOUCH_DELAY);
 
     for (int j = 1; j <= 10; j++)
     {
-        esp_hidd_send_touch_value(hid_conn_id, 1, 1, 1, 0, 1900, 1000 + 200 * j, 1, 1);
+        esp_hidd_send_touch_value(hid_conn_id, 1, 1, 6, 0, 1900, 1000 + 200 * j, 1, 1);
         Delay(TOUCH_INTERVAL);
     }
 
-    esp_hidd_send_touch_value(hid_conn_id, 0, 1, 1, 0, 1900, 3010, 0, 0);
+    esp_hidd_send_touch_value(hid_conn_id, 0, 0, 6, 0, 1900, 3010, 0, 0);
     Delay(TOUCH_DELAY);
 }
 
@@ -112,7 +112,7 @@ void send_slide_right(uint16_t hid_conn_id)
         Delay(TOUCH_INTERVAL);
     }
 
-    esp_hidd_send_touch_value(hid_conn_id, 0, 1,1, 0, 1500, 2000, 0, 0);
+    esp_hidd_send_touch_value(hid_conn_id, 0, 1, 1, 0, 1500, 2000, 0, 0);
     Delay(TOUCH_DELAY);
 }
 
@@ -136,7 +136,7 @@ void send_tap(uint16_t hid_conn_id)
 {
     esp_hidd_send_touch_value(hid_conn_id, 1, 1, 1, 0, 90, 200, 1, 1);
     Delay(TAP_DELAY);
-    esp_hidd_send_touch_value(hid_conn_id, 0, 1, 1, 0, 90, 200, 0, 0);
+    esp_hidd_send_touch_value(hid_conn_id, 0, 0, 1, 0, 90, 200, 0, 0);
     Delay(TAP_DELAY);
 }
 
@@ -148,7 +148,7 @@ void send_press_down(uint16_t hid_conn_id)
 
 void send_press_up(uint16_t hid_conn_id)
 {
-    esp_hidd_send_touch_value(hid_conn_id, 0, 1, 1, 0, 90, 200, 0, 0);
+    esp_hidd_send_touch_value(hid_conn_id, 0, 0, 1, 0, 90, 200, 0, 0);
     Delay(TAP_DELAY);
 }
 

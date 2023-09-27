@@ -46,34 +46,34 @@ static hid_report_map_t hid_rpt_map[HID_NUM_REPORTS];
 // HID Report Map characteristic value
 // Keyboard report descriptor (using format for Boot interface descriptor)
 static const uint8_t hidReportMap[] = {
-    //     0x05, 0x01, // Usage Page (Generic Desktop)
-    //     0x09, 0x02, // Usage (Mouse)
-    //     0xA1, 0x01, // Collection (Application)
-    //     0x85, 0x01, // Report Id (1)
-    //     0x09, 0x01, //   Usage (Pointer)
-    //     0xA1, 0x00, //   Collection (Physical)
-    //     0x05, 0x09, //     Usage Page (Buttons)
-    //     0x19, 0x01, //     Usage Minimum (01) - Button 1
-    //     0x29, 0x03, //     Usage Maximum (03) - Button 3
-    //     0x15, 0x00, //     Logical Minimum (0)
-    //     0x25, 0x01, //     Logical Maximum (1)
-    //     0x75, 0x01, //     Report Size (1)
-    //     0x95, 0x03, //     Report Count (3)
-    //     0x81, 0x02, //     Input (Data, Variable, Absolute) - Button states
-    //     0x75, 0x05, //     Report Size (5)
-    //     0x95, 0x01, //     Report Count (1)
-    //     0x81, 0x01, //     Input (Constant) - Padding or Reserved bits
-    //     0x05, 0x01, //     Usage Page (Generic Desktop)
-    //     0x09, 0x30, //     Usage (X)
-    //     0x09, 0x31, //     Usage (Y)
-    //     0x09, 0x38, //     Usage (Wheel)
-    //     0x15, 0x81, //     Logical Minimum (-127)
-    //     0x25, 0x7F, //     Logical Maximum (127)
-    //     0x75, 0x08, //     Report Size (8)
-    //     0x95, 0x03, //     Report Count (3)
-    //     0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
-    //     0xC0,       //   End Collection
-    //     0xC0,       // End Collection
+        // 0x05, 0x01, // Usage Page (Generic Desktop)
+        // 0x09, 0x02, // Usage (Mouse)
+        // 0xA1, 0x01, // Collection (Application)
+        // 0x85, 0x01, // Report Id (1)
+        // 0x09, 0x01, //   Usage (Pointer)
+        // 0xA1, 0x00, //   Collection (Physical)
+        // 0x05, 0x09, //     Usage Page (Buttons)
+        // 0x19, 0x01, //     Usage Minimum (01) - Button 1
+        // 0x29, 0x03, //     Usage Maximum (03) - Button 3
+        // 0x15, 0x00, //     Logical Minimum (0)
+        // 0x25, 0x01, //     Logical Maximum (1)
+        // 0x75, 0x01, //     Report Size (1)
+        // 0x95, 0x03, //     Report Count (3)
+        // 0x81, 0x02, //     Input (Data, Variable, Absolute) - Button states
+        // 0x75, 0x05, //     Report Size (5)
+        // 0x95, 0x01, //     Report Count (1)
+        // 0x81, 0x01, //     Input (Constant) - Padding or Reserved bits
+        // 0x05, 0x01, //     Usage Page (Generic Desktop)
+        // 0x09, 0x30, //     Usage (X)
+        // 0x09, 0x31, //     Usage (Y)
+        // 0x09, 0x38, //     Usage (Wheel)
+        // 0x15, 0x81, //     Logical Minimum (-127)
+        // 0x25, 0x7F, //     Logical Maximum (127)
+        // 0x75, 0x08, //     Report Size (8)
+        // 0x95, 0x03, //     Report Count (3)
+        // 0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
+        // 0xC0,       //   End Collection
+        // 0xC0,       // End Collection
 
     //     0x05, 0x01, // Usage Pg (Generic Desktop)
     //     0x09, 0x06, // Usage (Keyboard)
@@ -232,20 +232,20 @@ static const uint8_t hidReportMap[] = {
     // 0x09, 0x49,                   //       USAGE (Height)
     // 0x81, 0x02,                   //       INPUT (Data,Var,Abs)
     // 0xc0,                         //     END_COLLECTION
-    // // 0x05, 0x0d,                   //   USAGE_PAGE (Digitizers)
-    // // 0x55, 0x0C,                   //   UNIT_EXPONENT (-4)
-    // // 0x66, 0x01, 0x10,             //   UNIT (Seconds)
-    // // 0x47, 0xff, 0xff, 0x00, 0x00, //   PHYSICAL_MAXIMUM (65535)
-    // // 0x27, 0xff, 0xff, 0x00, 0x00, //   LOGICAL_MAXIMUM (65535)
-    // // 0x75, 0x10,                   //   REPORT_SIZE (16)
-    // // 0x95, 0x01,                   //   REPORT_COUNT (1)
-    // // 0x09, 0x56,                   //   USAGE (Scan Time)
-    // // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
-    // // 0x09, 0x54,                   //   USAGE (Contact count)
-    // // 0x25, 0x7f,                   //   LOGICAL_MAXIMUM (127)
-    // // 0x95, 0x01,                   //   REPORT_COUNT (1)
-    // // 0x75, 0x08,                   //   REPORT_SIZE (8)
-    // // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
+    // 0x05, 0x0d,                   //   USAGE_PAGE (Digitizers)
+    // 0x55, 0x0C,                   //   UNIT_EXPONENT (-4)
+    // 0x66, 0x01, 0x10,             //   UNIT (Seconds)
+    // 0x47, 0xff, 0xff, 0x00, 0x00, //   PHYSICAL_MAXIMUM (65535)
+    // 0x27, 0xff, 0xff, 0x00, 0x00, //   LOGICAL_MAXIMUM (65535)
+    // 0x75, 0x10,                   //   REPORT_SIZE (16)
+    // 0x95, 0x01,                   //   REPORT_COUNT (1)
+    // 0x09, 0x56,                   //   USAGE (Scan Time)
+    // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
+    // 0x09, 0x54,                   //   USAGE (Contact count)
+    // 0x25, 0x7f,                   //   LOGICAL_MAXIMUM (127)
+    // 0x95, 0x01,                   //   REPORT_COUNT (1)
+    // 0x75, 0x08,                   //   REPORT_SIZE (8)
+    // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
     // 0xc0,                         // END_COLLECTION
 
     // Another finger touch
@@ -411,28 +411,28 @@ static const uint8_t hidReportMap[] = {
     // 0xc0,
 
     // cpy from jx5 --  not working on any device , wired.
-    // 0x05, 0x0C,       // Usage Page (Consumer)
-    // 0x09, 0x01,       // Usage (Consumer Control)
-    // 0xA1, 0x01,       // Collection (Application)
-    // 0x85, 0x03,       //   Report ID (3)
-    // 0x15, 0x00,       //   Logical Minimum (0)
-    // 0x25, 0x01,       //   Logical Maximum (1)
-    // 0x75, 0x01,       //   Report Size (1)
-    // 0x95, 0x0B,       //   Report Count (11)
-    // 0x09, 0xEA,       //   Usage (Volume Decrement)
-    // 0x09, 0xE9,       //   Usage (Volume Increment)
-    // 0x09, 0x30,       //   Usage (Power)
-    // 0x0A, 0xAE, 0x01, //   Usage (AL Keyboard Layout)
-    // 0x0A, 0x23, 0x02, //   Usage (AC Home)
-    // 0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    // 0x95, 0x01,       //   Report Count (1)
-    // 0x75, 0x0D,       //   Report Size (13)
-    // 0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    // 0xC0,             // End Collection
+    0x05, 0x0C,       // Usage Page (Consumer)
+    0x09, 0x01,       // Usage (Consumer Control)
+    0xA1, 0x01,       // Collection (Application)
+    0x85, 0x03,       //   Report ID (3)
+    0x15, 0x00,       //   Logical Minimum (0)
+    0x25, 0x01,       //   Logical Maximum (1)
+    0x75, 0x01,       //   Report Size (1)
+    0x95, 0x0B,       //   Report Count (11)
+    0x09, 0xEA,       //   Usage (Volume Decrement)
+    0x09, 0xE9,       //   Usage (Volume Increment)
+    0x09, 0x30,       //   Usage (Power)
+    0x0A, 0xAE, 0x01, //   Usage (AL Keyboard Layout)
+    0x0A, 0x23, 0x02, //   Usage (AC Home)
+    0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x01,       //   Report Count (1)
+    0x75, 0x0D,       //   Report Size (13)
+    0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,             // End Collection
     0x05, 0x0D,       // Usage Page (Digitizer)
     0x09, 0x01,       // Usage (Digitizer)
     0xA1, 0x01,       // Collection (Application)
-    0x85, 0x02,       //   Report ID (2)
+    0x85, 0x01,       //   Report ID (2)
     0x09, 0x20,       //   Usage (Stylus)
     0xA1, 0x02,       //   Collection (Logical)
     0x09, 0x42,       //     Usage (Tip Switch)
@@ -529,7 +529,7 @@ uint8_t hidProtocolMode = HID_PROTOCOL_MODE_REPORT;
 
 // HID Information characteristic value
 static const uint8_t hidInfo[HID_INFORMATION_LEN] = {
-    LO_UINT16(0x0111), HI_UINT16(0x0111), // bcdHID (USB HID version)
+    LO_UINT16(0x0101), HI_UINT16(0x0101), // bcdHID (USB HID version) // Original:0x0111
     0x00,                                 // bCountryCode
     HID_KBD_FLAGS                         // Flags
 };
@@ -541,9 +541,6 @@ static uint16_t hidExtReportRefDesc = ESP_GATT_UUID_BATTERY_LEVEL;
 static uint8_t hidReportRefMouseIn[HID_REPORT_REF_LEN] =
     {HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT};
 
-// HID Report Reference characteristic descriptor, touch screen input
-static uint8_t hidReportRefTouchScreenIn[HID_REPORT_REF_LEN] =
-    {HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT};
 
 // HID Report Reference characteristic descriptor, key input
 static uint8_t hidReportRefKeyIn[HID_REPORT_REF_LEN] =
@@ -558,6 +555,10 @@ static uint8_t hidReportRefLedOut[HID_REPORT_REF_LEN] =
 static uint8_t hidReportRefVendorOut[HID_REPORT_REF_LEN] =
     {HID_RPT_ID_VENDOR_OUT, HID_REPORT_TYPE_OUTPUT};
 #endif
+
+// HID Report Reference characteristic descriptor, touch screen input
+static uint8_t hidReportRefTouchScreenIn[HID_REPORT_REF_LEN] =
+    {HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT};
 
 // HID Report Reference characteristic descriptor, Feature
 static uint8_t hidReportRefFeature[HID_REPORT_REF_LEN] =
@@ -687,21 +688,14 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         // HID Control Point Characteristic Value
         [HIDD_LE_IDX_HID_CTNL_PT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_control_point_uuid, ESP_GATT_PERM_WRITE, sizeof(uint8_t), 0, NULL}},
 
-        // Report Map Characteristic Declaration
-        [HIDD_LE_IDX_REPORT_MAP_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-        // Report Map Characteristic Value
-        [HIDD_LE_IDX_REPORT_MAP_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_map_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAP_MAX_LEN, sizeof(hidReportMap), (uint8_t *)&hidReportMap}},
-
-        // Report Map Characteristic - External Report Reference Descriptor
-        [HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_repot_map_ext_desc_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(uint16_t), (uint8_t *)&hidExtReportRefDesc}},
-
+      
         // Protocol Mode Characteristic Declaration
         [HIDD_LE_IDX_PROTO_MODE_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
         // Protocol Mode Characteristic Value
         [HIDD_LE_IDX_PROTO_MODE_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_proto_mode_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint8_t), sizeof(hidProtocolMode), (uint8_t *)&hidProtocolMode}},
 
         // Report Characteristic Declaration for MOUSE IN
-        [HIDD_LE_IDX_REPORT_MOUSE_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+        [HIDD_LE_IDX_REPORT_MOUSE_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write_notify}},
 
         [HIDD_LE_IDX_REPORT_MOUSE_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
 
@@ -709,17 +703,8 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
 
         [HIDD_LE_IDX_REPORT_MOUSE_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefMouseIn), sizeof(hidReportRefMouseIn), hidReportRefMouseIn}},
 
-        // Report Characteristic Declaration for touch screen IN
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
-
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
-
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
-
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefTouchScreenIn), sizeof(hidReportRefTouchScreenIn), hidReportRefTouchScreenIn}},
-
         // Report Characteristic Declaration for KEY IN
-        [HIDD_LE_IDX_REPORT_KEY_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+        [HIDD_LE_IDX_REPORT_KEY_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write_notify}},
         // Report Characteristic Value
         [HIDD_LE_IDX_REPORT_KEY_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
         // Report KEY INPUT Characteristic - Client Characteristic Configuration Descriptor
@@ -748,24 +733,14 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         // Report Characteristic - Report Reference Descriptor
         [HIDD_LE_IDX_REPORT_CC_IN_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefCCIn), sizeof(hidReportRefCCIn), hidReportRefCCIn}},
 
-        // Boot Keyboard Input Report Characteristic Declaration
-        [HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
-        // Boot Keyboard Input Report Characteristic Value
-        [HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_kb_input_uuid, ESP_GATT_PERM_READ, HIDD_LE_BOOT_REPORT_MAX_LEN, 0, NULL}},
-        // Boot Keyboard Input Report Characteristic - Client Characteristic Configuration Descriptor
-        [HIDD_LE_IDX_BOOT_KB_IN_REPORT_NTF_CFG] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
+         // Report Characteristic Declaration for touch screen IN
+        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
 
-        // Boot Keyboard Output Report Characteristic Declaration
-        [HIDD_LE_IDX_BOOT_KB_OUT_REPORT_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
-        // Boot Keyboard Output Report Characteristic Value
-        [HIDD_LE_IDX_BOOT_KB_OUT_REPORT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_kb_output_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), HIDD_LE_BOOT_REPORT_MAX_LEN, 0, NULL}},
+        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
 
-        // Boot Mouse Input Report Characteristic Declaration
-        [HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
-        // Boot Mouse Input Report Characteristic Value
-        [HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_mouse_input_uuid, ESP_GATT_PERM_READ, HIDD_LE_BOOT_REPORT_MAX_LEN, 0, NULL}},
-        // Boot Mouse Input Report Characteristic - Client Characteristic Configuration Descriptor
-        [HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_NTF_CFG] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
+        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
+
+        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefTouchScreenIn), sizeof(hidReportRefTouchScreenIn), hidReportRefTouchScreenIn}},
 
         // Report Characteristic Declaration
         [HIDD_LE_IDX_REPORT_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
@@ -773,6 +748,15 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         [HIDD_LE_IDX_REPORT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
         // Report Characteristic - Report Reference Descriptor
         [HIDD_LE_IDX_REPORT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefFeature), sizeof(hidReportRefFeature), hidReportRefFeature}},
+
+          // Report Map Characteristic Declaration
+        [HIDD_LE_IDX_REPORT_MAP_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+        // Report Map Characteristic Value
+        [HIDD_LE_IDX_REPORT_MAP_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_map_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAP_MAX_LEN, sizeof(hidReportMap), (uint8_t *)&hidReportMap}},
+
+        // Report Map Characteristic - External Report Reference Descriptor
+        [HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_repot_map_ext_desc_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(uint16_t), (uint8_t *)&hidExtReportRefDesc}},
+
 };
 
 static struct gatts_profile_inst gatt_profile_tab[];
@@ -870,6 +854,19 @@ void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     }
     case ESP_GATTS_CREATE_EVT:
         break;
+
+    case ESP_GATTS_START_EVT:
+        ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_START_EVT is triggerred");
+        // esp_bd_addr_t remote_device;
+        // memset(remote_device, 0, sizeof(esp_bd_addr_t));
+        // if(esp_ble_gap_set_prefer_conn_params(remote_device, 0x06, 0x09 , 100, 600))
+        // {
+        //     ESP_LOGD(HID_LE_PRF_TAG, "Failed to update peripheral conn param!");
+        // }
+
+        // ESP_LOGD(HID_LE_PRF_TAG, "Successfully updated peripheral conn param!");
+
+        break;
     case ESP_GATTS_CONNECT_EVT:
     {
         esp_hidd_cb_param_t cb_param = {0};
@@ -882,6 +879,27 @@ void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         {
             (hidd_le_env.hidd_cb)(ESP_HIDD_EVENT_BLE_CONNECT, &cb_param);
         }
+
+        esp_ble_conn_update_params_t conn_params = {0};
+        memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+        /* For the iOS system, please refer the official Apple documents about BLE connection parameters restrictions. */
+        conn_params.latency = 100;
+        conn_params.max_int = 0x09;    // max_int = 0x20*1.25ms = 40ms
+        conn_params.min_int = 0x06;    // min_int = 0x10*1.25ms = 20ms
+        conn_params.timeout = 600;    // timeout = 400*10ms = 4000ms
+        if(esp_ble_gap_update_conn_params(&conn_params))
+        {
+            ESP_LOGD(HID_LE_PRF_TAG, "Failed to set peripheral conn param!");
+        }
+
+        esp_gap_conn_params_t curr_param = {0};
+
+        if(esp_ble_get_current_conn_params(param->connect.remote_bda, &curr_param))
+        {
+            ESP_LOGD(HID_LE_PRF_TAG, "Failed to get peripheral conn param!");
+        }
+        ESP_LOGD(HID_LE_PRF_TAG, "Connection param AFTER setting, L: %d, I: %d, T: %d.", curr_param.latency, curr_param.interval, curr_param.timeout);
+
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
@@ -1079,6 +1097,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     {
         ESP_LOGI(HID_LE_PRF_TAG, "Mode setting handler evnt: ESP_GATTS_CONNECT_EVT, conn_id = %x", param->connect.conn_id);
         gatt_profile_tab[MODE_PROFILE_APP_IDX].conn_id = param->connect.conn_id;
+        ESP_LOGD(HID_LE_PRF_TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
@@ -1283,43 +1302,19 @@ static void hid_add_id_tbl(void)
     hid_rpt_map[3].cccdHandle = 0;
     hid_rpt_map[3].mode = HID_PROTOCOL_MODE_REPORT;
 
-    // Boot keyboard input report
-    // Use same ID and type as key input report
-    hid_rpt_map[4].id = hidReportRefKeyIn[0];
-    hid_rpt_map[4].type = hidReportRefKeyIn[1];
-    hid_rpt_map[4].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL];
-    hid_rpt_map[4].cccdHandle = 0;
-    hid_rpt_map[4].mode = HID_PROTOCOL_MODE_BOOT;
-
-    // Boot keyboard output report
-    // Use same ID and type as LED output report
-    hid_rpt_map[5].id = hidReportRefLedOut[0];
-    hid_rpt_map[5].type = hidReportRefLedOut[1];
-    hid_rpt_map[5].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_BOOT_KB_OUT_REPORT_VAL];
-    hid_rpt_map[5].cccdHandle = 0;
-    hid_rpt_map[5].mode = HID_PROTOCOL_MODE_BOOT;
-
-    // Boot mouse input report
-    // Use same ID and type as mouse input report
-    hid_rpt_map[6].id = hidReportRefMouseIn[0];
-    hid_rpt_map[6].type = hidReportRefMouseIn[1];
-    hid_rpt_map[6].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_VAL];
-    hid_rpt_map[6].cccdHandle = 0;
-    hid_rpt_map[6].mode = HID_PROTOCOL_MODE_BOOT;
-
     // Feature report
-    hid_rpt_map[7].id = hidReportRefFeature[0];
-    hid_rpt_map[7].type = hidReportRefFeature[1];
-    hid_rpt_map[7].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_VAL];
-    hid_rpt_map[7].cccdHandle = 0;
-    hid_rpt_map[7].mode = HID_PROTOCOL_MODE_REPORT;
+    hid_rpt_map[4].id = hidReportRefFeature[0];
+    hid_rpt_map[4].type = hidReportRefFeature[1];
+    hid_rpt_map[4].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_VAL];
+    hid_rpt_map[4].cccdHandle = 0;
+    hid_rpt_map[4].mode = HID_PROTOCOL_MODE_REPORT;
 
     // touch screen input report
-    hid_rpt_map[8].id = hidReportRefTouchScreenIn[0];
-    hid_rpt_map[8].type = hidReportRefTouchScreenIn[1];
-    hid_rpt_map[8].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL];
-    hid_rpt_map[8].cccdHandle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC];
-    hid_rpt_map[8].mode = HID_PROTOCOL_MODE_REPORT;
+    hid_rpt_map[5].id = hidReportRefTouchScreenIn[0];
+    hid_rpt_map[5].type = hidReportRefTouchScreenIn[1];
+    hid_rpt_map[5].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL];
+    hid_rpt_map[5].cccdHandle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC];
+    hid_rpt_map[5].mode = HID_PROTOCOL_MODE_REPORT;
 
     // Setup report ID map
     hid_dev_register_reports(HID_NUM_REPORTS, hid_rpt_map);

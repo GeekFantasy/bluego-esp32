@@ -75,8 +75,8 @@ static uint8_t hidd_service_uuid128[] = {
     0x10,
     0x00,
     0x00,
-    0x00,
-    0xef,
+    0x12,
+    0x18,
     0x00,
     0x00,
 };
@@ -87,7 +87,7 @@ static esp_ble_adv_data_t hidd_adv_data = {
     .include_txpower = true,
     .min_interval = 0x0006, // slave connection min interval, Time = min_interval * 1.25 msec
     .max_interval = 0x0010, // slave connection max interval, Time = max_interval * 1.25 msec
-    .appearance = 0x03c0,   // HID Generic,
+    .appearance = 0x03c1,   // ？
     .manufacturer_len = 0,
     .p_manufacturer_data = NULL,
     .service_data_len = 0,
@@ -134,7 +134,8 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
     case ESP_HIDD_EVENT_BLE_CONNECT:
     {
         ESP_LOGI(HID_DEMO_TAG, "ESP_HIDD_EVENT_BLE_CONNECT");
-        hid_conn_id = param->connect.conn_id;
+        hid_conn_id = param->connect.conn_id;     
+
         break;
     }
     case ESP_HIDD_EVENT_BLE_DISCONNECT:
@@ -193,6 +194,16 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         {
             ESP_LOGE(HID_DEMO_TAG, "fail reason = 0x%x", param->ble_security.auth_cmpl.fail_reason);
         }
+        break;
+
+    case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+        ESP_LOGI(HID_DEMO_TAG, "ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT is triggered");
+        printf("Updated Connection Parameters: \n");
+        printf("\t Status: %d \n", param->update_conn_params.status);
+        printf("\t Interval min: %d \n", param->update_conn_params.min_int); 
+        printf("\t Interval max: %d \n", param->update_conn_params.max_int);
+        printf("\t Latency: %d \n", param->update_conn_params.latency);
+        printf("\t Timeout: %d \n", param->update_conn_params.timeout);
         break;
     default:
         break;
