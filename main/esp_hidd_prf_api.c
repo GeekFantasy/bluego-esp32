@@ -179,6 +179,6 @@ void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t con
     // buffer[12] = contact_count;     // contact count
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
-                        2, HID_REPORT_TYPE_INPUT,7, buffer);
+                        HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT,7, buffer);
     return;
 }
