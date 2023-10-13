@@ -56,6 +56,8 @@
 
 #define BATTRAY_APP_ID       0x180f
 
+#define DEVICE_INFO_APP_ID   0x180A
+
 #define MODE_APP_ID          0x00EF
 
 

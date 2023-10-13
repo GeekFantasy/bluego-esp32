@@ -411,67 +411,68 @@ static const uint8_t hidReportMap[] = {
     // 0xc0,
 
     // cpy from jx5 --  not working on any device , wired.
-    0x05, 0x0C,       // Usage Page (Consumer)
-    0x09, 0x01,       // Usage (Consumer Control)
-    0xA1, 0x01,       // Collection (Application)
-    0x85, 0x03,       //   Report ID (3)
-    0x15, 0x00,       //   Logical Minimum (0)
-    0x25, 0x01,       //   Logical Maximum (1)
-    0x75, 0x01,       //   Report Size (1)
-    0x95, 0x0B,       //   Report Count (11)
-    0x09, 0xEA,       //   Usage (Volume Decrement)
-    0x09, 0xE9,       //   Usage (Volume Increment)
-    0x09, 0x30,       //   Usage (Power)
-    0x0A, 0xAE, 0x01, //   Usage (AL Keyboard Layout)
-    0x0A, 0x23, 0x02, //   Usage (AC Home)
-    0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x01,       //   Report Count (1)
-    0x75, 0x0D,       //   Report Size (13)
-    0x81, 0x03,       //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0xC0,             // End Collection
-    0x05, 0x0D,       // Usage Page (Digitizer)
-    0x09, 0x01,       // Usage (Digitizer)
-    0xA1, 0x01,       // Collection (Application)
-    0x85, 0x01,       //   Report ID (2)
-    0x09, 0x20,       //   Usage (Stylus)
-    0xA1, 0x02,       //   Collection (Logical)
-    0x09, 0x42,       //     Usage (Tip Switch)
-    0x15, 0x00,       //     Logical Minimum (0)
-    0x25, 0x01,       //     Logical Maximum (1)
-    0x75, 0x01,       //     Report Size (1)
-    0x95, 0x01,       //     Report Count (1)
-    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x09, 0x32,       //     Usage (In Range)
-    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x06,       //     Report Count (6)
-    0x81, 0x03,       //     Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x75, 0x08,       //     Report Size (8)
-    0x09, 0x51,       //     Usage (0x51)
-    0x95, 0x01,       //     Report Count (1)
-    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x05, 0x01,       //     Usage Page (Generic Desktop Ctrls)
-    0x26, 0xFF, 0x0F, //     Logical Maximum (4095)
-    0x75, 0x10,       //     Report Size (16)
-    0x55, 0x0E,       //     Unit Exponent (-2)
-    0x65, 0x33,       //     Unit (System: English Linear, Length: Inch)
-    0x09, 0x30,       //     Usage (X)
-    0x35, 0x00,       //     Physical Minimum (0)
-    0x46, 0xB5, 0x04, //     Physical Maximum (1205)
-    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x46, 0x8A, 0x03, //     Physical Maximum (906)
-    0x09, 0x31,       //     Usage (Y)
-    0x81, 0x02,       //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0xC0,             //   End Collection
-    0x05, 0x0D,       //   Usage Page (Digitizer)
-    0x09, 0x54,       //   Usage (0x54)
-    0x95, 0x01,       //   Report Count (1)
-    0x75, 0x08,       //   Report Size (8)
-    0x81, 0x02,       //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x85, 0x08,       //   Report ID (8)
-    0x09, 0x55,       //   Usage (0x55)
-    0x25, 0x05,       //   Logical Maximum (5)
-    0xB1, 0x02,       //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,             // End Collection
+    0x05, 0x0C,        // Usage Page (Consumer)
+    0x09, 0x01,        // Usage (Consumer Control)
+    0xA1, 0x01,        // Collection (Application)
+    0x85, 0x03,        //   Report ID (3)
+    0x15, 0x00,        //   Logical Minimum (0)
+    0x25, 0x01,        //   Logical Maximum (1)
+    0x75, 0x01,        //   Report Size (1)
+    0x95, 0x0B,        //   Report Count (11)
+    0x09, 0xEA,        //   Usage (Volume Decrement)
+    0x09, 0xE9,        //   Usage (Volume Increment)
+    0x09, 0x30,        //   Usage (Power)
+    0x0A, 0xAE, 0x01,  //   Usage (AL Keyboard Layout)
+    0x0A, 0x23, 0x02,  //   Usage (AC Home)
+    0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x01,        //   Report Count (1)
+    0x75, 0x0D,        //   Report Size (13)
+    0x81, 0x03,        //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,              // End Collection
+    0x05, 0x0D,        // Usage Page (Digitizer)
+    0x09, 0x01,        // Usage (Digitizer)
+    0xA1, 0x01,        // Collection (Application)
+    0x85, 0x02,        //   Report ID (2)
+    0x09, 0x20,        //   Usage (Stylus)
+    0xA1, 0x02,        //   Collection (Logical)
+    0x09, 0x42,        //     Usage (Tip Switch)
+    0x15, 0x00,        //     Logical Minimum (0)
+    0x25, 0x01,        //     Logical Maximum (1)
+    0x75, 0x01,        //     Report Size (1)
+    0x95, 0x01,        //     Report Count (1)
+    0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x09, 0x32,        //     Usage (In Range)
+    0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x06,        //     Report Count (6)
+    0x81, 0x03,        //     Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x75, 0x08,        //     Report Size (8)
+    0x09, 0x51,        //     Usage (0x51)
+    0x95, 0x01,        //     Report Count (1)
+    0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x01,        //     Usage Page (Generic Desktop Ctrls)
+    0x26, 0xFF, 0x0F,  //     Logical Maximum (4095)
+    0x75, 0x10,        //     Report Size (16)
+    0x55, 0x0E,        //     Unit Exponent (-2)
+    0x65, 0x33,        //     Unit (System: English Linear, Length: Inch)
+    0x09, 0x30,        //     Usage (X)
+    0x35, 0x00,        //     Physical Minimum (0)
+    0x46, 0xB5, 0x04,  //     Physical Maximum (1205)
+    0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x46, 0x8A, 0x03,  //     Physical Maximum (906)
+    0x09, 0x31,        //     Usage (Y)
+    0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,              //   End Collection
+    0x05, 0x0D,        //   Usage Page (Digitizer)
+    0x09, 0x54,        //   Usage (0x54)
+    0x95, 0x01,        //   Report Count (1)
+    0x75, 0x08,        //   Report Size (8)
+    0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x85, 0x08,        //   Report ID (8)
+    0x09, 0x55,        //   Usage (0x55)
+    0x25, 0x05,        //   Logical Maximum (5)
+    0xB1, 0x02,        //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0xC0,              // End Collection
+
 };
 
 /// Battery Service Attributes Indexes
@@ -485,6 +486,42 @@ enum
     BAS_IDX_BATT_LVL_PRES_FMT,
 
     BAS_IDX_NB,
+};
+
+/// Device Information Service Attributes Indexes
+enum
+{
+    DEV_INFO_IDX_SVC,
+
+    // MANU_NAME_IDX_PNP_ID_CHAR,
+    // MANU_NAME_IDX_PNP_ID_VAL,
+
+    
+    // MOD_NUM_IDX_PNP_ID_CHAR,
+    // MOD_NUM_IDX_PNP_ID_VAL,
+
+    // SER_NUM_IDX_PNP_ID_CHAR,
+    // SER_NUM_IDX_PNP_ID_VAL,
+
+    // HARD_REV_IDX_PNP_ID_CHAR,
+    // HARD_REV_IDX_PNP_ID_VAL,
+
+    // FIRM_REV_IDX_PNP_ID_CHAR,
+    // FIRM_REV_IDX_PNP_ID_VAL,
+
+    // SOFT_REV_IDX_PNP_ID_CHAR,
+    // SOFT_REV_IDX_PNP_ID_VAL,
+
+    // SYS_ID_IDX_PNP_ID_CHAR,
+    // SYS_ID_IDX_PNP_ID_VAL,
+
+    // IEEE_IDX_PNP_ID_CHAR,
+    // IEEE_IDX_PNP_ID_VAL,
+
+    PNP_ID_IDX_PNP_ID_CHAR,
+    PNP_ID_IDX_PNP_ID_VAL,
+
+    DEV_INFO_IDX_NB,
 };
 
 // Mode setting service Attributes Indexes
@@ -504,9 +541,10 @@ enum
 
 #define HI_UINT16(a) (((a) >> 8) & 0xFF)
 #define LO_UINT16(a) ((a)&0xFF)
-#define PROFILE_NUM 2
+#define PROFILE_NUM 3
 #define HID_PROFILE_APP_IDX 0
 #define MODE_PROFILE_APP_IDX 1
+#define DEVICE_INFO_PROFILE_APP_IDX 2
 
 struct gatts_profile_inst
 {
@@ -519,6 +557,7 @@ struct gatts_profile_inst
 hidd_le_env_t hidd_le_env;
 
 uint16_t mode_svc_hdl_tab[MSS_IDX_NB];
+uint16_t device_info_svc_hdl_tab[DEV_INFO_IDX_NB];
 
 // HID report map length
 // uint8_t hidReportMapLen = sizeof(hidReportMap);
@@ -627,6 +666,89 @@ static const esp_gatts_attr_db_t bas_att_db[BAS_IDX_NB] =
 
         // Battary level report Characteristic Declaration
         [BAS_IDX_BATT_LVL_PRES_FMT] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&char_format_uuid, ESP_GATT_PERM_READ, sizeof(struct prf_char_pres_fmt), 0, NULL}},
+};
+
+/// Device infomation Service
+static const uint16_t device_info_svc = ESP_GATT_UUID_DEVICE_INFO_SVC;
+static const uint16_t pnp_id_uuid = ESP_GATT_UUID_PNP_ID;
+static const uint16_t manu_name_uuid = ESP_GATT_UUID_MANU_NAME;
+static const uint16_t model_number_uuid = ESP_GATT_UUID_MOD_NUM;
+static const uint16_t serial_number_uuid = ESP_GATT_UUID_SER_NUM;
+static const uint16_t hard_rev_uuid = ESP_GATT_UUID_HARD_REV;
+static const uint16_t firm_rev_uuid = ESP_GATT_UUID_FIRM_REV;
+static const uint16_t soft_rev_uuid = ESP_GATT_UUID_SOFT_REV;
+static const uint16_t sys_id_uuid = ESP_GATT_UUID_SYS_ID;
+static const uint16_t ieee_uuid = ESP_GATT_UUID_IEEE;
+
+static const uint8_t pnp_id_ccc[2] = {0x00, 0x00};
+// static const uint16_t char_format_uuid = ESP_GATT_UUID_CHAR_PRESENT_FORMAT;
+static uint8_t manu_name[] = {0x7A, 0x68, 0x75, 0x68, 0x61, 0x69, 0x5F, 0x6A, 0x69, 0x65, 0x6C, 0x69};
+static uint8_t mod_num[] = {0x68, 0x69, 0x64, 0x5F, 0x6D, 0x6F, 0x75, 0x73, 0x65};
+static uint8_t ser_num[] = {0x30, 0x30, 0x30, 0x30, 0x30, 0x30};
+static uint8_t hard_rev[] = {0x30, 0x2E, 0x30, 0x2E, 0x31};
+static uint8_t firm_rev[] = {0x30, 0x2E, 0x30, 0x2E, 0x31};
+static uint8_t soft_rev[] = {0x30, 0x2E, 0x30, 0x2E, 0x31};
+static uint8_t sys_id[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static uint8_t pnp_id[] = {0x02, 0xAC, 0x05, 0x2C, 0x02, 0x1B, 0x01};
+
+static const esp_gatts_attr_db_t pnp_id_att_db[DEV_INFO_IDX_NB] =
+{
+    // Device infomation Service Declaration
+    [DEV_INFO_IDX_SVC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(device_info_svc), (uint8_t *)&device_info_svc}},
+
+    // // Manufacturer Name String Characteristic Declaration
+    // [MANU_NAME_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Manufacturer Name String Characteristic Value
+    // [MANU_NAME_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&manu_name_uuid, ESP_GATT_PERM_READ, sizeof(manu_name), sizeof(manu_name), (uint8_t *)manu_name}},
+
+    // // Model Number String Characteristic Declaration
+    // [MOD_NUM_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Model Number String Characteristic Value
+    // [MOD_NUM_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&model_number_uuid, ESP_GATT_PERM_READ, sizeof(mod_num), sizeof(mod_num), (uint8_t *)mod_num}},
+
+    // // Serial Number String Characteristic Declaration
+    // [SER_NUM_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Serial Number String Characteristic Value
+    // [SER_NUM_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&serial_number_uuid, ESP_GATT_PERM_READ, sizeof(ser_num), sizeof(ser_num), (uint8_t *)ser_num}},
+
+    // // Haridware revision String Characteristic Declaration
+    // [HARD_REV_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Haridware revision String Characteristic Value
+    // [HARD_REV_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hard_rev_uuid, ESP_GATT_PERM_READ, sizeof(hard_rev), sizeof(hard_rev), (uint8_t *)hard_rev}},
+
+    // // Firmware revision String Characteristic Declaration
+    // [FIRM_REV_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Firmware revision String Characteristic Value
+    // [FIRM_REV_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&firm_rev_uuid, ESP_GATT_PERM_READ, sizeof(firm_rev), sizeof(firm_rev), (uint8_t *)firm_rev}},
+
+    // // Software revision String Characteristic Declaration
+    // [SOFT_REV_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Software revision String Characteristic Value
+    // [SOFT_REV_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&soft_rev_uuid, ESP_GATT_PERM_READ, sizeof(soft_rev), sizeof(soft_rev), (uint8_t *)soft_rev}},
+
+    // // Sytstem ID Characteristic Declaration
+    // [SYS_ID_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Sytstem ID Characteristic Value
+    // [SYS_ID_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&sys_id_uuid, ESP_GATT_PERM_READ, sizeof(sys_id), sizeof(sys_id), (uint8_t *)sys_id}},
+
+    //  // Sytstem ID Characteristic Declaration
+    // [IEEE_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // // Sytstem ID Characteristic Value
+    // [IEEE_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&ieee_uuid, ESP_GATT_PERM_READ, sizeof(sys_id), 0, NULL}},
+
+    // PnP-ID Characteristic Declaration
+    [PNP_ID_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
+
+    // PnP-ID Characteristic Value
+    [PNP_ID_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&pnp_id_uuid, ESP_GATT_PERM_READ, sizeof(pnp_id), sizeof(pnp_id), (uint8_t *)pnp_id}},
 };
 
 /*Mode setting Service */
@@ -963,6 +1085,76 @@ void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     }
 }
 
+void device_info_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
+                        esp_ble_gatts_cb_param_t *param)
+{
+    switch (event)
+    {
+    case ESP_GATTS_REG_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "device_info_prf_cb_hd is called on case: ESP_GATTS_REG_EVT.");
+        esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(pnp_id_att_db, gatts_if, DEV_INFO_IDX_NB, 0);
+        if (create_attr_ret)
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "create attr table failed, error code = %x", create_attr_ret);
+        }
+        break;
+    }
+    case ESP_GATTS_CONF_EVT:
+    {
+        break;
+    }
+    case ESP_GATTS_CREATE_EVT:
+        break;
+
+    case ESP_GATTS_START_EVT:
+        break;
+    case ESP_GATTS_CONNECT_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "device_info_prf_cb_hd: ESP_GATTS_CONNECT_EVT, conn_id = %x", param->connect.conn_id);
+        gatt_profile_tab[DEVICE_INFO_PROFILE_APP_IDX].conn_id = param->connect.conn_id;
+        ESP_LOGD(HID_LE_PRF_TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
+        break;
+    }
+    case ESP_GATTS_DISCONNECT_EVT:
+    {
+        ESP_LOGI(HID_LE_PRF_TAG, "device_info_prf_cb_hd: ESP_GATTS_DISCONNECT_EVT");
+        break;
+    }
+    case ESP_GATTS_CLOSE_EVT:
+        break;
+    case ESP_GATTS_WRITE_EVT:
+    {
+        break;
+    }
+    case ESP_GATTS_CREAT_ATTR_TAB_EVT:
+    {
+        if (param->add_attr_tab.status != ESP_GATT_OK)
+        {
+            ESP_LOGE(HID_LE_PRF_TAG, "create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+        }
+        else if (param->add_attr_tab.num_handle != DEV_INFO_IDX_NB)
+        {
+            ESP_LOGE(HID_LE_PRF_TAG, "create attribute table abnormally, num_handle (%d) \
+                        doesn't equal to MSS_IDX_NB(%d)",
+                     param->add_attr_tab.num_handle, MSS_IDX_NB);
+        }
+        else
+        {
+            ESP_LOGI(HID_LE_PRF_TAG, "create attribute table successfully, the number handle = %d\n", param->add_attr_tab.num_handle);
+            memcpy(device_info_svc_hdl_tab, param->add_attr_tab.handles, sizeof(device_info_svc_hdl_tab));
+            if(esp_ble_gatts_start_service(device_info_svc_hdl_tab[DEV_INFO_IDX_SVC]) == ESP_FAIL)
+            {
+                ESP_LOGI(HID_LE_PRF_TAG, "Failed to create attribute table for device_info_svc_hdl_tab.");
+            }
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                         esp_ble_gatts_cb_param_t *param)
 {
@@ -1186,6 +1378,9 @@ static struct gatts_profile_inst gatt_profile_tab[PROFILE_NUM] = {
     [MODE_PROFILE_APP_IDX] = {
         .gatts_cb = esp_mode_prf_cb_hd, .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     },
+    [DEVICE_INFO_PROFILE_APP_IDX] = {
+        .gatts_cb = device_info_prf_cb_hd, .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
+    },
 };
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
@@ -1204,6 +1399,10 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
             else if (param->reg.app_id == MODE_APP_ID)
             {
                 gatt_profile_tab[MODE_PROFILE_APP_IDX].gatts_if = gatts_if;
+            }
+            else if (param->reg.app_id == DEVICE_INFO_APP_ID)
+            {
+                gatt_profile_tab[DEVICE_INFO_PROFILE_APP_IDX].gatts_if = gatts_if;
             }
 
             ESP_LOGI(HID_LE_PRF_TAG, "Assign gatt_if:%d to app id: %x", gatts_if, param->reg.app_id);

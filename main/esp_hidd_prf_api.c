@@ -47,6 +47,12 @@ esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
     if((hidd_status = hidd_register_cb()) != ESP_OK) {
         return hidd_status;
     }
+    
+    // Finally, this is the key making stylus works
+    if(esp_ble_gatts_app_register(DEVICE_INFO_APP_ID))
+    {
+        ESP_LOGE(HID_LE_PRF_TAG, "APP with id %x register failed.", DEVICE_INFO_APP_ID);
+    }
 
     if(esp_ble_gatts_app_register(MODE_APP_ID))
     {
@@ -173,6 +179,6 @@ void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t con
     // buffer[12] = contact_count;     // contact count
 
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
-                        1, HID_REPORT_TYPE_INPUT,7, buffer);
+                        2, HID_REPORT_TYPE_INPUT,7, buffer);
     return;
 }
