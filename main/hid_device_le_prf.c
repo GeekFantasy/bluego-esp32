@@ -467,10 +467,6 @@ static const uint8_t hidReportMap[] = {
     0x95, 0x01,        //   Report Count (1)
     0x75, 0x08,        //   Report Size (8)
     0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x85, 0x08,        //   Report ID (8)
-    0x09, 0x55,        //   Usage (0x55)
-    0x25, 0x05,        //   Logical Maximum (5)
-    0xB1, 0x02,        //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
     0xC0,              // End Collection
 
 };
@@ -492,31 +488,6 @@ enum
 enum
 {
     DEV_INFO_IDX_SVC,
-
-    // MANU_NAME_IDX_PNP_ID_CHAR,
-    // MANU_NAME_IDX_PNP_ID_VAL,
-
-    
-    // MOD_NUM_IDX_PNP_ID_CHAR,
-    // MOD_NUM_IDX_PNP_ID_VAL,
-
-    // SER_NUM_IDX_PNP_ID_CHAR,
-    // SER_NUM_IDX_PNP_ID_VAL,
-
-    // HARD_REV_IDX_PNP_ID_CHAR,
-    // HARD_REV_IDX_PNP_ID_VAL,
-
-    // FIRM_REV_IDX_PNP_ID_CHAR,
-    // FIRM_REV_IDX_PNP_ID_VAL,
-
-    // SOFT_REV_IDX_PNP_ID_CHAR,
-    // SOFT_REV_IDX_PNP_ID_VAL,
-
-    // SYS_ID_IDX_PNP_ID_CHAR,
-    // SYS_ID_IDX_PNP_ID_VAL,
-
-    // IEEE_IDX_PNP_ID_CHAR,
-    // IEEE_IDX_PNP_ID_VAL,
 
     PNP_ID_IDX_PNP_ID_CHAR,
     PNP_ID_IDX_PNP_ID_VAL,
@@ -671,78 +642,12 @@ static const esp_gatts_attr_db_t bas_att_db[BAS_IDX_NB] =
 /// Device infomation Service
 static const uint16_t device_info_svc = ESP_GATT_UUID_DEVICE_INFO_SVC;
 static const uint16_t pnp_id_uuid = ESP_GATT_UUID_PNP_ID;
-static const uint16_t manu_name_uuid = ESP_GATT_UUID_MANU_NAME;
-static const uint16_t model_number_uuid = ESP_GATT_UUID_MOD_NUM;
-static const uint16_t serial_number_uuid = ESP_GATT_UUID_SER_NUM;
-static const uint16_t hard_rev_uuid = ESP_GATT_UUID_HARD_REV;
-static const uint16_t firm_rev_uuid = ESP_GATT_UUID_FIRM_REV;
-static const uint16_t soft_rev_uuid = ESP_GATT_UUID_SOFT_REV;
-static const uint16_t sys_id_uuid = ESP_GATT_UUID_SYS_ID;
-static const uint16_t ieee_uuid = ESP_GATT_UUID_IEEE;
-
-static const uint8_t pnp_id_ccc[2] = {0x00, 0x00};
-// static const uint16_t char_format_uuid = ESP_GATT_UUID_CHAR_PRESENT_FORMAT;
-static uint8_t manu_name[] = {0x7A, 0x68, 0x75, 0x68, 0x61, 0x69, 0x5F, 0x6A, 0x69, 0x65, 0x6C, 0x69};
-static uint8_t mod_num[] = {0x68, 0x69, 0x64, 0x5F, 0x6D, 0x6F, 0x75, 0x73, 0x65};
-static uint8_t ser_num[] = {0x30, 0x30, 0x30, 0x30, 0x30, 0x30};
-static uint8_t hard_rev[] = {0x30, 0x2E, 0x30, 0x2E, 0x31};
-static uint8_t firm_rev[] = {0x30, 0x2E, 0x30, 0x2E, 0x31};
-static uint8_t soft_rev[] = {0x30, 0x2E, 0x30, 0x2E, 0x31};
-static uint8_t sys_id[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static uint8_t pnp_id[] = {0x02, 0xAC, 0x05, 0x2C, 0x02, 0x1B, 0x01};
 
 static const esp_gatts_attr_db_t pnp_id_att_db[DEV_INFO_IDX_NB] =
 {
     // Device infomation Service Declaration
     [DEV_INFO_IDX_SVC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(device_info_svc), (uint8_t *)&device_info_svc}},
-
-    // // Manufacturer Name String Characteristic Declaration
-    // [MANU_NAME_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Manufacturer Name String Characteristic Value
-    // [MANU_NAME_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&manu_name_uuid, ESP_GATT_PERM_READ, sizeof(manu_name), sizeof(manu_name), (uint8_t *)manu_name}},
-
-    // // Model Number String Characteristic Declaration
-    // [MOD_NUM_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Model Number String Characteristic Value
-    // [MOD_NUM_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&model_number_uuid, ESP_GATT_PERM_READ, sizeof(mod_num), sizeof(mod_num), (uint8_t *)mod_num}},
-
-    // // Serial Number String Characteristic Declaration
-    // [SER_NUM_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Serial Number String Characteristic Value
-    // [SER_NUM_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&serial_number_uuid, ESP_GATT_PERM_READ, sizeof(ser_num), sizeof(ser_num), (uint8_t *)ser_num}},
-
-    // // Haridware revision String Characteristic Declaration
-    // [HARD_REV_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Haridware revision String Characteristic Value
-    // [HARD_REV_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hard_rev_uuid, ESP_GATT_PERM_READ, sizeof(hard_rev), sizeof(hard_rev), (uint8_t *)hard_rev}},
-
-    // // Firmware revision String Characteristic Declaration
-    // [FIRM_REV_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Firmware revision String Characteristic Value
-    // [FIRM_REV_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&firm_rev_uuid, ESP_GATT_PERM_READ, sizeof(firm_rev), sizeof(firm_rev), (uint8_t *)firm_rev}},
-
-    // // Software revision String Characteristic Declaration
-    // [SOFT_REV_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Software revision String Characteristic Value
-    // [SOFT_REV_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&soft_rev_uuid, ESP_GATT_PERM_READ, sizeof(soft_rev), sizeof(soft_rev), (uint8_t *)soft_rev}},
-
-    // // Sytstem ID Characteristic Declaration
-    // [SYS_ID_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Sytstem ID Characteristic Value
-    // [SYS_ID_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&sys_id_uuid, ESP_GATT_PERM_READ, sizeof(sys_id), sizeof(sys_id), (uint8_t *)sys_id}},
-
-    //  // Sytstem ID Characteristic Declaration
-    // [IEEE_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
-
-    // // Sytstem ID Characteristic Value
-    // [IEEE_IDX_PNP_ID_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&ieee_uuid, ESP_GATT_PERM_READ, sizeof(sys_id), 0, NULL}},
 
     // PnP-ID Characteristic Declaration
     [PNP_ID_IDX_PNP_ID_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
