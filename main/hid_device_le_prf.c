@@ -46,78 +46,78 @@ static hid_report_map_t hid_rpt_map[HID_NUM_REPORTS];
 // HID Report Map characteristic value
 // Keyboard report descriptor (using format for Boot interface descriptor)
 static const uint8_t hidReportMap[] = {
-        0x05, 0x01, // Usage Page (Generic Desktop)
-        0x09, 0x02, // Usage (Mouse)
-        0xA1, 0x01, // Collection (Application)
-        0x85, 0x01, // Report Id (1)
-        0x09, 0x01, //   Usage (Pointer)
-        0xA1, 0x00, //   Collection (Physical)
-        0x05, 0x09, //     Usage Page (Buttons)
-        0x19, 0x01, //     Usage Minimum (01) - Button 1
-        0x29, 0x03, //     Usage Maximum (03) - Button 3
-        0x15, 0x00, //     Logical Minimum (0)
-        0x25, 0x01, //     Logical Maximum (1)
-        0x75, 0x01, //     Report Size (1)
-        0x95, 0x03, //     Report Count (3)
-        0x81, 0x02, //     Input (Data, Variable, Absolute) - Button states
-        0x75, 0x05, //     Report Size (5)
-        0x95, 0x01, //     Report Count (1)
-        0x81, 0x01, //     Input (Constant) - Padding or Reserved bits
-        0x05, 0x01, //     Usage Page (Generic Desktop)
-        0x09, 0x30, //     Usage (X)
-        0x09, 0x31, //     Usage (Y)
-        0x09, 0x38, //     Usage (Wheel)
-        0x15, 0x81, //     Logical Minimum (-127)
-        0x25, 0x7F, //     Logical Maximum (127)
-        0x75, 0x08, //     Report Size (8)
-        0x95, 0x03, //     Report Count (3)
-        0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
-        0xC0,       //   End Collection
-        0xC0,       // End Collection
+        // 0x05, 0x01, // Usage Page (Generic Desktop)
+        // 0x09, 0x02, // Usage (Mouse)
+        // 0xA1, 0x01, // Collection (Application)
+        // 0x85, 0x01, // Report Id (1)
+        // 0x09, 0x01, //   Usage (Pointer)
+        // 0xA1, 0x00, //   Collection (Physical)
+        // 0x05, 0x09, //     Usage Page (Buttons)
+        // 0x19, 0x01, //     Usage Minimum (01) - Button 1
+        // 0x29, 0x03, //     Usage Maximum (03) - Button 3
+        // 0x15, 0x00, //     Logical Minimum (0)
+        // 0x25, 0x01, //     Logical Maximum (1)
+        // 0x75, 0x01, //     Report Size (1)
+        // 0x95, 0x03, //     Report Count (3)
+        // 0x81, 0x02, //     Input (Data, Variable, Absolute) - Button states
+        // 0x75, 0x05, //     Report Size (5)
+        // 0x95, 0x01, //     Report Count (1)
+        // 0x81, 0x01, //     Input (Constant) - Padding or Reserved bits
+        // 0x05, 0x01, //     Usage Page (Generic Desktop)
+        // 0x09, 0x30, //     Usage (X)
+        // 0x09, 0x31, //     Usage (Y)
+        // 0x09, 0x38, //     Usage (Wheel)
+        // 0x15, 0x81, //     Logical Minimum (-127)
+        // 0x25, 0x7F, //     Logical Maximum (127)
+        // 0x75, 0x08, //     Report Size (8)
+        // 0x95, 0x03, //     Report Count (3)
+        // 0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
+        // 0xC0,       //   End Collection
+        // 0xC0,       // End Collection
 
-        0x05, 0x01, // Usage Pg (Generic Desktop)
-        0x09, 0x06, // Usage (Keyboard)
-        0xA1, 0x01, // Collection: (Application)
-        0x85, 0x02, // Report Id (2)
-        0x05, 0x07, //   Usage Pg (Key Codes)
-        0x19, 0xE0, //   Usage Min (224)
-        0x29, 0xE7, //   Usage Max (231)
-        0x15, 0x00, //   Log Min (0)
-        0x25, 0x01, //   Log Max (1)
+        // 0x05, 0x01, // Usage Pg (Generic Desktop)
+        // 0x09, 0x06, // Usage (Keyboard)
+        // 0xA1, 0x01, // Collection: (Application)
+        // 0x85, 0x02, // Report Id (2)
+        // 0x05, 0x07, //   Usage Pg (Key Codes)
+        // 0x19, 0xE0, //   Usage Min (224)
+        // 0x29, 0xE7, //   Usage Max (231)
+        // 0x15, 0x00, //   Log Min (0)
+        // 0x25, 0x01, //   Log Max (1)
 
-        //   Modifier byte
-        0x75, 0x01, //   Report Size (1)
-        0x95, 0x08, //   Report Count (8)
-        0x81, 0x02, //   Input: (Data, Variable, Absolute)
+        // //   Modifier byte
+        // 0x75, 0x01, //   Report Size (1)
+        // 0x95, 0x08, //   Report Count (8)
+        // 0x81, 0x02, //   Input: (Data, Variable, Absolute)
 
-        //   Reserved byte
-        0x95, 0x01, //   Report Count (1)
-        0x75, 0x08, //   Report Size (8)
-        0x81, 0x01, //   Input: (Constant)
+        // //   Reserved byte
+        // 0x95, 0x01, //   Report Count (1)
+        // 0x75, 0x08, //   Report Size (8)
+        // 0x81, 0x01, //   Input: (Constant)
 
-        //   LED report
-        0x95, 0x05, //   Report Count (5)
-        0x75, 0x01, //   Report Size (1)
-        0x05, 0x08, //   Usage Pg (LEDs)
-        0x19, 0x01, //   Usage Min (1)
-        0x29, 0x05, //   Usage Max (5)
-        0x91, 0x02, //   Output: (Data, Variable, Absolute)
+        // //   LED report
+        // 0x95, 0x05, //   Report Count (5)
+        // 0x75, 0x01, //   Report Size (1)
+        // 0x05, 0x08, //   Usage Pg (LEDs)
+        // 0x19, 0x01, //   Usage Min (1)
+        // 0x29, 0x05, //   Usage Max (5)
+        // 0x91, 0x02, //   Output: (Data, Variable, Absolute)
 
-        //   LED report padding
-        0x95, 0x01, //   Report Count (1)
-        0x75, 0x03, //   Report Size (3)
-        0x91, 0x01, //   Output: (Constant)
-        
-        //   Key arrays (6 bytes)
-        0x95, 0x06, //   Report Count (6)
-        0x75, 0x08, //   Report Size (8)
-        0x15, 0x00, //   Log Min (0)
-        0x25, 0x65, //   Log Max (101)
-        0x05, 0x07, //   Usage Pg (Key Codes)
-        0x19, 0x00, //   Usage Min (0)
-        0x29, 0x65, //   Usage Max (101)
-        0x81, 0x00, //   Input: (Data, Array)
-        0xC0, // End Collection
+        // //   LED report padding
+        // 0x95, 0x01, //   Report Count (1)
+        // 0x75, 0x03, //   Report Size (3)
+        // 0x91, 0x01, //   Output: (Constant)
+
+        // //   Key arrays (6 bytes)
+        // 0x95, 0x06, //   Report Count (6)
+        // 0x75, 0x08, //   Report Size (8)
+        // 0x15, 0x00, //   Log Min (0)
+        // 0x25, 0x65, //   Log Max (101)
+        // 0x05, 0x07, //   Usage Pg (Key Codes)
+        // 0x19, 0x00, //   Usage Min (0)
+        // 0x29, 0x65, //   Usage Max (101)
+        // 0x81, 0x00, //   Input: (Data, Array)
+        // 0xC0, // End Collection
         
         0x05, 0x0C, // Usage Pg (Consumer Devices)
         0x09, 0x01, // Usage (Consumer Control)
@@ -246,25 +246,8 @@ static const uint8_t hidReportMap[] = {
     // 0x81, 0x02,                   //   INPUT (Data,Var,Abs)
     // 0xc0,                         // END_COLLECTION  
 
-    // // cpy from jx5 --  not working on any device , wired.
-    // 0x05, 0x0C,        // Usage Page (Consumer)
-    // 0x09, 0x01,        // Usage (Consumer Control)
-    // 0xA1, 0x01,        // Collection (Application)
-    // 0x85, 0x03,        //   Report ID (3)
-    // 0x15, 0x00,        //   Logical Minimum (0)
-    // 0x25, 0x01,        //   Logical Maximum (1)
-    // 0x75, 0x01,        //   Report Size (1)
-    // 0x95, 0x0B,        //   Report Count (11)
-    // 0x09, 0xEA,        //   Usage (Volume Decrement)
-    // 0x09, 0xE9,        //   Usage (Volume Increment)
-    // 0x09, 0x30,        //   Usage (Power)
-    // 0x0A, 0xAE, 0x01,  //   Usage (AL Keyboard Layout)
-    // 0x0A, 0x23, 0x02,  //   Usage (AC Home)
-    // 0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    // 0x95, 0x01,        //   Report Count (1)
-    // 0x75, 0x0D,        //   Report Size (13)
-    // 0x81, 0x03,        //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    // 0xC0,              // End Collection
+    // cpy from jx5 --  not working on any device , wired.
+    // The stylus combined with consumer device can work on most devices.
     0x05, 0x0D,        // Usage Page (Digitizer)
     0x09, 0x01,        // Usage (Digitizer)
     0xA1, 0x01,        // Collection (Application)
