@@ -41,16 +41,18 @@
 #define HID_MAX_APPS                 1
 
 // Number of HID reports defined in the service
-#define HID_NUM_REPORTS          6  // Original: 9
+#define HID_NUM_REPORTS          7  // Original: 9
+
+#define HID_SERVICE_CHANGED_IN  6 // This is used to indicate the service change
 
 // HID Report IDs for the service
 #define HID_RPT_ID_MOUSE_IN      1   // Mouse input report ID
 #define HID_RPT_ID_KEY_IN        2   // Keyboard input report ID
-#define HID_RPT_ID_CC_IN         3   //Consumer Control input report ID
+#define HID_RPT_ID_CC_IN         3   // Consumer Control input report ID
 #define HID_RPT_ID_VENDOR_OUT    4   // Vendor output report ID
-#define HID_RPT_ID_TOUCH_SCREEN  5   // Touch screen input report ID
-#define HID_RPT_ID_LED_OUT       0  // LED output report ID
-#define HID_RPT_ID_FEATURE       0  // Feature report ID
+#define HID_RPT_ID_STYLUS        5   // Stylus input report ID
+#define HID_RPT_ID_LED_OUT       0   // LED output report ID
+#define HID_RPT_ID_FEATURE       0   // Feature report ID
 
 #define HIDD_APP_ID			0x1812//ATT_SVC_HID
 
@@ -159,11 +161,11 @@ enum {
     HIDD_LE_IDX_REPORT_CC_IN_CCC,
     HIDD_LE_IDX_REPORT_CC_IN_REP_REF,
 
-    // Report touch screen input
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF,
+    // Report stylus input
+    HIDD_LE_IDX_REPORT_STYLUS_IN_CHAR,
+    HIDD_LE_IDX_REPORT_STYLUS_IN_VAL,
+    HIDD_LE_IDX_REPORT_STYLUS_IN_CCC,
+    HIDD_LE_IDX_REPORT_STYLUS_REP_REF,
 
     // // Boot Keyboard Input Report
     // HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR,
@@ -193,7 +195,7 @@ enum {
     // Service Changed Characteristic
     HIDD_LE_IDX_SERVICE_CHANGED_CHAR,
     HIDD_LE_IDX_SERVICE_CHANGED_VAL,
-    HIDD_LE_IDX_SERVICE_CHANGED_FMT,
+    HIDD_LE_IDX_SERVICE_CHANGED_CCC,
 
     HIDD_LE_IDX_NB,
 };
@@ -360,5 +362,7 @@ void hidd_get_attr_value(uint16_t handle, uint16_t *length, uint8_t **value);
 
 esp_err_t hidd_register_cb(void);
 
+void hidd_set_service_changed_version(uint8_t serv_version);
+uint8_t hidd_get_service_changed_version();
 
 #endif  ///__HID_DEVICE_LE_PRF__

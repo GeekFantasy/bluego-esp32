@@ -384,9 +384,9 @@ static uint8_t hidReportRefVendorOut[HID_REPORT_REF_LEN] =
     {HID_RPT_ID_VENDOR_OUT, HID_REPORT_TYPE_OUTPUT};
 #endif
 
-// HID Report Reference characteristic descriptor, touch screen input
-static uint8_t hidReportRefTouchScreenIn[HID_REPORT_REF_LEN] =
-    {HID_RPT_ID_TOUCH_SCREEN, HID_REPORT_TYPE_INPUT};
+// HID Report Reference characteristic descriptor, stylus input
+static uint8_t hidReportRefStylusIn[HID_REPORT_REF_LEN] =
+    {HID_RPT_ID_STYLUS, HID_REPORT_TYPE_INPUT};
 
 // HID Report Reference characteristic descriptor, Feature
 static uint8_t hidReportRefFeature[HID_REPORT_REF_LEN] =
@@ -395,6 +395,10 @@ static uint8_t hidReportRefFeature[HID_REPORT_REF_LEN] =
 // HID Report Reference characteristic descriptor, consumer control input
 static uint8_t hidReportRefCCIn[HID_REPORT_REF_LEN] =
     {HID_RPT_ID_CC_IN, HID_REPORT_TYPE_INPUT};
+
+// HID service changed descriptor, service changed indication
+static uint8_t hidServiceChangedIn[HID_REPORT_REF_LEN] =
+    {HID_SERVICE_CHANGED_IN, HID_REPORT_TYPE_INPUT};
 
 /*
  *  Heart Rate PROFILE ATTRIBUTES
@@ -431,7 +435,7 @@ static const uint8_t char_prop_read = ESP_GATT_CHAR_PROP_BIT_READ;
 static const uint8_t char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;
 static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_READ;
 static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;
-static const uint8_t char_prop_notify_indicate = ESP_GATT_CHAR_PROP_BIT_INDICATE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;
+static const uint8_t char_prop_read_indicate = ESP_GATT_CHAR_PROP_BIT_INDICATE | ESP_GATT_CHAR_PROP_BIT_READ;
 static const uint8_t char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 
 
@@ -520,7 +524,7 @@ static const esp_gatts_attr_db_t mode_setting_att_db[MSS_IDX_NB] =
 };
 
 /// Full Hid device Database Description - Used to add attributes into the database
-static const uint8_t service_changed_indication[4] = {0x00, 0x00, 0x00, 0x00};
+static uint8_t service_changed_indication[4] = {0x00, 0x00, 0x00, 0x00};
 static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
     {
         // HID Service Declaration
@@ -539,7 +543,6 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         // HID Control Point Characteristic Value
         [HIDD_LE_IDX_HID_CTNL_PT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_control_point_uuid, ESP_GATT_PERM_WRITE, sizeof(uint8_t), 0, NULL}},
 
-      
         // Protocol Mode Characteristic Declaration
         [HIDD_LE_IDX_PROTO_MODE_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
         // Protocol Mode Characteristic Value
@@ -547,11 +550,8 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
 
         // Report Characteristic Declaration for MOUSE IN
         [HIDD_LE_IDX_REPORT_MOUSE_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write_notify}},
-
         [HIDD_LE_IDX_REPORT_MOUSE_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
-
         [HIDD_LE_IDX_REPORT_MOUSE_IN_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
-
         [HIDD_LE_IDX_REPORT_MOUSE_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefMouseIn), sizeof(hidReportRefMouseIn), hidReportRefMouseIn}},
 
         // Report Characteristic Declaration for KEY IN
@@ -563,9 +563,8 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         // Report Characteristic - Report Reference Descriptor
         [HIDD_LE_IDX_REPORT_KEY_IN_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefKeyIn), sizeof(hidReportRefKeyIn), hidReportRefKeyIn}},
 
-        // Report Characteristic Declaration
+        // Report Characteristic Declaration for LED OUT
         [HIDD_LE_IDX_REPORT_LED_OUT_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
-
         [HIDD_LE_IDX_REPORT_LED_OUT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
         [HIDD_LE_IDX_REPORT_LED_OUT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefLedOut), sizeof(hidReportRefLedOut), hidReportRefLedOut}},
 
@@ -575,25 +574,22 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         [HIDD_LE_IDX_REPORT_VENDOR_OUT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
         [HIDD_LE_IDX_REPORT_VENDOR_OUT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefVendorOut), sizeof(hidReportRefVendorOut), hidReportRefVendorOut}},
 #endif
-        // Report Characteristic Declaration
+        // Report Characteristic Declaration for consumer control
         [HIDD_LE_IDX_REPORT_CC_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
         // Report Characteristic Value
         [HIDD_LE_IDX_REPORT_CC_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
-        // Report KEY INPUT Characteristic - Client Characteristic Configuration Descriptor
+        // Report Characteristic - Client Characteristic Configuration Descriptor
         [HIDD_LE_IDX_REPORT_CC_IN_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE_ENCRYPTED), sizeof(uint16_t), 0, NULL}},
         // Report Characteristic - Report Reference Descriptor
         [HIDD_LE_IDX_REPORT_CC_IN_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefCCIn), sizeof(hidReportRefCCIn), hidReportRefCCIn}},
 
-        // Report Characteristic Declaration for touch screen IN
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+        // Report Characteristic Declaration for stylus IN
+        [HIDD_LE_IDX_REPORT_STYLUS_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+        [HIDD_LE_IDX_REPORT_STYLUS_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
+        [HIDD_LE_IDX_REPORT_STYLUS_IN_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
+        [HIDD_LE_IDX_REPORT_STYLUS_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefStylusIn), sizeof(hidReportRefStylusIn), hidReportRefStylusIn}},
 
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
-
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
-
-        [HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid, ESP_GATT_PERM_READ, sizeof(hidReportRefTouchScreenIn), sizeof(hidReportRefTouchScreenIn), hidReportRefTouchScreenIn}},
-
-        // Report Characteristic Declaration
+        // Report Characteristic Declaration for Feature
         [HIDD_LE_IDX_REPORT_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
         // Report Characteristic Value
         [HIDD_LE_IDX_REPORT_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAX_LEN, 0, NULL}},
@@ -604,16 +600,15 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
         [HIDD_LE_IDX_REPORT_MAP_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read}},
         // Report Map Characteristic Value
         [HIDD_LE_IDX_REPORT_MAP_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_map_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAP_MAX_LEN, sizeof(hidReportMap), (uint8_t *)&hidReportMap}},
-
         // Report Map Characteristic - External Report Reference Descriptor
         [HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_repot_map_ext_desc_uuid, ESP_GATT_PERM_READ, sizeof(uint16_t), sizeof(uint16_t), (uint8_t *)&hidExtReportRefDesc}},
 
         // Service Changed Characteristic Declaration
-        [HIDD_LE_IDX_SERVICE_CHANGED_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+        [HIDD_LE_IDX_SERVICE_CHANGED_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_indicate}},
         // Service Changed Characteristic Value
-        [HIDD_LE_IDX_SERVICE_CHANGED_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_service_changed_uuid, ESP_GATT_PERM_READ, HIDD_LE_REPORT_MAP_MAX_LEN, 0, NULL}},
-        //Service Changed Characteristic Descriptor
-        [HIDD_LE_IDX_SERVICE_CHANGED_FMT] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&descriptor_service_changed_uuid, ESP_GATT_PERM_READ, sizeof(service_changed_indication), sizeof(service_changed_indication), (uint8_t *)service_changed_indication}}
+        [HIDD_LE_IDX_SERVICE_CHANGED_VAL] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_service_changed_uuid, ESP_GATT_PERM_READ, sizeof(service_changed_indication), sizeof(service_changed_indication), (uint8_t *)service_changed_indication}},
+        //Service Changed Characteristic Descriptor - Client Characteristic Configuration Descriptor
+        [HIDD_LE_IDX_SERVICE_CHANGED_CCC] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE), sizeof(uint16_t), 0, NULL}},
 };
 
 static struct gatts_profile_inst gatt_profile_tab[];
@@ -940,7 +935,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
     {
         ESP_LOGI(HID_LE_PRF_TAG, "esp_mode_prf_cb_hd is called on case: ESP_GATTS_WRITE_EVT. ");
         ESP_LOGI(HID_LE_PRF_TAG, "ESP_GATTS_WRITE_EVT, conn_id: %d, trans_id: %d, write handle: %d.", param->write.conn_id, param->write.trans_id, param->write.handle);
-        if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle read for current mode char
+        if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_CURR_MODE]) // handle write for current mode char
         {
             if (!param->write.is_prep)
             {
@@ -957,7 +952,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 }
             }
         }
-        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING]) // handle read for mode setting char
+        else if (param->write.handle == mode_svc_hdl_tab[MSS_IDX_CHAR_VAL_MODE_SETTING]) // handle write for mode setting char
         {
             if (!param->write.is_prep)
             {
@@ -1206,6 +1201,16 @@ void hidd_get_attr_value(uint16_t handle, uint16_t *length, uint8_t **value)
     return;
 }
 
+void hidd_set_service_changed_version(uint8_t serv_version)
+{
+    service_changed_indication[0] = serv_version;
+}
+
+uint8_t hidd_get_service_changed_version()
+{
+    return service_changed_indication[0];
+}
+
 static void hid_add_id_tbl(void)
 {
     // Mouse input report
@@ -1243,12 +1248,19 @@ static void hid_add_id_tbl(void)
     hid_rpt_map[4].cccdHandle = 0;
     hid_rpt_map[4].mode = HID_PROTOCOL_MODE_REPORT;
 
-    // touch screen input report
-    hid_rpt_map[5].id = hidReportRefTouchScreenIn[0];
-    hid_rpt_map[5].type = hidReportRefTouchScreenIn[1];
-    hid_rpt_map[5].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL];
-    hid_rpt_map[5].cccdHandle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC];
+    // stylus input report
+    hid_rpt_map[5].id = hidReportRefStylusIn[0];
+    hid_rpt_map[5].type = hidReportRefStylusIn[1];
+    hid_rpt_map[5].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_STYLUS_IN_VAL];
+    hid_rpt_map[5].cccdHandle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_STYLUS_IN_CCC];
     hid_rpt_map[5].mode = HID_PROTOCOL_MODE_REPORT;
+
+    // service change indication
+    hid_rpt_map[6].id = hidServiceChangedIn[0];
+    hid_rpt_map[6].type = hidServiceChangedIn[1];
+    hid_rpt_map[6].handle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SERVICE_CHANGED_VAL];
+    hid_rpt_map[6].cccdHandle = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SERVICE_CHANGED_CCC];
+    hid_rpt_map[6].mode = HID_PROTOCOL_MODE_REPORT;
 
     // Setup report ID map
     hid_dev_register_reports(HID_NUM_REPORTS, hid_rpt_map);

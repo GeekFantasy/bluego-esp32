@@ -57,6 +57,21 @@ void hid_dev_send_report(esp_gatt_if_t gatts_if, uint16_t conn_id,
     return;
 }
 
+void hid_dev_send_indication(esp_gatt_if_t gatts_if, uint16_t conn_id,
+                                    uint8_t id, uint8_t type, uint8_t length, uint8_t *data)
+{
+    hid_report_map_t *p_rpt;
+
+    // get att handle for report
+    if ((p_rpt = hid_dev_rpt_by_id(id, type)) != NULL) {
+        // if notifications are enabled
+        ESP_LOGD(HID_LE_PRF_TAG, "%s(), send the indication, handle = %d", __func__, p_rpt->handle);
+        esp_ble_gatts_send_indicate(gatts_if, conn_id, p_rpt->handle, length, data, true);
+    }
+
+    return;
+}
+
 void hid_consumer_build_report(uint8_t *buffer, consumer_cmd_t cmd)
 {
     if (!buffer) {

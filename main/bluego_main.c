@@ -539,6 +539,10 @@ void hid_main_task(void *pvParameters)
                 {
                     //Delay(100);
                     //esp_restart();  // Restart is not necessary 
+                    ESP_LOGI(HID_DEMO_TAG, "Send service changed indication");
+                    uint8_t serv_version = hidd_get_service_changed_version();
+                    hidd_set_service_changed_version(serv_version + 1);
+                    esp_hidd_send_service_changed_value(hid_conn_id, hidd_get_service_changed_version());
                 }
             }
         }
