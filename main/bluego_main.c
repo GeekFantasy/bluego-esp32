@@ -539,10 +539,12 @@ void hid_main_task(void *pvParameters)
                 {
                     //Delay(100);
                     //esp_restart();  // Restart is not necessary 
-                    ESP_LOGI(HID_DEMO_TAG, "Send service changed indication");
-                    uint8_t serv_version = hidd_get_service_changed_version();
-                    hidd_set_service_changed_version(serv_version + 1);
-                    esp_hidd_send_service_changed_value(hid_conn_id, hidd_get_service_changed_version());
+
+                    // Commented out the service indication part, seems not work on Mi11.
+                    // ESP_LOGI(HID_DEMO_TAG, "Send service changed indication");
+                    // uint8_t serv_version = hidd_get_service_changed_version();
+                    // hidd_set_service_changed_version(serv_version + 1);
+                    // esp_hidd_send_service_changed_value(hid_conn_id, hidd_get_service_changed_version());
                 }
             }
         }
@@ -564,6 +566,25 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    // Check the current mode of the device.
+    if(read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
+    {
+        curr_mode = 1;
+        write_curr_mode_to_nvs(curr_mode);
+        write_all_operations_to_nvs();
+        ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
+    }
+    // Read the operation matrix to memory.
+    read_all_operations();
+
+    // If the gesture is eneabled, use the report map with stylus and consumer control
+    // Or use the one with mouse, keyborad and consumer control.
+    if(check_gesture_enableed())
+    {
+        hidd_set_report_map(HIDD_REPORT_MAP_STYLUS_CC);
+    }
+
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -632,24 +653,7 @@ void app_main(void)
 
     init_adc();
 
-    if(read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
-    {
-        curr_mode = 1;
-        write_curr_mode_to_nvs(curr_mode);
-        write_all_operations_to_nvs();
-        ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
-    }
-
-    // 读取NVS_Record
-    read_all_operations();
-
-    // test string parse
-    // if(update_operations_tab(data_buff, data_len))
-    // {
-    //     ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation_action tables.");
-    // }
-
-
+    // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
     ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");

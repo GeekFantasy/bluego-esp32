@@ -376,3 +376,9 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
         break;
     }
 }
+
+// Check if gesture is enabled
+uint16_t check_gesture_enableed()
+{
+    return get_action_code(OPER_KEY_GES);
+}

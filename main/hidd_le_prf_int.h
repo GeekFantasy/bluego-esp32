@@ -45,6 +45,12 @@
 
 #define HID_SERVICE_CHANGED_IN  6 // This is used to indicate the service change
 
+// HID report map type
+enum {
+    HIDD_REPORT_MAP_MS_KB_CC,   // mouse ,keyboard and consumer control
+    HIDD_REPORT_MAP_STYLUS_CC,  // stylus and consumer control
+};
+
 // HID Report IDs for the service
 #define HID_RPT_ID_MOUSE_IN      1   // Mouse input report ID
 #define HID_RPT_ID_KEY_IN        2   // Keyboard input report ID
@@ -363,6 +369,9 @@ void hidd_get_attr_value(uint16_t handle, uint16_t *length, uint8_t **value);
 esp_err_t hidd_register_cb(void);
 
 void hidd_set_service_changed_version(uint8_t serv_version);
+
 uint8_t hidd_get_service_changed_version();
+
+void hidd_set_report_map(int report_map_type);
 
 #endif  ///__HID_DEVICE_LE_PRF__
