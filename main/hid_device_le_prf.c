@@ -721,17 +721,20 @@ void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             (hidd_le_env.hidd_cb)(ESP_HIDD_EVENT_BLE_CONNECT, &cb_param);
         }
 
-        esp_ble_conn_update_params_t conn_params = {0};
-        memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
-        /* For the iOS system, please refer the official Apple documents about BLE connection parameters restrictions. */
-        conn_params.latency = 100;
-        conn_params.max_int = 0x09;    // max_int = 0x20*1.25ms = 40ms
-        conn_params.min_int = 0x06;    // min_int = 0x10*1.25ms = 20ms
-        conn_params.timeout = 600;    // timeout = 400*10ms = 4000ms
-        if(esp_ble_gap_update_conn_params(&conn_params))
-        {
-            ESP_LOGD(HID_LE_PRF_TAG, "Failed to set peripheral conn param!");
-        }
+        // This connection parameter seem affect the connection, not good for receiving notification
+        // So the parameters below need improvement.
+
+        // esp_ble_conn_update_params_t conn_params = {0};
+        // memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+        // /* For the iOS system, please refer the official Apple documents about BLE connection parameters restrictions. */
+        // conn_params.latency = 100;
+        // conn_params.max_int = 0x09;    // max_int = 0x20*1.25ms = 40ms
+        // conn_params.min_int = 0x06;    // min_int = 0x6*1.25ms = 20ms
+        // conn_params.timeout = 600;    // timeout = 400*10ms = 4000ms
+        // if(esp_ble_gap_update_conn_params(&conn_params))
+        // {
+        //     ESP_LOGD(HID_LE_PRF_TAG, "Failed to set peripheral conn param!");
+        // }
 
         esp_gap_conn_params_t curr_param = {0};
 
@@ -739,7 +742,7 @@ void esp_hidd_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         {
             ESP_LOGD(HID_LE_PRF_TAG, "Failed to get peripheral conn param!");
         }
-        ESP_LOGD(HID_LE_PRF_TAG, "Connection param AFTER setting, L: %d, I: %d, T: %d.", curr_param.latency, curr_param.interval, curr_param.timeout);
+        ESP_LOGI(HID_LE_PRF_TAG, "Connection param AFTER setting, L: %d, I: %d, T: %d.", curr_param.latency, curr_param.interval, curr_param.timeout);
 
         break;
     }
