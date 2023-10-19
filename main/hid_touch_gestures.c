@@ -90,9 +90,9 @@ void send_slide_left(uint16_t hid_conn_id)
     esp_hidd_send_touch_value(hid_conn_id, 1, 1, 3, 0, 3000, 1600, 1, 1);
     Delay(TOUCH_DELAY);
 
-    for (int j = 1; j <= 10; j++)
+    for (int j = 1; j <= 16; j++)
     {
-        esp_hidd_send_touch_value(hid_conn_id, 1, 1, 3, 0, 3000 - 200 * j, 1600, 1, 1);
+        esp_hidd_send_touch_value(hid_conn_id, 1, 1, 3, 0, 3000 - 125 * j, 1600, 1, 1);
         Delay(TOUCH_INTERVAL);
     }
 
@@ -105,9 +105,9 @@ void send_slide_right(uint16_t hid_conn_id)
     esp_hidd_send_touch_value(hid_conn_id, 1, 1, 4, 0, 1000, 1600, 1, 1);
     Delay(TOUCH_DELAY);
 
-    for (int j = 1; j <= 10; j++)
+    for (int j = 1; j <= 16; j++)
     {
-        esp_hidd_send_touch_value(hid_conn_id, 1, 1, 4, 0, 1000 + 200 * j, 1600, 1, 1);
+        esp_hidd_send_touch_value(hid_conn_id, 1, 1, 4, 0, 1000 + 125 * j, 1600, 1, 1);
         Delay(TOUCH_INTERVAL);
     }
 

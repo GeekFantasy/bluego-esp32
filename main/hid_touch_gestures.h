@@ -1,9 +1,9 @@
 #ifndef HID_TOUCH_GESTURES
 #define HID_TOUCH_GESTURES
 
-#define TOUCH_INTERVAL 10
+#define TOUCH_INTERVAL 15
 #define TOUCH_DELAY    20
-#define TAP_DELAY      80
+#define TAP_DELAY      100
 
 typedef struct
 {
