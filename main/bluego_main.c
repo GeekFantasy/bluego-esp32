@@ -580,9 +580,10 @@ void app_main(void)
 
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.
-    if(check_gesture_enableed())
+    if(check_stylus_enableed())
     {
         hidd_set_report_map(HIDD_REPORT_MAP_STYLUS_CC);
+        ESP_LOGI(HID_DEMO_TAG, "***Stylus is used***");
     }
 
 

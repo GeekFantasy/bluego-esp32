@@ -175,6 +175,10 @@ esp_err_t update_operations_tab(const uint8_t *data, int data_len)
     esp_err_t err = 0;
     operation_action op = {0};
 
+    // As only parts of the settings from mobile will be sent. The other part of the settings need to be cleared 
+    // to avoid mistakes.
+    clear_operations_tab_action_code();
+
     for (int i = 0, j = 0; i < data_len; i++)
     {
         if (data[i] == ',')
@@ -377,8 +381,36 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
     }
 }
 
-// Check if gesture is enabled
-uint16_t check_gesture_enableed()
+// Check if stulus is enabled
+uint16_t check_stylus_enableed()
 {
-    return get_action_code(OPER_KEY_GES);
+    uint16_t enabled_flag = 0;
+
+    if(get_action_code(OPER_KEY_MFS))
+    {
+        for (int i = OPER_KEY_MFS_UP; i <= OPER_KEY_MFS_MIDDLE; i++)
+        {
+            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_PHONE_SLIDE_UP) 
+                && (operation_action_matrix[i].action_code <= ACTION_CODE_PHONE_BACK));
+        }  
+    }
+    
+    if(get_action_code(OPER_KEY_GES))
+    {
+        for (int i = OPER_KEY_GES_UP; i <= OPER_KEY_GES_ACLK; i++)
+        {
+            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_PHONE_SLIDE_UP) 
+                && (operation_action_matrix[i].action_code <= ACTION_CODE_PHONE_BACK));
+        }
+    }
+
+    return enabled_flag;
+}
+
+void clear_operations_tab_action_code()
+{
+    for (size_t i = 0; i < OPER_KEY_MAX_NUM; i++)
+    {
+        operation_action_matrix[i].action_code = 0;
+    }
 }
