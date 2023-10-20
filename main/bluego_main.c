@@ -35,7 +35,7 @@
 #define SWITCH_KEY_LEFT_LEVEL    780
 #define SWITCH_KEY_RIGHT_LEVEL   429
 #define SWITCH_KEY_MIDDLE_LEVEL  280
-#define SWITCH_KEY_RANGE         35
+#define SWITCH_KEY_RANGE         45
 
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 100;
