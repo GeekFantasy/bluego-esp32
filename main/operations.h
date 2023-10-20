@@ -118,5 +118,8 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
 esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode);
 esp_err_t read_curr_mode_from_nvs(uint8_t* curr_mode);
 esp_err_t update_operations_tab(const uint8_t* data, int data_len);
+void clear_operations_tab_action_code();
+// Check if gesture is enabled
+uint16_t check_stylus_enableed();
 
 #endif

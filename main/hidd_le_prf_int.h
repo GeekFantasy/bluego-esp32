@@ -41,20 +41,30 @@
 #define HID_MAX_APPS                 1
 
 // Number of HID reports defined in the service
-#define HID_NUM_REPORTS          9
+#define HID_NUM_REPORTS          7  // Original: 9
+
+#define HID_SERVICE_CHANGED_IN  6 // This is used to indicate the service change
+
+// HID report map type
+enum {
+    HIDD_REPORT_MAP_MS_KB_CC,   // mouse ,keyboard and consumer control
+    HIDD_REPORT_MAP_STYLUS_CC,  // stylus and consumer control
+};
 
 // HID Report IDs for the service
 #define HID_RPT_ID_MOUSE_IN      1   // Mouse input report ID
 #define HID_RPT_ID_KEY_IN        2   // Keyboard input report ID
-#define HID_RPT_ID_CC_IN         3   //Consumer Control input report ID
+#define HID_RPT_ID_CC_IN         3   // Consumer Control input report ID
 #define HID_RPT_ID_VENDOR_OUT    4   // Vendor output report ID
-#define HID_RPT_ID_TOUCH_SCREEN  5   // Touch screen input report ID
-#define HID_RPT_ID_LED_OUT       0  // LED output report ID
-#define HID_RPT_ID_FEATURE       0  // Feature report ID
+#define HID_RPT_ID_STYLUS        5   // Stylus input report ID
+#define HID_RPT_ID_LED_OUT       0   // LED output report ID
+#define HID_RPT_ID_FEATURE       0   // Feature report ID
 
 #define HIDD_APP_ID			0x1812//ATT_SVC_HID
 
 #define BATTRAY_APP_ID       0x180f
+
+#define DEVICE_INFO_APP_ID   0x180A
 
 #define MODE_APP_ID          0x00EF
 
@@ -102,7 +112,7 @@
 #define HID_EXT_REPORT_REF_LEN          2         // External Report Reference Descriptor
 
 // HID feature flags
-#define HID_KBD_FLAGS             HID_FLAGS_REMOTE_WAKE
+#define HID_KBD_FLAGS             HID_FLAGS_REMOTE_WAKE | HID_FLAGS_NORMALLY_CONNECTABLE //Original:HID_FLAGS_REMOTE_WAKE
 
 /* HID Report type */
 #define HID_REPORT_TYPE_INPUT       1
@@ -125,11 +135,7 @@ enum {
     HIDD_LE_IDX_HID_CTNL_PT_CHAR,
     HIDD_LE_IDX_HID_CTNL_PT_VAL,
 
-    // Report Map
-    HIDD_LE_IDX_REPORT_MAP_CHAR,
-    HIDD_LE_IDX_REPORT_MAP_VAL,
-    HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF,
-
+    
     // Protocol Mode
     HIDD_LE_IDX_PROTO_MODE_CHAR,
     HIDD_LE_IDX_PROTO_MODE_VAL,
@@ -140,12 +146,6 @@ enum {
     HIDD_LE_IDX_REPORT_MOUSE_IN_CCC,
     HIDD_LE_IDX_REPORT_MOUSE_REP_REF,
     
-    // Report touch screen input
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CHAR,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_VAL,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_IN_CCC,
-    HIDD_LE_IDX_REPORT_TOUCH_SCREEN_REP_REF,
-
     //Report Key input
     HIDD_LE_IDX_REPORT_KEY_IN_CHAR,
     HIDD_LE_IDX_REPORT_KEY_IN_VAL,
@@ -167,25 +167,41 @@ enum {
     HIDD_LE_IDX_REPORT_CC_IN_CCC,
     HIDD_LE_IDX_REPORT_CC_IN_REP_REF,
 
-    // Boot Keyboard Input Report
-    HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR,
-    HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL,
-    HIDD_LE_IDX_BOOT_KB_IN_REPORT_NTF_CFG,
+    // Report stylus input
+    HIDD_LE_IDX_REPORT_STYLUS_IN_CHAR,
+    HIDD_LE_IDX_REPORT_STYLUS_IN_VAL,
+    HIDD_LE_IDX_REPORT_STYLUS_IN_CCC,
+    HIDD_LE_IDX_REPORT_STYLUS_REP_REF,
 
-    // Boot Keyboard Output Report
-    HIDD_LE_IDX_BOOT_KB_OUT_REPORT_CHAR,
-    HIDD_LE_IDX_BOOT_KB_OUT_REPORT_VAL,
+    // // Boot Keyboard Input Report
+    // HIDD_LE_IDX_BOOT_KB_IN_REPORT_CHAR,
+    // HIDD_LE_IDX_BOOT_KB_IN_REPORT_VAL,
+    // HIDD_LE_IDX_BOOT_KB_IN_REPORT_NTF_CFG,
 
-    // Boot Mouse Input Report
-    HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_CHAR,
-    HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_VAL,
-    HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_NTF_CFG,
+    // // Boot Keyboard Output Report
+    // HIDD_LE_IDX_BOOT_KB_OUT_REPORT_CHAR,
+    // HIDD_LE_IDX_BOOT_KB_OUT_REPORT_VAL,
+
+    // // Boot Mouse Input Report
+    // HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_CHAR,
+    // HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_VAL,
+    // HIDD_LE_IDX_BOOT_MOUSE_IN_REPORT_NTF_CFG,
 
     // Report
     HIDD_LE_IDX_REPORT_CHAR,
     HIDD_LE_IDX_REPORT_VAL,
     HIDD_LE_IDX_REPORT_REP_REF,
     //HIDD_LE_IDX_REPORT_NTF_CFG,
+
+    // Report Map
+    HIDD_LE_IDX_REPORT_MAP_CHAR,
+    HIDD_LE_IDX_REPORT_MAP_VAL,
+    HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF,
+
+    // Service Changed Characteristic
+    HIDD_LE_IDX_SERVICE_CHANGED_CHAR,
+    HIDD_LE_IDX_SERVICE_CHANGED_VAL,
+    HIDD_LE_IDX_SERVICE_CHANGED_CCC,
 
     HIDD_LE_IDX_NB,
 };
@@ -352,5 +368,10 @@ void hidd_get_attr_value(uint16_t handle, uint16_t *length, uint8_t **value);
 
 esp_err_t hidd_register_cb(void);
 
+void hidd_set_service_changed_version(uint8_t serv_version);
+
+uint8_t hidd_get_service_changed_version();
+
+void hidd_set_report_map(int report_map_type);
 
 #endif  ///__HID_DEVICE_LE_PRF__

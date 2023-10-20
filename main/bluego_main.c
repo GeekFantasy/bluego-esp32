@@ -35,7 +35,7 @@
 #define SWITCH_KEY_LEFT_LEVEL    780
 #define SWITCH_KEY_RIGHT_LEVEL   429
 #define SWITCH_KEY_MIDDLE_LEVEL  280
-#define SWITCH_KEY_RANGE         35
+#define SWITCH_KEY_RANGE         45
 
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 100;
@@ -75,8 +75,8 @@ static uint8_t hidd_service_uuid128[] = {
     0x10,
     0x00,
     0x00,
-    0x00,
-    0xef,
+    0x12,
+    0x18,
     0x00,
     0x00,
 };
@@ -87,7 +87,7 @@ static esp_ble_adv_data_t hidd_adv_data = {
     .include_txpower = true,
     .min_interval = 0x0006, // slave connection min interval, Time = min_interval * 1.25 msec
     .max_interval = 0x0010, // slave connection max interval, Time = max_interval * 1.25 msec
-    .appearance = 0x03c0,   // HID Generic,
+    .appearance = 0x03c1,   // ？
     .manufacturer_len = 0,
     .p_manufacturer_data = NULL,
     .service_data_len = 0,
@@ -134,7 +134,8 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
     case ESP_HIDD_EVENT_BLE_CONNECT:
     {
         ESP_LOGI(HID_DEMO_TAG, "ESP_HIDD_EVENT_BLE_CONNECT");
-        hid_conn_id = param->connect.conn_id;
+        hid_conn_id = param->connect.conn_id;     
+
         break;
     }
     case ESP_HIDD_EVENT_BLE_DISCONNECT:
@@ -193,6 +194,16 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         {
             ESP_LOGE(HID_DEMO_TAG, "fail reason = 0x%x", param->ble_security.auth_cmpl.fail_reason);
         }
+        break;
+
+    case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+        ESP_LOGI(HID_DEMO_TAG, "ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT is triggered");
+        printf("Updated Connection Parameters: \n");
+        printf("\t Status: %d \n", param->update_conn_params.status);
+        printf("\t Interval min: %d \n", param->update_conn_params.min_int); 
+        printf("\t Interval max: %d \n", param->update_conn_params.max_int);
+        printf("\t Latency: %d \n", param->update_conn_params.latency);
+        printf("\t Timeout: %d \n", param->update_conn_params.timeout);
         break;
     default:
         break;
@@ -528,6 +539,12 @@ void hid_main_task(void *pvParameters)
                 {
                     //Delay(100);
                     //esp_restart();  // Restart is not necessary 
+
+                    // Commented out the service indication part, seems not work on Mi11.
+                    // ESP_LOGI(HID_DEMO_TAG, "Send service changed indication");
+                    // uint8_t serv_version = hidd_get_service_changed_version();
+                    // hidd_set_service_changed_version(serv_version + 1);
+                    // esp_hidd_send_service_changed_value(hid_conn_id, hidd_get_service_changed_version());
                 }
             }
         }
@@ -549,6 +566,26 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    // Check the current mode of the device.
+    if(read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
+    {
+        curr_mode = 1;
+        write_curr_mode_to_nvs(curr_mode);
+        write_all_operations_to_nvs();
+        ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
+    }
+    // Read the operation matrix to memory.
+    read_all_operations();
+
+    // If the gesture is eneabled, use the report map with stylus and consumer control
+    // Or use the one with mouse, keyborad and consumer control.
+    if(check_stylus_enableed())
+    {
+        hidd_set_report_map(HIDD_REPORT_MAP_STYLUS_CC);
+        ESP_LOGI(HID_DEMO_TAG, "***Stylus is used***");
+    }
+
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -617,24 +654,7 @@ void app_main(void)
 
     init_adc();
 
-    if(read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
-    {
-        curr_mode = 1;
-        write_curr_mode_to_nvs(curr_mode);
-        write_all_operations_to_nvs();
-        ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
-    }
-
-    // 读取NVS_Record
-    read_all_operations();
-
-    // test string parse
-    // if(update_operations_tab(data_buff, data_len))
-    // {
-    //     ESP_LOGI(HID_DEMO_TAG, "Error in updating the operation_action tables.");
-    // }
-
-
+    // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
     ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");
