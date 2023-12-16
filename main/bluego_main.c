@@ -24,8 +24,11 @@
 #include "mpu6500.h"
 #include "hid_touch_gestures.h"
 #include "operations.h"
+#include "esp_system.h"
+#include "driver/spi_master.h"
 
 #define HID_DEMO_TAG "BLUEGO"
+#define EPD_TAG      "E-Paper"
 #define IMU_LOG_TAG "IMU DATA"
 #define HIDD_DEVICE_NAME "Bluego"
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
@@ -315,11 +318,11 @@ void init_adc()
     ret = adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11);
     if (ret)
     {
-        ESP_LOGI(HID_DEMO_TAG, "ADC intilese failed. \n");
+        ESP_LOGI(HID_DEMO_TAG, "ADC initialization failed. \n");
     }
     else
     {
-        ESP_LOGI(HID_DEMO_TAG, "ADC intilese successfully\n");
+        ESP_LOGI(HID_DEMO_TAG, "ADC initialized successfully\n");
     }
 }
 
@@ -555,6 +558,350 @@ void hid_main_task(void *pvParameters)
     }
 }
 
+
+#define EPD_WIDTH       80
+#define EPD_HEIGHT      128
+#define EPD_CS_PIN      15
+#define EPD_RST_PIN     33
+#define EPD_DC_PIN      12
+#define EPD_BUSY_PIN    32
+
+#define EPD_MOSI_PIN    13
+#define EPD_MISo_PIN    -1
+#define EPD_CLK_PIN     14
+
+#define SET_PIN_HIGH(pin)   gpio_set_level(pin, 1)
+#define SET_PIN_LOW(pin)    gpio_set_level(pin, 0)
+
+/**
+ * full screen update LUT
+**/
+const unsigned char lut_w1[] =
+{
+0x60	,0x5A	,0x5A	,0x00	,0x00	,0x01	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+ 	
+};	
+const unsigned char lut_b1[] =
+{
+0x90	,0x5A	,0x5A	,0x00	,0x00	,0x01	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+
+
+};
+/**
+ * partial screen update LUT
+**/
+const unsigned char lut_w[] =
+{
+0x60	,0x01	,0x01	,0x00	,0x00	,0x01	,
+0x80	,0x0f	,0x00	,0x00	,0x00	,0x01	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+
+};	
+const unsigned char lut_b[] =
+{
+0x90	,0x01	,0x01	,0x00	,0x00	,0x01	,
+0x40	,0x0f	,0x00	,0x00	,0x00	,0x01	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
+
+};
+
+
+void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_send_command() with cmd: 0x %hx", cmd);
+    esp_err_t ret;
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));       //Zero out the transaction
+    t.length=8;                     //Command is 8 bits
+    t.tx_buffer=&cmd;               //The data is the cmd itself
+    t.user=(void*)0;                //D/C needs to be set to 0
+    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
+    assert(ret==ESP_OK);            //Should have had no issues.
+    ESP_LOGI(EPD_TAG, "Exiting epd_send_command().");
+}
+
+void epd_send_data(spi_device_handle_t spi, const uint8_t *data, int len)
+{
+    esp_err_t ret;
+    spi_transaction_t t;
+    if (len == 0) return;             //no need to send anything
+    memset(&t, 0, sizeof(t));       //Zero out the transaction
+    t.length = len*8;                 //Len is in bytes, transaction length is in bits.
+    t.tx_buffer = data;               //Data
+    t.user=(void*)1;                //D/C needs to be set to 1
+    ret = spi_device_polling_transmit(spi, &t);  //Transmit!
+    assert(ret == ESP_OK);            //Should have had no issues.
+}
+
+void epd_send_byte_data(spi_device_handle_t spi, const uint8_t data)
+{
+    epd_send_data(spi, &data, 1);
+}
+
+void epd_set_full_reg(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_set_full_reg().");
+
+    epd_send_command(spi, 0x23);
+    epd_send_data(spi, lut_w1, sizeof(lut_w1));
+  
+    epd_send_command(spi, 0x24);
+    epd_send_data(spi, lut_w1, sizeof(lut_b1));
+
+    ESP_LOGI(EPD_TAG, "Exiting epd_set_full_reg().");
+}
+
+void epd_reset(void)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_reset().");
+    SET_PIN_LOW(EPD_RST_PIN);
+    Delay(20);
+    SET_PIN_HIGH(EPD_RST_PIN);
+    Delay(20);
+    ESP_LOGI(EPD_TAG, "Exiting epd_reset().");
+}
+
+void epd_wait_until_ilde(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_wait_until_ilde().");
+    int busy;
+    do{
+        busy = gpio_get_level(EPD_BUSY_PIN);
+        Delay(1);
+    }while(!busy);
+    Delay(10);
+    ESP_LOGI(EPD_TAG, "Exiting epd_wait_until_ilde().");
+}
+
+void epd_spi_pre_transfer_callback(spi_transaction_t *t)
+{
+    int dc = (int)t->user;
+    gpio_set_level(EPD_DC_PIN, dc);
+}
+
+void epd_init(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_init().");
+    epd_reset();
+
+    epd_send_command(spi, 0xD2); 
+    epd_send_byte_data(spi, 0x3F);
+
+    epd_send_command(spi, 0x00);
+    epd_send_byte_data(spi, 0x6F);
+
+    epd_send_command(spi, 0x01);
+    epd_send_byte_data(spi, 0x03);
+    epd_send_byte_data(spi, 0x00);
+    epd_send_byte_data(spi, 0x2b);
+    epd_send_byte_data(spi, 0x2b);
+
+    epd_send_command(spi, 0x06);
+    epd_send_byte_data(spi, 0x3F);
+
+    epd_send_command(spi, 0x2A);
+    epd_send_byte_data(spi, 0x00);
+    epd_send_byte_data(spi, 0x00);
+
+    epd_send_command(spi, 0x30);
+    epd_send_byte_data(spi, 0x13);
+
+    epd_send_command(spi, 0x50);
+    epd_send_byte_data(spi, 0x57);
+
+    epd_send_command(spi, 0x60);
+    epd_send_byte_data(spi, 0x22);
+
+    epd_send_command(spi, 0x61);
+    epd_send_byte_data(spi, 0x50);
+    epd_send_byte_data(spi, 0x80);
+
+    epd_send_command(spi, 0x82);
+    epd_send_byte_data(spi, 0x12);
+    
+    epd_send_command(spi, 0xE3);
+    epd_send_byte_data(spi, 0x33);
+
+    epd_set_full_reg(spi);
+
+    epd_send_command(spi, 0x04);
+
+    epd_wait_until_ilde(spi);
+    ESP_LOGI(EPD_TAG, "Exiting epd_init().");
+}
+
+void epd_turn_on_display(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_turn_on_display().");
+    epd_send_command(spi, 0x04); //power on
+    epd_wait_until_ilde(spi);
+
+    epd_send_command(spi, 0x12); //start refreshing the screen
+    epd_wait_until_ilde(spi);
+
+    epd_send_command(spi, 0x02); //power off
+    epd_wait_until_ilde(spi);
+    ESP_LOGI(EPD_TAG, "Exiting epd_turn_on_display().");
+}
+
+void epd_send_full_black(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_send_full_black().");
+
+    int Width = (EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1);
+    epd_send_command(spi, 0x10);
+    for (size_t i = 0; i < EPD_HEIGHT; i++)
+    {
+        for (size_t j = 0; j < Width; j++)
+        {
+            epd_send_byte_data(spi, 0xFF);
+        }
+    }
+
+    epd_send_command(spi, 0x13);
+    for (size_t i = 0; i < EPD_HEIGHT; i++)
+    {
+        for (size_t j = 0; j < Width; j++)
+        {
+            epd_send_byte_data(spi, 0x0F);
+        }
+    }
+
+    epd_turn_on_display(spi);
+
+    ESP_LOGI(EPD_TAG, "Exiting epd_send_full_black().");
+}
+
+uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_get_byte().");
+    epd_send_command(spi, cmd);
+
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));
+    t.length = 8;
+    t.flags = SPI_TRANS_USE_RXDATA;
+    t.user = (void*)1;
+    t.rx_data[0] = 0, t.rx_data[1] = 0, t.rx_data[2] = 0, t.rx_data[3] = 0;
+
+    esp_err_t ret = spi_device_polling_transmit(spi, &t);
+    assert( ret == ESP_OK );
+
+    ESP_LOGI(EPD_TAG, "Exiting epd_get_byte().");
+
+    return t.rx_data[0];
+}
+
+uint8_t epd_get_ic_status(spi_device_handle_t spi)
+{
+    uint8_t rx = 0;
+    ESP_LOGI(EPD_TAG, "Entering epd_get_ic_status().");
+    epd_send_command(spi, 0x71);
+
+    rx = epd_get_byte(spi, 0x71);
+
+    ESP_LOGI(EPD_TAG, "Exiting epd_get_ic_status().");
+
+    return rx;
+}
+
+
+void init_e_paper_display()
+{
+    ESP_LOGI(EPD_TAG, "Entering init_e_paper_display().");
+
+    //zero-initialize the config structure.
+    gpio_config_t io_conf = {};
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = ((1ULL << EPD_CS_PIN) | (1ULL << EPD_RST_PIN) | (1ULL << EPD_DC_PIN));
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //bit mask of the pins, use GPIO4/5 here
+    io_conf.pin_bit_mask = 1ULL << EPD_BUSY_PIN;
+    //set as input mode
+    io_conf.mode = GPIO_MODE_INPUT;
+    //enable pull-up mode
+    io_conf.pull_up_en = 1;
+    gpio_config(&io_conf);
+
+
+    esp_err_t ret;
+    spi_device_handle_t spi;
+    spi_bus_config_t buscfg={
+        .miso_io_num = -1,
+        .mosi_io_num = EPD_MOSI_PIN,
+        .sclk_io_num = EPD_CLK_PIN,
+        .quadwp_io_num=-1,
+        .quadhd_io_num=-1,
+        .max_transfer_sz= 128*80*2+8,
+        .flags=SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_IOMUX_PINS,
+        .intr_flags = 0
+    };
+    spi_device_interface_config_t devcfg={
+        .clock_speed_hz = 4*1000*1000,           //Clock out at 4 MHz
+        .mode = 3,                                //SPI mode 3
+        .spics_io_num = EPD_CS_PIN,              //CS pin
+        .queue_size = 7,                          //We want to be able to queue 7 transactions at a time
+        .flags = SPI_DEVICE_NO_DUMMY | SPI_DEVICE_3WIRE ,
+        .pre_cb = epd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
+    };
+    //Initialize the SPI bus
+    ret=spi_bus_initialize(HSPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    ESP_ERROR_CHECK(ret);
+    //Attach the LCD to the SPI bus
+    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
+    ESP_ERROR_CHECK(ret);
+
+    epd_init(spi);
+
+    uint8_t rx = 0;
+    rx = epd_get_byte(spi, 0x11);
+    ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
+
+    epd_turn_on_display(spi);
+    epd_send_full_black(spi);
+
+    rx = epd_get_byte(spi, 0x11);
+    ESP_LOGI(EPD_TAG, "The data read from 0x11 after send data is: %x.", rx);
+
+    Delay(10000);
+
+    // uint8_t rx = epd_get_ic_status(spi);
+    // ESP_LOGI(EPD_TAG, "after send full balck, epd_get_ic_status() get data: %x.", rx);
+
+    ESP_LOGI(EPD_TAG, "Exiting init_e_paper_display().");
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -652,7 +999,11 @@ void app_main(void)
     mpu6500_init();
     mpu6500_who_am_i();
 
+    // init 5-direcgtion-button
     init_adc();
+
+    // init e-paper-display
+    init_e_paper_display();
 
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
