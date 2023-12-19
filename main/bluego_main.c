@@ -625,6 +625,8 @@ const unsigned char lut_b[] =
 
 };
 
+uint8_t edp_buff[1280] = {0xFF};
+
 
 void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
 {
@@ -635,6 +637,10 @@ void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
     t.length=8;                     //Command is 8 bits
     t.tx_buffer=&cmd;               //The data is the cmd itself
     t.user=(void*)0;                //D/C needs to be set to 0
+    
+    int dc = (int)t.user;
+    ESP_LOGD(EPD_TAG, "epd_send_command(), dc is : %x", dc);
+
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
     ESP_LOGI(EPD_TAG, "Exiting epd_send_command().");
@@ -649,6 +655,10 @@ void epd_send_data(spi_device_handle_t spi, const uint8_t *data, int len)
     t.length = len*8;                 //Len is in bytes, transaction length is in bits.
     t.tx_buffer = data;               //Data
     t.user=(void*)1;                //D/C needs to be set to 1
+
+    // int dc = (int)t.user;
+    // ESP_LOGD(EPD_TAG, "epd_send_data(), dc is : %x", dc);
+
     ret = spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret == ESP_OK);            //Should have had no issues.
 }
@@ -708,7 +718,7 @@ void epd_init(spi_device_handle_t spi)
     epd_send_byte_data(spi, 0x3F);
 
     epd_send_command(spi, 0x00);
-    epd_send_byte_data(spi, 0x6F);
+    epd_send_byte_data(spi, 0x5F);  // changed from 0x6F to 0x5F, and it's working now.
 
     epd_send_command(spi, 0x01);
     epd_send_byte_data(spi, 0x03);
@@ -742,7 +752,7 @@ void epd_init(spi_device_handle_t spi)
     epd_send_command(spi, 0xE3);
     epd_send_byte_data(spi, 0x33);
 
-    epd_set_full_reg(spi);
+    //epd_set_full_reg(spi);  // Fuck this piece of code, made me wasting 2 days on debugging.
 
     epd_send_command(spi, 0x04);
 
@@ -791,6 +801,27 @@ void epd_send_full_black(spi_device_handle_t spi)
 
     ESP_LOGI(EPD_TAG, "Exiting epd_send_full_black().");
 }
+
+void epd_send_full_black_v2(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_send_full_black().");
+
+    epd_send_command(spi, 0x10);
+    epd_send_data(spi, edp_buff, sizeof(edp_buff));
+    
+    for (size_t i = 0; i < 1280; i++)
+    {
+       edp_buff[i] = 0x0F;
+    }
+
+    epd_send_command(spi, 0x13);
+    epd_send_data(spi, edp_buff, sizeof(edp_buff));    
+
+    epd_turn_on_display(spi);
+
+    ESP_LOGI(EPD_TAG, "Exiting epd_send_full_black().");
+}
+
 
 uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
 {
@@ -861,18 +892,18 @@ void init_e_paper_display()
         .miso_io_num = -1,
         .mosi_io_num = EPD_MOSI_PIN,
         .sclk_io_num = EPD_CLK_PIN,
-        .quadwp_io_num=-1,
-        .quadhd_io_num=-1,
-        .max_transfer_sz= 128*80*2+8,
-        .flags=SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_IOMUX_PINS,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 128*80*2+8,
+        .flags = SPICOMMON_BUSFLAG_MASTER ,
         .intr_flags = 0
     };
     spi_device_interface_config_t devcfg={
         .clock_speed_hz = 4*1000*1000,           //Clock out at 4 MHz
-        .mode = 3,                                //SPI mode 3
+        .mode = 0,                                //SPI mode 3, 0 and 3 seems both working well
         .spics_io_num = EPD_CS_PIN,              //CS pin
-        .queue_size = 7,                          //We want to be able to queue 7 transactions at a time
-        .flags = SPI_DEVICE_NO_DUMMY | SPI_DEVICE_3WIRE ,
+        .queue_size = 1,                          //We want to be able to queue 7 transactions at a time
+        .flags = SPI_DEVICE_3WIRE ,
         .pre_cb = epd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
     };
     //Initialize the SPI bus
@@ -888,16 +919,17 @@ void init_e_paper_display()
     rx = epd_get_byte(spi, 0x11);
     ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
 
-    epd_turn_on_display(spi);
-    epd_send_full_black(spi);
+    //epd_turn_on_display(spi);
+    //epd_send_full_black(spi);
+    epd_send_full_black_v2(spi);
 
     rx = epd_get_byte(spi, 0x11);
     ESP_LOGI(EPD_TAG, "The data read from 0x11 after send data is: %x.", rx);
 
-    Delay(10000);
+    Delay(6000);
 
-    // uint8_t rx = epd_get_ic_status(spi);
-    // ESP_LOGI(EPD_TAG, "after send full balck, epd_get_ic_status() get data: %x.", rx);
+    rx = epd_get_ic_status(spi);
+    ESP_LOGI(EPD_TAG, "after send full balck, epd_get_ic_status() get data: %x.", rx);
 
     ESP_LOGI(EPD_TAG, "Exiting init_e_paper_display().");
 }
