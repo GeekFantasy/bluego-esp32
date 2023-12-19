@@ -714,45 +714,12 @@ void epd_init(spi_device_handle_t spi)
     ESP_LOGI(EPD_TAG, "Entering epd_init().");
     epd_reset();
 
-    epd_send_command(spi, 0xD2); 
-    epd_send_byte_data(spi, 0x3F);
-
     epd_send_command(spi, 0x00);
     epd_send_byte_data(spi, 0x5F);  // changed from 0x6F to 0x5F, and it's working now.
-
-    epd_send_command(spi, 0x01);
-    epd_send_byte_data(spi, 0x03);
-    epd_send_byte_data(spi, 0x00);
-    epd_send_byte_data(spi, 0x2b);
-    epd_send_byte_data(spi, 0x2b);
-
-    epd_send_command(spi, 0x06);
-    epd_send_byte_data(spi, 0x3F);
 
     epd_send_command(spi, 0x2A);
     epd_send_byte_data(spi, 0x00);
     epd_send_byte_data(spi, 0x00);
-
-    epd_send_command(spi, 0x30);
-    epd_send_byte_data(spi, 0x13);
-
-    epd_send_command(spi, 0x50);
-    epd_send_byte_data(spi, 0x57);
-
-    epd_send_command(spi, 0x60);
-    epd_send_byte_data(spi, 0x22);
-
-    epd_send_command(spi, 0x61);
-    epd_send_byte_data(spi, 0x50);
-    epd_send_byte_data(spi, 0x80);
-
-    epd_send_command(spi, 0x82);
-    epd_send_byte_data(spi, 0x12);
-    
-    epd_send_command(spi, 0xE3);
-    epd_send_byte_data(spi, 0x33);
-
-    //epd_set_full_reg(spi);  // Fuck this piece of code, made me wasting 2 days on debugging.
 
     epd_send_command(spi, 0x04);
 
