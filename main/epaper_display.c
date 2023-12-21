@@ -296,6 +296,86 @@ void epd_dis_part_ram(spi_device_handle_t spi, unsigned int x_start,unsigned int
     epd_update_display(spi);
 }
 
+void epd_dis_part_ram_v2(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
+                        const uint8_t * data_A, const uint8_t * data_B,
+                        const uint8_t * data_C, const uint8_t * data_D,
+                        const uint8_t * data_E, unsigned char num,
+                        unsigned int PART_COLUMN, unsigned int PART_LINE)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_dis_part_ram()");
+    unsigned int i, x_end, y_end;
+    x_start = x_start - x_start % 8;
+    x_end = x_start + PART_LINE - 1; 
+    y_end = y_start + PART_COLUMN * num - 1;
+
+    // epd_init_partial(spi);       // move inital code out 
+    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
+    epd_send_command(spi, 0x90);     //resolution setting
+
+    epd_send_byte_data(spi, x_start);
+    epd_send_byte_data(spi, x_end);
+    epd_send_byte_data(spi, y_start);
+    epd_send_byte_data(spi, y_end);
+    epd_send_byte_data(spi, 0x00);
+
+    epd_send_command(spi, 0x10);
+    if(part_flag == 1)
+    {
+        part_flag = 0;
+        for (size_t i = 0; i < PART_COLUMN * PART_LINE * num / 8; i++)
+        {
+            epd_send_byte_data(spi, 0xFF);
+        } 
+    }
+    else
+    {
+        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
+            epd_send_byte_data(spi, old_data_a[i]); 
+        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
+            epd_send_byte_data(spi, old_data_b[i]); 
+        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
+            epd_send_byte_data(spi, old_data_c[i]); 
+        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
+            epd_send_byte_data(spi, old_data_d[i]); 
+        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
+            epd_send_byte_data(spi, old_data_e[i]); 
+    }
+
+    epd_send_command(spi, 0x13);
+
+    for(i = 0; i < PART_COLUMN * PART_LINE  / 8; i++)    
+    {   
+       epd_send_byte_data(spi, data_A[i]); 
+       old_data_a[i] = data_A[i];     
+    } 
+
+    for(i = 0; i < PART_COLUMN * PART_LINE  / 8; i++)    
+    {   
+       epd_send_byte_data(spi, data_B[i]); 
+       old_data_b[i] = data_B[i];     
+    } 
+
+    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
+    {   
+       epd_send_byte_data(spi, data_C[i]); 
+       old_data_c[i] = data_C[i];     
+    } 
+
+    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
+    {   
+       epd_send_byte_data(spi, data_D[i]); 
+       old_data_d[i] = data_D[i];     
+    } 
+
+    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
+    {   
+       epd_send_byte_data(spi, data_E[i]); 
+       old_data_e[i] = data_E[i];     
+    } 
+
+    epd_update_display(spi);
+}
+
 void epd_dis_part_time(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
                         const uint8_t * datas_A, const uint8_t * datas_B,
                         const uint8_t * datas_C, const uint8_t * datas_D,
@@ -303,6 +383,16 @@ void epd_dis_part_time(spi_device_handle_t spi, unsigned int x_start,unsigned in
                         unsigned int PART_COLUMN, unsigned int PART_LINE)
 {
     epd_dis_part_ram(spi, x_start, y_start, datas_A, datas_B, datas_C, datas_D, datas_E, num, PART_COLUMN, PART_LINE);
+}
+
+void epd_dis_part_time_v2(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
+                        const uint8_t * datas_A, const uint8_t * datas_B,
+                        const uint8_t * datas_C, const uint8_t * datas_D,
+                        const uint8_t * datas_E, unsigned char num,
+                        unsigned int PART_COLUMN, unsigned int PART_LINE)
+{
+    ESP_LOGI(EPD_TAG, "***************Display new image on partial mode*********************.");
+    epd_dis_part_ram_v2(spi, x_start, y_start, datas_A, datas_B, datas_C, datas_D, datas_E, num, PART_COLUMN, PART_LINE);
 }
 
 void epd_init(spi_device_handle_t spi)
@@ -610,6 +700,31 @@ void edp_test_display_partial_image_v2(spi_device_handle_t spi)
     Delay(2000);
 }
 
+/// @brief Test display partial functions
+/// @param spi 
+/// Status: this is not working
+void edp_test_display_partial_image_v3(spi_device_handle_t spi)
+{
+    epd_init(spi);
+
+    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
+    {
+        edp_buff[i] = 0xFF;
+    }
+    
+    epd_set_raw_value_base_map(spi, edp_buff);
+
+    epd_init_partial(spi);  
+
+    for (size_t i = 0; i < 10; i++)
+    {
+        epd_dis_part_time_v2(spi, 24, 4, number[i], number[0], g_image_numdot, number[0], number[1], 5, 24, 32);
+    }
+    
+    Delay(2000);
+}
+
+
 void init_e_paper_display()
 {
     ESP_LOGI(EPD_TAG, "Entering init_e_paper_display().");
@@ -667,7 +782,7 @@ void init_e_paper_display()
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
     ESP_ERROR_CHECK(ret);
 
-    edp_test_display_partial_image_v2(spi);
+    edp_test_display_partial_image_v3(spi);
     // Test code
 
     edp_deep_sleep(spi);
