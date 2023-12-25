@@ -12,15 +12,15 @@
 
 #define EPD_WIDTH       80
 #define EPD_HEIGHT      128
-#define EPD_CS_PIN      15
-#define EPD_RST_PIN     33
-#define EPD_DC_PIN      12
-#define EPD_BUSY_PIN    32
+#define EPD_CS_PIN      27      //Original: 15
+#define EPD_RST_PIN     25      //Original:33
+#define EPD_DC_PIN      26      //Original:12
+#define EPD_BUSY_PIN    33      //Original:32
 
 #define EPD_MOSI_PIN    13
-#define EPD_MISo_PIN    -1
+#define EPD_MISO_PIN    -1
 #define EPD_CLK_PIN     14
-
+ 
 #define SET_PIN_HIGH(pin)   gpio_set_level(pin, 1)
 #define SET_PIN_LOW(pin)    gpio_set_level(pin, 0)
 
@@ -757,7 +757,7 @@ void init_e_paper_display()
     spi_device_handle_t spi;
 
     spi_bus_config_t buscfg={
-        .miso_io_num = -1,
+        .miso_io_num = EPD_MISO_PIN,
         .mosi_io_num = EPD_MOSI_PIN,
         .sclk_io_num = EPD_CLK_PIN,
         .quadwp_io_num = -1,

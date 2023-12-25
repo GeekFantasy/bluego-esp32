@@ -312,19 +312,196 @@ esp_err_t init_paj7620_interrupt()
     return err;
 }
 
-void init_adc()
+void init_power_voltage_adc()
 {
     esp_err_t ret;
-    ret = adc2_config_channel_atten(ADC2_CHANNEL_7, ADC_ATTEN_DB_11);
+    ret = adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11);
+    ret = adc1_config_width(ADC_WIDTH_BIT_12);
     if (ret)
     {
-        ESP_LOGI(HID_DEMO_TAG, "ADC initialization failed. \n");
+        ESP_LOGI(HID_DEMO_TAG, "Power ADC initialization failed. \n");
     }
     else
     {
-        ESP_LOGI(HID_DEMO_TAG, "ADC initialized successfully\n");
+        ESP_LOGI(HID_DEMO_TAG, "Power ADC initialized successfully\n");
     }
 }
+
+#define LED_YELLOW_PIN          15
+#define LED_BLUE_PIN            9
+#define TRACK_BALL_TOUCH_PIN    20
+#define TRACK_BALL_UP_PIN       2
+#define TRACK_BALL_DOWN_PIN     4
+#define TRACK_BALL_LEFT_PIN     10
+#define TRACK_BALL_RIGHT_PIN    12
+
+esp_err_t init_led_indicator()
+{
+    esp_err_t err = 0;
+    //zero-initialize the config structure.
+    gpio_config_t io_conf = {};
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = ((1ULL << LED_YELLOW_PIN) | (1ULL << LED_BLUE_PIN));
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    err = gpio_config(&io_conf);
+
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Failed to init_led_indicator gpio config, error: %d.", err);
+    }
+    else
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Success to init_led_indicator gpio config.");
+    }
+    return err;
+}
+
+int up_changing_number = 0, down_changing_number = 0, left_changing_number = 0, right_changing_number = 0;
+
+static void track_ball_up_event_handler(void *arg)
+{
+    up_changing_number++;
+}
+
+static void track_ball_down_event_handler(void *arg)
+{
+    down_changing_number++;
+}
+
+static void track_ball_left_event_handler(void *arg)
+{
+    left_changing_number++;
+}
+
+static void track_ball_right_event_handler(void *arg)
+{
+    right_changing_number++;
+}
+
+
+esp_err_t init_track_ball_touch()
+{
+    esp_err_t err = 0;
+    gpio_config_t io_conf = {};
+    // interrupt of failing edge
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    // set as input mode
+    io_conf.mode = GPIO_MODE_INPUT;
+    // bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = (1ULL << TRACK_BALL_TOUCH_PIN) | (1ULL << TRACK_BALL_UP_PIN) | (1ULL << TRACK_BALL_DOWN_PIN | (1ULL << TRACK_BALL_LEFT_PIN) | (1ULL << TRACK_BALL_RIGHT_PIN));
+    // disable pull-down mode
+    io_conf.pull_down_en = 0;
+    // enable pull-up mode
+    io_conf.pull_up_en = 1;
+
+    err = gpio_config(&io_conf);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Failed to init_track_ball_touch gpio config, error: %d.", err);
+    }
+    else
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Success to init_track_ball_touch gpio config");
+    }
+
+    // err = gpio_install_isr_service(0);
+    // if (err != ESP_OK)
+    // {
+    //     ESP_LOGI(HID_DEMO_TAG, "Failed to install isr service, error: %d.", err);
+    //     return err;
+    // }
+
+    // hook isr handler for specific gpio pin
+    err = gpio_isr_handler_add(TRACK_BALL_UP_PIN, track_ball_up_event_handler, NULL);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball up, error: %d.", err);
+        return err;
+    }
+
+    err = gpio_isr_handler_add(TRACK_BALL_DOWN_PIN, track_ball_down_event_handler, NULL);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball down, error: %d.", err);
+        return err;
+    }
+
+    err = gpio_isr_handler_add(TRACK_BALL_LEFT_PIN, track_ball_left_event_handler, NULL);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball left, error: %d.", err);
+        return err;
+    }
+
+    err = gpio_isr_handler_add(TRACK_BALL_RIGHT_PIN, track_ball_right_event_handler, NULL);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball right, error: %d.", err);
+        return err;
+    }
+
+    return err;
+}
+
+
+void track_ball_related_task(void *pvParameters)
+{
+    ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_related_task task");
+
+    int i = 0, touch_level = 0, up_level = 0, down_level = 0, left_level = 0, right_level = 0;
+
+    while (1)
+    {
+        gpio_set_level(LED_BLUE_PIN, i++%2);
+        gpio_set_level(LED_YELLOW_PIN, i++%2);
+        i++;
+        touch_level = gpio_get_level(TRACK_BALL_TOUCH_PIN);
+        up_level = gpio_get_level(TRACK_BALL_UP_PIN);
+        down_level = gpio_get_level(TRACK_BALL_DOWN_PIN);
+        left_level = gpio_get_level(TRACK_BALL_LEFT_PIN);
+        right_level = gpio_get_level(TRACK_BALL_RIGHT_PIN);
+        ESP_LOGI(HID_DEMO_TAG, "Track ball state TOUCH: %d, UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ", touch_level, up_level, down_level, left_level, right_level);
+        ESP_LOGI(HID_DEMO_TAG, "Track ball changing UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ", up_changing_number, down_changing_number, left_changing_number, right_changing_number);
+        up_changing_number = 0, down_changing_number = 0, left_changing_number = 0, right_changing_number = 0;
+        Delay(3000);
+    } 
+}
+
+/// @brief Task for checking power voltage ADC
+/// @param pvParameters
+void power_voltage_adc_task(void *pvParameters)
+{
+    int average,  read_raw = 0, min, max;
+    ESP_LOGI(HID_DEMO_TAG, "Entering power_voltage_adc_task  task");
+
+    while(1)
+    {
+        average = 0;
+        min = 65536;
+        max = 0;
+
+        for (size_t i = 0; i < 10; i++)
+        {
+            read_raw = adc1_get_raw(ADC1_CHANNEL_4);
+            if(read_raw < min) min = read_raw;
+            if(read_raw > max) max = read_raw;
+            average += read_raw;
+            ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC %d: %d",i,  read_raw);
+            Delay(6 * 1000);
+        }
+        
+        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average/10);
+    }
+}
+
 
 /// @brief Task for checking the multiple function switch
 /// @param pvParameters
@@ -656,11 +833,15 @@ void app_main(void)
     mpu6500_init();
     mpu6500_who_am_i();
 
-    // init 5-direcgtion-button
-    init_adc();
+    // init power voltage adc
+    init_power_voltage_adc();
 
     // init e-paper-display
     init_e_paper_display();
+
+    //Init led indicator and touch ball input
+    init_led_indicator();
+    init_track_ball_touch();
 
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
@@ -668,9 +849,15 @@ void app_main(void)
     ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");
     xTaskCreate(&imu_gyro_task, "imu_gyro_check", 2048, NULL, 1, NULL);
 
-    ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
-    xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
+    //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
+    //xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
+    ESP_LOGI(HID_DEMO_TAG, "power_voltage_adc_task task initialed.");
+    xTaskCreate(&power_voltage_adc_task, "power_voltage_adc_task", 2048, NULL, 1, NULL);
 
+    ESP_LOGI(HID_DEMO_TAG, "track_ball_related_task task initialed.");
+    xTaskCreate(&track_ball_related_task, "track_ball_related_task", 2048, NULL, 1, NULL);
+    
+    
     ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
     xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
 
