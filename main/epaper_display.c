@@ -763,23 +763,23 @@ void init_e_paper_display()
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 128*80*2+8,
-        .flags = SPICOMMON_BUSFLAG_MASTER ,
+        .flags = SPICOMMON_BUSFLAG_MASTER,
         .intr_flags = 0
     };
 
     spi_device_interface_config_t devcfg={
-        .clock_speed_hz = 1*1000*1000,           //Clock out at 4 MHz
-        .mode = 0,                                //SPI mode 3, 0 and 3 seems both working well
-        .spics_io_num = EPD_CS_PIN,              //CS pin
-        .queue_size = 1,                          //We want to be able to queue 7 transactions at a time
+        .clock_speed_hz = 4 * 1000 * 1000,          //Clock out at 4 MHz
+        .mode = 0,                                  //SPI mode 3, 0 and 3 seems both working well
+        .spics_io_num = EPD_CS_PIN,                 //CS pin
+        .queue_size = 7,                            //We want to be able to queue 7 transactions at a time
         .flags = SPI_DEVICE_3WIRE ,
-        .pre_cb = epd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
+        .pre_cb = epd_spi_pre_transfer_callback,    //Specify pre-transfer callback to handle D/C line
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    ret = spi_bus_initialize(HSPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
     ESP_ERROR_CHECK(ret);
     //Attach the LCD to the SPI bus
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
+    ret = spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
     ESP_ERROR_CHECK(ret);
 
     edp_test_display_partial_image_v3(spi);
