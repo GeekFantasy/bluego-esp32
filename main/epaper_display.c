@@ -729,19 +729,19 @@ void edp_test_display_partial_image_with_full_scale(spi_device_handle_t spi)
     // ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
 
     epd_display_full_image_in_partial_mode(spi, gImage_airmouse, sizeof(gImage_airmouse));
-    Delay(3000);
+    //Delay(3000);
 
     epd_display_full_image_in_partial_mode(spi, gImage_gesture, sizeof(g_image_naruto));
-    Delay(3000);
+    //Delay(3000);
 
     epd_display_full_image_in_partial_mode(spi, gImage_trackball, sizeof(g_image_naruto));
-    Delay(3000);
+    //Delay(3000);
 
     epd_display_full_image_in_partial_mode(spi, gImage_custom1, sizeof(g_image_naruto));
-    Delay(3000);
+    //Delay(3000);
 
     epd_display_full_image_in_partial_mode(spi, gImage_custom2, sizeof(g_image_naruto));
-    Delay(3000);
+    //Delay(3000);
 }
 
 /// @brief Test display partial functions
