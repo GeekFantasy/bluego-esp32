@@ -40,6 +40,8 @@
 #define SWITCH_KEY_MIDDLE_LEVEL  280
 #define SWITCH_KEY_RANGE         45
 
+#define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
+
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 100;
 const TickType_t time_delay_for_gyro = 10;
@@ -315,7 +317,7 @@ esp_err_t init_paj7620_interrupt()
 void init_power_voltage_adc()
 {
     esp_err_t ret;
-    ret = adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11);
+    ret = adc1_config_channel_atten(POWER_ADC_CHANNEL, ADC_ATTEN_DB_11);
     ret = adc1_config_width(ADC_WIDTH_BIT_12);
     if (ret)
     {
@@ -327,13 +329,14 @@ void init_power_voltage_adc()
     }
 }
 
-#define LED_YELLOW_PIN          15
-#define LED_BLUE_PIN            9
-#define TRACK_BALL_TOUCH_PIN    20
-#define TRACK_BALL_UP_PIN       2
+#define LED_YELLOW_PIN          2
+#define LED_BLUE_PIN            20
+#define TRACK_BALL_TOUCH_PIN    15
+#define TRACK_BALL_FUNC_PIN     12
+#define TRACK_BALL_UP_PIN       9
 #define TRACK_BALL_DOWN_PIN     4
 #define TRACK_BALL_LEFT_PIN     10
-#define TRACK_BALL_RIGHT_PIN    12
+#define TRACK_BALL_RIGHT_PIN    13
 
 esp_err_t init_led_indicator()
 {
@@ -396,7 +399,7 @@ esp_err_t init_track_ball_touch()
     // set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     // bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = (1ULL << TRACK_BALL_TOUCH_PIN) | (1ULL << TRACK_BALL_UP_PIN) | (1ULL << TRACK_BALL_DOWN_PIN | (1ULL << TRACK_BALL_LEFT_PIN) | (1ULL << TRACK_BALL_RIGHT_PIN));
+    io_conf.pin_bit_mask = (1ULL << TRACK_BALL_FUNC_PIN) | (1ULL << TRACK_BALL_TOUCH_PIN) | (1ULL << TRACK_BALL_UP_PIN) | (1ULL << TRACK_BALL_DOWN_PIN | (1ULL << TRACK_BALL_LEFT_PIN) | (1ULL << TRACK_BALL_RIGHT_PIN));
     // disable pull-down mode
     io_conf.pull_down_en = 0;
     // enable pull-up mode
@@ -456,7 +459,7 @@ void track_ball_related_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_related_task task");
 
-    int i = 0, touch_level = 0, up_level = 0, down_level = 0, left_level = 0, right_level = 0;
+    int i = 0, touch_level = 0, func_level = 0, up_level = 0, down_level = 0, left_level = 0, right_level = 0;
 
     while (1)
     {
@@ -464,11 +467,12 @@ void track_ball_related_task(void *pvParameters)
         gpio_set_level(LED_YELLOW_PIN, i++%2);
         i++;
         touch_level = gpio_get_level(TRACK_BALL_TOUCH_PIN);
+        func_level = gpio_get_level(TRACK_BALL_FUNC_PIN);
         up_level = gpio_get_level(TRACK_BALL_UP_PIN);
         down_level = gpio_get_level(TRACK_BALL_DOWN_PIN);
         left_level = gpio_get_level(TRACK_BALL_LEFT_PIN);
         right_level = gpio_get_level(TRACK_BALL_RIGHT_PIN);
-        ESP_LOGI(HID_DEMO_TAG, "Track ball state TOUCH: %d, UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ", touch_level, up_level, down_level, left_level, right_level);
+        ESP_LOGI(HID_DEMO_TAG, "Track ball state FUNC: %d, TOUCH: %d, UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ",func_level, touch_level, up_level, down_level, left_level, right_level);
         ESP_LOGI(HID_DEMO_TAG, "Track ball changing UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ", up_changing_number, down_changing_number, left_changing_number, right_changing_number);
         up_changing_number = 0, down_changing_number = 0, left_changing_number = 0, right_changing_number = 0;
         Delay(3000);
@@ -490,7 +494,7 @@ void power_voltage_adc_task(void *pvParameters)
 
         for (size_t i = 0; i < 10; i++)
         {
-            read_raw = adc1_get_raw(ADC1_CHANNEL_4);
+            read_raw = adc1_get_raw(POWER_ADC_CHANNEL);
             if(read_raw < min) min = read_raw;
             if(read_raw > max) max = read_raw;
             average += read_raw;
