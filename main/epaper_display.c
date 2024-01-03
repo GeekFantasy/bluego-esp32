@@ -402,7 +402,7 @@ void epd_init(spi_device_handle_t spi)
     epd_wait_until_ilde(spi);
 
     epd_send_command(spi, 0x00);
-    epd_send_byte_data(spi, 0x5F);  // changed from 0x6F to 0x5F, and it's working now.
+    epd_send_byte_data(spi, 0x5F);      //changed from 0x6F to 0x5F, and it's working now.
 
     epd_send_command(spi, 0x2A);
     epd_send_byte_data(spi, 0x00);
@@ -605,6 +605,29 @@ void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int le
     ESP_LOGI(EPD_TAG, "Exiting epd_display_full_image().");
 }
 
+/// @brief Show full image in the partial display mode
+/// @param spi 
+/// @param data 
+/// @param len 
+void epd_display_full_image_in_partial_mode(spi_device_handle_t spi, const uint8_t* data, int len)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_display_full_image().");
+        
+    epd_send_command(spi, 0x10);
+    epd_send_data(spi, old_data, sizeof(old_data));
+
+    epd_send_command(spi, 0x13);
+    epd_send_data(spi, data, len);
+
+    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
+    {
+        old_data[i] = data[i];
+    }
+    
+    epd_update_display(spi);
+    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_image().");
+}
+
 uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
 {
     ESP_LOGI(EPD_TAG, "Entering epd_get_byte().");
@@ -646,35 +669,79 @@ void edp_test_display_full_image(spi_device_handle_t spi)
     //Delay(6000);
 
     epd_display_full_white(spi);
-    Delay(6000);
+    //Delay(6000);
 
     // uint8_t rx = 0;
     // rx = epd_get_byte(spi, 0x11);
     // ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
-
     epd_display_full_image(spi, g_image_naruto, sizeof(g_image_naruto));
 
-    Delay(6000);
+    Delay(5000);
+
+    epd_display_full_image(spi, gImage_airmouse, sizeof(gImage_airmouse));
+
+    Delay(5000);
+
+    epd_display_full_image(spi, gImage_gesture, sizeof(gImage_airmouse));
+
+    Delay(5000);
+
+    epd_display_full_image(spi, gImage_trackball, sizeof(gImage_airmouse));
+
+    Delay(5000);
+
+    epd_display_full_image(spi, gImage_custom1, sizeof(gImage_airmouse));
+
+    Delay(5000);
+
+    epd_display_full_image(spi, gImage_custom2, sizeof(gImage_airmouse));
+
+    Delay(5000);
 }
 
 /// @brief Test display partial functions
 /// @param spi 
-/// Status: this is not working
-void edp_test_display_partial_image(spi_device_handle_t spi)
+/// Status: this is now working
+void edp_test_display_partial_image_with_full_scale(spi_device_handle_t spi)
 {
-    epd_init_partial(spi);
-    //Delay(6000);
+    epd_init(spi);
 
-    epd_display_full_white(spi);
-    Delay(6000);
+    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
+    {
+        edp_buff[i] = 0xFF;
+    }
+    
+    epd_set_raw_value_base_map(spi, edp_buff);
+    //Delay(2000);
+
+    epd_init_partial(spi);
+    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
+    epd_send_command(spi, 0x90);     //resolution setting
+
+    epd_send_byte_data(spi, 0);
+    epd_send_byte_data(spi, 79);
+    epd_send_byte_data(spi, 0);
+    epd_send_byte_data(spi, 127);
+    epd_send_byte_data(spi, 0x00);
 
     // uint8_t rx = 0;
     // rx = epd_get_byte(spi, 0x11);
     // ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
 
-    epd_display_full_image(spi, g_image_naruto, sizeof(g_image_naruto));
+    epd_display_full_image_in_partial_mode(spi, gImage_airmouse, sizeof(gImage_airmouse));
+    Delay(3000);
 
-    Delay(6000);
+    epd_display_full_image_in_partial_mode(spi, gImage_gesture, sizeof(g_image_naruto));
+    Delay(3000);
+
+    epd_display_full_image_in_partial_mode(spi, gImage_trackball, sizeof(g_image_naruto));
+    Delay(3000);
+
+    epd_display_full_image_in_partial_mode(spi, gImage_custom1, sizeof(g_image_naruto));
+    Delay(3000);
+
+    epd_display_full_image_in_partial_mode(spi, gImage_custom2, sizeof(g_image_naruto));
+    Delay(3000);
 }
 
 /// @brief Test display partial functions
@@ -782,8 +849,10 @@ void init_e_paper_display()
     ret = spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
     ESP_ERROR_CHECK(ret);
 
-    edp_test_display_partial_image_v3(spi);
+    //edp_test_display_partial_image_v3(spi);
     // Test code
+    //edp_test_display_full_image(spi);
+    edp_test_display_partial_image_with_full_scale(spi);
 
     edp_deep_sleep(spi);
     ESP_LOGI(EPD_TAG, "Exiting init_e_paper_display().");
