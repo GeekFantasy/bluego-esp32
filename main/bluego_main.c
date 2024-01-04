@@ -861,7 +861,6 @@ void app_main(void)
     ESP_LOGI(HID_DEMO_TAG, "track_ball_related_task task initialed.");
     xTaskCreate(&track_ball_related_task, "track_ball_related_task", 2048, NULL, 1, NULL);
     
-    
     ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
     xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
 
