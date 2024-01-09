@@ -13,11 +13,11 @@
 #define ACTION_DURATION 100
 
 operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
-    {"imu", 0},
+    {"imu", 1},
     {"imu_gyro", 201},
     {"mfs", 0},
-    {"mfs_up", 204},
-    {"mfs_down", 203},
+    {"mfs_up", 204},        // mfs hardware is remove from bluego v2.1
+    {"mfs_down", 203},      // so this piece of code is kept but not used
     {"mfs_left", 0},
     {"mfs_right", 0},
     {"mfs_middle", 202},
@@ -29,7 +29,7 @@ operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
     {"ges_forward", 105},
     {"ges_clk", 106},
     {"ges_aclk", 107}, 
-    {"tbk", 1},
+    {"tbk", 0},
     {"tkb_up", 101},
     {"tkb_down", 102},
     {"tkb_left", 103},

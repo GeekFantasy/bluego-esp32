@@ -231,16 +231,16 @@ int read_ges_from_paj7620()
             switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620_read_reg(0x43, 1, &data).
             {
             case GES_RIGHT_FLAG: // the gestures mapping need to change according to direction of the sensor mounted
-                ges_key = OPER_KEY_GES_LEFT;
+                ges_key = OPER_KEY_GES_UP;
                 break;
             case GES_LEFT_FLAG:
-                ges_key = OPER_KEY_GES_RIGHT;
-                break;
-            case GES_UP_FLAG:
                 ges_key = OPER_KEY_GES_DOWN;
                 break;
+            case GES_UP_FLAG:
+                ges_key = OPER_KEY_GES_RIGHT;
+                break;
             case GES_DOWN_FLAG:
-                ges_key = OPER_KEY_GES_UP;
+                ges_key = OPER_KEY_GES_LEFT;
                 break;
             case GES_FORWARD_FLAG: 
                 ges_key = OPER_KEY_GES_FORWOARD;
@@ -437,6 +437,7 @@ void power_voltage_adc_task(void *pvParameters)
 
 /// @brief Task for checking the multiple function switch
 /// @param pvParameters
+///  mfs hardware is remove from bluego v2.1, so this piece of code is kept but not used
 void multi_fun_switch_task(void *pvParameters)
 {
     int read_raw;
@@ -602,13 +603,13 @@ void imu_gyro_task(void *pvParameters)
             if ((abs(100 * angle_diff.x) >= 2) || (abs(100 * angle_diff.z) >= 2) || (abs(100 * angle_diff.y) >= 360))
             {
                 int x, y, z;
-                x = angle_diff.x / 0.02; // Every 0.02 degree movement are counted as 1 pixel movement on screen
+                y = angle_diff.y / 0.02; // Every 0.02 degree movement are counted as 1 pixel movement on screen
                 z = angle_diff.z / 0.02;
-                y = angle_diff.y / 3.6;
+                x = angle_diff.x / 3.6;
                 op_msg.oper_key = OPER_KEY_IMU_GYRO;
                 op_msg.oper_param.mouse.point_x = -z; // gyro z axis is used as x on screen
-                op_msg.oper_param.mouse.point_y = x; // gyro x axis is used as y on screen
-                op_msg.oper_param.mouse.wheel = y; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse.point_y = y; // gyro x axis is used as y on screen
+                op_msg.oper_param.mouse.wheel = x; // gyro x axis is used as y on screen
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
                 //ESP_LOGI(IMU_LOG_TAG, "M:%d,%d,%d,%lld", op_msg.oper_param.mouse.point_x, op_msg.oper_param.mouse.point_y,op_msg.oper_param.mouse.wheel, time_us_diff);
             }

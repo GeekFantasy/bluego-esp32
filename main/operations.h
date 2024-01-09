@@ -52,8 +52,8 @@ enum
     OPER_KEY_IMU,
     OPER_KEY_IMU_GYRO,
 
-    OPER_KEY_MFS,
-    OPER_KEY_MFS_UP,
+    OPER_KEY_MFS,               // mfs hardware is remove from bluego v2.1
+    OPER_KEY_MFS_UP,            // so this piece of code is kept but not used
     OPER_KEY_MFS_DOWN,
     OPER_KEY_MFS_LEFT,
     OPER_KEY_MFS_RIGHT,
