@@ -1,4 +1,5 @@
 #include "operations.h"
+#include "stdlib.h"
 #include "esp_log.h"
 #include "paj7620.h"
 #include "esp_hidd_prf_api.h"
@@ -12,9 +13,9 @@
 #define ACTION_DURATION 100
 
 operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
-    {"imu", 1},
+    {"imu", 0},
     {"imu_gyro", 201},
-    {"mfs", 1},
+    {"mfs", 0},
     {"mfs_up", 204},
     {"mfs_down", 203},
     {"mfs_left", 0},
@@ -27,7 +28,53 @@ operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
     {"ges_right", 104},
     {"ges_forward", 105},
     {"ges_clk", 106},
-    {"ges_aclk", 107}};
+    {"ges_aclk", 107}, 
+    {"tbk", 1},
+    {"tkb_up", 101},
+    {"tkb_down", 102},
+    {"tkb_left", 103},
+    {"tkb_right", 104},
+    {"tkb_touch", 106}};
+
+const uint16_t mode_am_actions[OPER_KEY_MAX_NUM] =  // mode actions for air mouse
+{
+    1, 201,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0   
+};
+
+const uint16_t mode_ges_actions[OPER_KEY_MAX_NUM] = // mode actions for hand gesture control 
+{
+    0, 0,
+    0, 0, 0, 0, 0, 0,
+    1, 101, 102, 103, 104, 105, 106, 107,
+    0, 0, 0, 0, 0, 0   
+};
+
+const uint16_t mode_tkb_actions[OPER_KEY_MAX_NUM] = // mode actions for hand track ball control 
+{
+    0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 101, 102, 103, 104, 105   
+};
+
+const uint16_t mode_ctm1_actions[OPER_KEY_MAX_NUM] =    // mode actions for hand custom 1 
+{
+    0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0   
+};
+
+const uint16_t mode_ctm2_actions[OPER_KEY_MAX_NUM] =    // mode actions for custom 2 
+{
+    0, 0,
+    0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0   
+};
 
 uint8_t data_buff[] = {'i', 'm', 'u', ':', 0x00, 0x00, ',', 'i', 'm', 'u', '_', 'g', 'y', 'r', 'o', ':', 0x3, 0x3, ',', 'm', 'f', 's', ':', 0x02, 0x0};
 int data_len = sizeof(data_buff);
@@ -60,12 +107,49 @@ void write_oper_to_nvs(nvs_handle_t handle, operation_action record)
     nvs_commit(handle);
 }
 
+// 写入NVS_Record
+void write_mode_oper_to_nvs(nvs_handle_t handle, operation_action record, int mode_num)
+{
+    char mode_str[5] = {0};
+    itoa(mode_num, mode_str, 10);
+
+    if (nvs_set_u16(handle, strcat(record.op_key, mode_str), record.action_code))
+    {
+        ESP_LOGE(OPERATIONS_TAG, "Failed to write op_key %s,action_code = %d", record.op_key, record.action_code);
+    }
+    else
+    {
+        ESP_LOGI(OPERATIONS_TAG, "Write op_key %s,action_code = %d", record.op_key, record.action_code);
+    }
+
+    nvs_commit(handle);
+}
+
 // 读取NVS_Record
 void read_oper_from_nvs(nvs_handle_t handle, operation_action *record)
 {
     if (record != NULL)
     {
         if (nvs_get_u16(handle, record->op_key, &(record->action_code)))
+        {
+            ESP_LOGE(OPERATIONS_TAG, "Failed to read op_key %s, original action_code = %d", record->op_key, record->action_code);
+        }
+        else
+        {
+            ESP_LOGI(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
+        }
+    }
+}
+
+// 读取NVS_Record
+void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint8_t mode_num)
+{
+    if (record != NULL)
+    {
+        char mode_str[5] = {0};
+        itoa(mode_num, mode_str, 10);
+
+        if (nvs_get_u16(handle, strcat(record->op_key, mode_str), &(record->action_code)))
         {
             ESP_LOGE(OPERATIONS_TAG, "Failed to read op_key %s, original action_code = %d", record->op_key, record->action_code);
         }
@@ -91,6 +175,7 @@ esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode)
 
     return err;
 }
+
 
 esp_err_t read_curr_mode_from_nvs(uint8_t *curr_mode)
 {
@@ -126,6 +211,25 @@ void write_all_operations_to_nvs()
     nvs_close(handle);
 }
 
+// 把所有的operation写入 nvs
+void write_mode_operations_to_nvs(uint8_t mode_num)
+{
+    // 写入operations record
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK)
+    {
+        return;
+    }
+
+    for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
+    {
+        write_mode_oper_to_nvs(handle, operation_action_matrix[i], mode_num);
+    }
+
+    nvs_close(handle);
+}
+
 // 读取所有NVS_Record
 void read_all_operations()
 {
@@ -139,6 +243,24 @@ void read_all_operations()
     for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
     {
         read_oper_from_nvs(handle, &operation_action_matrix[i]);
+    }
+
+    nvs_close(handle);
+}
+
+// 读取所有NVS_Record
+void read_mode_operations(uint8_t mode_num)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK)
+    {
+        return;
+    }
+
+    for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
+    {
+        read_mode_oper_from_nvs(handle, &operation_action_matrix[i], mode_num);
     }
 
     nvs_close(handle);
@@ -284,31 +406,31 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
             esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
         }
         break;
-    case ACTION_CODE_PHONE_SLIDE_UP:
+    case ACTION_CODE_SCREEN_SLIDE_UP:
         if (op_param.key_state.pressed)
             send_slide_up(hid_conn_id);
         break;
-    case ACTION_CODE_PHONE_SLIDE_DOWN:
+    case ACTION_CODE_SCREEN_SLIDE_DOWN:
         if (op_param.key_state.pressed)
             send_slide_down(hid_conn_id);
         break;
-    case ACTION_CODE_PHONE_SLIDE_LEFT:
+    case ACTION_CODE_SCREEN_SLIDE_LEFT:
         if (op_param.key_state.pressed)
             send_slide_left(hid_conn_id);
         break;
-    case ACTION_CODE_PHONE_SLIDE_RIGHT:
+    case ACTION_CODE_SCREEN_SLIDE_RIGHT:
         if (op_param.key_state.pressed)
             send_slide_right(hid_conn_id);
         break;
-    case ACTION_CODE_PHONE_TAP:
+    case ACTION_CODE_SCREEN_TAP:
         if (op_param.key_state.pressed)
             send_tap(hid_conn_id);
         break;
-    case ACTION_CODE_PHONE_DOUBLE_TAP:
+    case ACTION_CODE_SCREEN_DOUBLE_TAP:
         if (op_param.key_state.pressed)
             send_double_tap(hid_conn_id);
         break;
-    case ACTION_CODE_PHONE_BACK:
+    case ACTION_CODE_SCREEN_BACKWARD:
         if (op_param.key_state.pressed)
             send_back(hid_conn_id);
         break;
@@ -390,8 +512,8 @@ uint16_t check_stylus_enableed()
     {
         for (int i = OPER_KEY_MFS_UP; i <= OPER_KEY_MFS_MIDDLE; i++)
         {
-            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_PHONE_SLIDE_UP) 
-                && (operation_action_matrix[i].action_code <= ACTION_CODE_PHONE_BACK));
+            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_SCREEN_SLIDE_UP) 
+                && (operation_action_matrix[i].action_code <= ACTION_CODE_SCREEN_BACKWARD));
         }  
     }
     
@@ -399,8 +521,17 @@ uint16_t check_stylus_enableed()
     {
         for (int i = OPER_KEY_GES_UP; i <= OPER_KEY_GES_ACLK; i++)
         {
-            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_PHONE_SLIDE_UP) 
-                && (operation_action_matrix[i].action_code <= ACTION_CODE_PHONE_BACK));
+            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_SCREEN_SLIDE_UP) 
+                && (operation_action_matrix[i].action_code <= ACTION_CODE_SCREEN_BACKWARD));
+        }
+    }
+
+    if(get_action_code(OPER_KEY_TKB))
+    {
+        for (int i = OPER_KEY_TKB_UP; i <= OPER_KEY_TKB_TOUCH; i++)
+        {
+            enabled_flag += ((operation_action_matrix[i].action_code >= ACTION_CODE_SCREEN_SLIDE_UP) 
+                && (operation_action_matrix[i].action_code <= ACTION_CODE_SCREEN_BACKWARD));
         }
     }
 

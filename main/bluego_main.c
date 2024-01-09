@@ -15,7 +15,6 @@
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
-#include "driver/gpio.h"
 #include "hid_dev.h"
 #include "paj7620.h"
 #include "driver/uart.h"
@@ -27,6 +26,7 @@
 #include "esp_system.h"
 #include "driver/spi_master.h"
 #include "epaper_display.h"
+#include "trackball.h"
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -43,7 +43,8 @@
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 
 const TickType_t time_delay_for_mfs = 50;
-const TickType_t time_delay_for_ges = 100;
+const TickType_t time_delay_for_ges = 200;
+const TickType_t time_delay_for_tkb = 200;
 const TickType_t time_delay_for_gyro = 10;
 const TickType_t time_delay_when_idle = 500;
 const TickType_t tick_delay_msg_send = 10;
@@ -275,7 +276,7 @@ static void paj7620_event_handler(void *arg)
     // ESP_LOGI(HID_DEMO_TAG, "Paj7620 interrup triggered.");
 }
 
-esp_err_t init_paj7620_interrupt()
+esp_err_t paj7620_interrupt_init()
 {
     esp_err_t err = 0;
     gpio_config_t io_conf = {};
@@ -329,153 +330,80 @@ void init_power_voltage_adc()
     }
 }
 
-#define LED_YELLOW_PIN          2
-#define LED_BLUE_PIN            20
-#define TRACK_BALL_TOUCH_PIN    15
-#define TRACK_BALL_FUNC_PIN     12
-#define TRACK_BALL_UP_PIN       9
-#define TRACK_BALL_DOWN_PIN     4
-#define TRACK_BALL_LEFT_PIN     10
-#define TRACK_BALL_RIGHT_PIN    13
-
-esp_err_t init_led_indicator()
+int get_track_ball_movement_key(track_ball_movement tkb_mv)
 {
-    esp_err_t err = 0;
-    //zero-initialize the config structure.
-    gpio_config_t io_conf = {};
-    //disable interrupt
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    //set as output mode
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = ((1ULL << LED_YELLOW_PIN) | (1ULL << LED_BLUE_PIN));
-    //disable pull-down mode
-    io_conf.pull_down_en = 0;
-    //disable pull-up mode
-    io_conf.pull_up_en = 0;
-    //configure GPIO with the given settings
-    err = gpio_config(&io_conf);
+    int oper_key = 0;
 
-    if (err != ESP_OK)
+    if(tkb_mv.up > 0)
     {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to init_led_indicator gpio config, error: %d.", err);
+        if(tkb_mv.up >= tkb_mv.left && tkb_mv.up >= tkb_mv.right)
+        {
+            oper_key = OPER_KEY_TKB_UP;
+        }
     }
-    else
+    else if(tkb_mv.down > 0)
     {
-        ESP_LOGI(HID_DEMO_TAG, "Success to init_led_indicator gpio config.");
+        if(tkb_mv.down >= tkb_mv.left && tkb_mv.down >= tkb_mv.right)
+        {
+            oper_key = OPER_KEY_TKB_DOWN;
+        }
     }
-    return err;
-}
 
-int up_changing_number = 0, down_changing_number = 0, left_changing_number = 0, right_changing_number = 0;
-
-static void track_ball_up_event_handler(void *arg)
-{
-    up_changing_number++;
-}
-
-static void track_ball_down_event_handler(void *arg)
-{
-    down_changing_number++;
-}
-
-static void track_ball_left_event_handler(void *arg)
-{
-    left_changing_number++;
-}
-
-static void track_ball_right_event_handler(void *arg)
-{
-    right_changing_number++;
+    if(tkb_mv.left > 0)
+    {
+        if(tkb_mv.left > tkb_mv.up && tkb_mv.left > tkb_mv.down)
+        {
+            oper_key = OPER_KEY_TKB_LEFT;
+        }
+    }
+    else if(tkb_mv.right > 0)
+    {
+        if(tkb_mv.right > tkb_mv.up && tkb_mv.right > tkb_mv.down)
+        {
+            oper_key = OPER_KEY_TKB_RIGHT;
+        }
+    }
+    
+    return oper_key;
 }
 
 
-esp_err_t init_track_ball_touch()
+void track_ball_task(void *pvParameters)
 {
-    esp_err_t err = 0;
-    gpio_config_t io_conf = {};
-    // interrupt of failing edge
-    io_conf.intr_type = GPIO_INTR_ANYEDGE;
-    // set as input mode
-    io_conf.mode = GPIO_MODE_INPUT;
-    // bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = (1ULL << TRACK_BALL_FUNC_PIN) | (1ULL << TRACK_BALL_TOUCH_PIN) | (1ULL << TRACK_BALL_UP_PIN) | (1ULL << TRACK_BALL_DOWN_PIN | (1ULL << TRACK_BALL_LEFT_PIN) | (1ULL << TRACK_BALL_RIGHT_PIN));
-    // disable pull-down mode
-    io_conf.pull_down_en = 0;
-    // enable pull-up mode
-    io_conf.pull_up_en = 1;
+    ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
 
-    err = gpio_config(&io_conf);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to init_track_ball_touch gpio config, error: %d.", err);
-    }
-    else
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Success to init_track_ball_touch gpio config");
-    }
-
-    // err = gpio_install_isr_service(0);
-    // if (err != ESP_OK)
-    // {
-    //     ESP_LOGI(HID_DEMO_TAG, "Failed to install isr service, error: %d.", err);
-    //     return err;
-    // }
-
-    // hook isr handler for specific gpio pin
-    err = gpio_isr_handler_add(TRACK_BALL_UP_PIN, track_ball_up_event_handler, NULL);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball up, error: %d.", err);
-        return err;
-    }
-
-    err = gpio_isr_handler_add(TRACK_BALL_DOWN_PIN, track_ball_down_event_handler, NULL);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball down, error: %d.", err);
-        return err;
-    }
-
-    err = gpio_isr_handler_add(TRACK_BALL_LEFT_PIN, track_ball_left_event_handler, NULL);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball left, error: %d.", err);
-        return err;
-    }
-
-    err = gpio_isr_handler_add(TRACK_BALL_RIGHT_PIN, track_ball_right_event_handler, NULL);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder for track ball right, error: %d.", err);
-        return err;
-    }
-
-    return err;
-}
-
-
-void track_ball_related_task(void *pvParameters)
-{
-    ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_related_task task");
-
-    int i = 0, touch_level = 0, func_level = 0, up_level = 0, down_level = 0, left_level = 0, right_level = 0;
+    uint16_t tkb_key;
+    oper_message op_msg;
+    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
+    TickType_t last_wake_time = xTaskGetTickCount();
 
     while (1)
     {
-        gpio_set_level(LED_BLUE_PIN, i++%2);
-        gpio_set_level(LED_YELLOW_PIN, i++%2);
-        i++;
-        touch_level = gpio_get_level(TRACK_BALL_TOUCH_PIN);
-        func_level = gpio_get_level(TRACK_BALL_FUNC_PIN);
-        up_level = gpio_get_level(TRACK_BALL_UP_PIN);
-        down_level = gpio_get_level(TRACK_BALL_DOWN_PIN);
-        left_level = gpio_get_level(TRACK_BALL_LEFT_PIN);
-        right_level = gpio_get_level(TRACK_BALL_RIGHT_PIN);
-        ESP_LOGI(HID_DEMO_TAG, "Track ball state FUNC: %d, TOUCH: %d, UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ",func_level, touch_level, up_level, down_level, left_level, right_level);
-        ESP_LOGI(HID_DEMO_TAG, "Track ball changing UP: %d, DOWN: %d, LEFT: %d, RIGHT: %d, ", up_changing_number, down_changing_number, left_changing_number, right_changing_number);
-        up_changing_number = 0, down_changing_number = 0, left_changing_number = 0, right_changing_number = 0;
-        Delay(3000);
+        if (sec_conn && get_action_code(OPER_KEY_TKB) == 1)
+        {
+            if(TRACK_BALL_TOUCH_DOWN == get_track_ball_touch_state())
+            {
+                tkb_key = OPER_KEY_TKB_TOUCH;
+            }
+            else
+            {
+                tkb_key = get_track_ball_movement_key(get_track_ball_movement());
+            }
+
+            if(tkb_key != 0 && oper_queue != NULL)
+            {
+                op_msg.oper_key = tkb_key;
+                op_msg.oper_param.key_state.pressed = 1;
+                xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+                ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
+            }
+
+            vTaskDelayUntil(&last_wake_time, time_delay_for_tkb);
+        }
+        else
+        {
+            Delay(200);
+        }        
     } 
 }
 
@@ -744,6 +672,11 @@ void app_main(void)
 {
     esp_err_t ret;
 
+    if(ESP_OK == nvs_flash_erase())
+    {
+        ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
+    }
+
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
@@ -753,15 +686,15 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Check the current mode of the device.
-    if(read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
+    if(ESP_OK != read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
     {
         curr_mode = 1;
         write_curr_mode_to_nvs(curr_mode);
-        write_all_operations_to_nvs();
+        write_mode_operations_to_nvs(curr_mode);
         ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
     }
     // Read the operation matrix to memory.
-    read_all_operations();
+    read_mode_operations(curr_mode);
 
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.
@@ -770,7 +703,6 @@ void app_main(void)
         hidd_set_report_map(HIDD_REPORT_MAP_STYLUS_CC);
         ESP_LOGI(HID_DEMO_TAG, "***Stylus is used***");
     }
-
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -831,38 +763,40 @@ void app_main(void)
     // Initialize PAJ7620
     paj7620_init();
     // Initialize PAJ7620 interrupt
-    init_paj7620_interrupt();
+    paj7620_interrupt_init();
 
     // init MPU6500
     mpu6500_init();
-    mpu6500_who_am_i();
+    mpu6500_who_am_i();  // check if initialised successfully
 
     // init power voltage adc
     init_power_voltage_adc();
 
     // init e-paper-display
-    init_e_paper_display();
+    spi_device_handle_t edp_spi;
+    ret = init_e_paper_display(&edp_spi);
+    display_mode(edp_spi, 6);
 
     //Init led indicator and touch ball input
-    init_led_indicator();
-    init_track_ball_touch();
+    init_track_ball();
 
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
-    ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialed.");
+    ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialised.");
     xTaskCreate(&imu_gyro_task, "imu_gyro_check", 2048, NULL, 1, NULL);
 
     //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
     //xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
-    ESP_LOGI(HID_DEMO_TAG, "power_voltage_adc_task task initialed.");
+    ESP_LOGI(HID_DEMO_TAG, "power_voltage_adc_task task initialised.");
     xTaskCreate(&power_voltage_adc_task, "power_voltage_adc_task", 2048, NULL, 1, NULL);
 
-    ESP_LOGI(HID_DEMO_TAG, "track_ball_related_task task initialed.");
-    xTaskCreate(&track_ball_related_task, "track_ball_related_task", 2048, NULL, 1, NULL);
+    ESP_LOGI(HID_DEMO_TAG, "track_ball_task task initiinitialisedaled.");
+    xTaskCreate(&track_ball_task, "track_ball_task", 2048, NULL, 1, NULL);
     
-    ESP_LOGI(HID_DEMO_TAG, "ges_check task initialed.");
+    ESP_LOGI(HID_DEMO_TAG, "ges_check task initialised.");
     xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
 
+    ESP_LOGI(HID_DEMO_TAG, "hid_task task initialised.");
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 }

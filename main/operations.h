@@ -5,31 +5,31 @@
 #include "nvs.h"
 #include <string.h>
 
-#define ACTION_CODE_RESTART_DEVICE      000
+#define ACTION_CODE_RESTART_DEVICE          000
 
-#define ACTION_CODE_PHONE_SLIDE_UP      101
-#define ACTION_CODE_PHONE_SLIDE_DOWN    102
-#define ACTION_CODE_PHONE_SLIDE_LEFT    103
-#define ACTION_CODE_PHONE_SLIDE_RIGHT   104
-#define ACTION_CODE_PHONE_TAP           105
-#define ACTION_CODE_PHONE_DOUBLE_TAP    106
-#define ACTION_CODE_PHONE_BACK          107
+#define ACTION_CODE_SCREEN_SLIDE_UP          101
+#define ACTION_CODE_SCREEN_SLIDE_DOWN        102
+#define ACTION_CODE_SCREEN_SLIDE_LEFT        103
+#define ACTION_CODE_SCREEN_SLIDE_RIGHT       104
+#define ACTION_CODE_SCREEN_TAP               105
+#define ACTION_CODE_SCREEN_DOUBLE_TAP        106
+#define ACTION_CODE_SCREEN_BACKWARD          107
 
-#define ACTION_CODE_MOUSE_POINTOR       201
-#define ACTION_CODE_MOUSE_LEFT_CLICK    202
-#define ACTION_CODE_MOUSE_RIGHT_CLICK   203
-#define ACTION_CODE_MOUSE_MIDDLE_CLICK  204
+#define ACTION_CODE_MOUSE_POINTOR           201
+#define ACTION_CODE_MOUSE_LEFT_CLICK        202
+#define ACTION_CODE_MOUSE_RIGHT_CLICK       203
+#define ACTION_CODE_MOUSE_MIDDLE_CLICK      204
 
-#define ACTION_CODE_KEYBOARD_KEY_UP     301
-#define ACTION_CODE_KEYBOARD_KEY_DOWN   302
-#define ACTION_CODE_KEYBOARD_KEY_LEFT   303
-#define ACTION_CODE_KEYBOARD_KEY_RIGHT  304
-#define ACTION_CODE_KEYBOARD_KEY_SPACE  305
-#define ACTION_CODE_KEYBOARD_KEY_ENTER  306
+#define ACTION_CODE_KEYBOARD_KEY_UP         301
+#define ACTION_CODE_KEYBOARD_KEY_DOWN       302
+#define ACTION_CODE_KEYBOARD_KEY_LEFT       303
+#define ACTION_CODE_KEYBOARD_KEY_RIGHT      304
+#define ACTION_CODE_KEYBOARD_KEY_SPACE      305
+#define ACTION_CODE_KEYBOARD_KEY_ENTER      306
 #define ACTION_CODE_KEYBOARD_SWITCH_WINDOW  307
-#define ACTION_CODE_KEYBOARD_DESKTOP_NEXT  308
-#define ACTION_CODE_KEYBOARD_DESKTOP_PREV  309
-#define ACTION_CODE_KEYBOARD_MINIMIZE_ALL  310
+#define ACTION_CODE_KEYBOARD_DESKTOP_NEXT   308
+#define ACTION_CODE_KEYBOARD_DESKTOP_PREV   309
+#define ACTION_CODE_KEYBOARD_MINIMIZE_ALL   310
 
 #define ACTION_CODE_CONSUMER_VOLUME_UP      401
 #define ACTION_CODE_CONSUMER_VOLUME_DOWN    402
@@ -68,13 +68,20 @@ enum
     OPER_KEY_GES_CLK,
     OPER_KEY_GES_ACLK,
 
+    OPER_KEY_TKB,
+    OPER_KEY_TKB_UP,
+    OPER_KEY_TKB_DOWN,
+    OPER_KEY_TKB_LEFT,
+    OPER_KEY_TKB_RIGHT,
+    OPER_KEY_TKB_TOUCH,
+
     OPER_KEY_MAX_NUM
 };
 
 enum
 {
     OPER_TYPE_NONE,
-    OPER_TYPE_TRIGGER_ONLY,  //operation with just a trigger, eg. gesture detector operations and gyro operation
+    OPER_TYPE_TRIGGER_ONLY,  //operation with just a trigger and no cancellation followed, eg. gesture detector operations and gyro operation
     OPER_TYPE_TRIGGER_CANCEL // operation with a trigger and cancel opeation, eg. multiple fun switch, a pressing operation is followed by a cancel (or release) operation.
 };
 
@@ -121,5 +128,7 @@ esp_err_t update_operations_tab(const uint8_t* data, int data_len);
 void clear_operations_tab_action_code();
 // Check if gesture is enabled
 uint16_t check_stylus_enableed();
+void write_mode_operations_to_nvs(uint8_t mode_num);
+void read_mode_operations(uint8_t mode_num);
 
 #endif

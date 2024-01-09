@@ -746,6 +746,57 @@ void edp_test_display_partial_image_with_full_scale(spi_device_handle_t spi)
 
 /// @brief Test display partial functions
 /// @param spi 
+/// Status: this is now working
+void edp_display_current_mode(spi_device_handle_t spi, uint8_t curr_mode)
+{
+    epd_init(spi);
+
+    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
+    {
+        edp_buff[i] = 0xFF;
+    }
+    
+    epd_set_raw_value_base_map(spi, edp_buff);
+
+    epd_init_partial(spi);
+    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
+    epd_send_command(spi, 0x90);     //resolution setting
+
+    epd_send_byte_data(spi, 0);
+    epd_send_byte_data(spi, 79);
+    epd_send_byte_data(spi, 0);
+    epd_send_byte_data(spi, 127);
+    epd_send_byte_data(spi, 0x00);
+
+    unsigned char *image;
+
+    switch (curr_mode)
+    {
+    case 1:
+        image = gImage_airmouse;
+        break;
+    case 2:
+        image = gImage_gesture;
+        break;
+    case 3:
+        image = gImage_trackball;
+        break;
+    case 4:
+        image = gImage_custom1;
+        break;
+    case 5:
+        image = gImage_custom2;
+        break;
+    default:
+        image = gImage_config;
+        break;
+    }
+
+    epd_display_full_image_in_partial_mode(spi, image, EPD_DIS_ARRAY);
+}
+
+/// @brief Test display partial functions
+/// @param spi 
 /// Status: this is not working
 void edp_test_display_partial_image_v2(spi_device_handle_t spi)
 {
@@ -792,7 +843,7 @@ void edp_test_display_partial_image_v3(spi_device_handle_t spi)
 }
 
 
-void init_e_paper_display()
+esp_err_t  init_e_paper_display(spi_device_handle_t *spi)
 {
     ESP_LOGI(EPD_TAG, "Entering init_e_paper_display().");
 
@@ -821,7 +872,7 @@ void init_e_paper_display()
     gpio_config(&io_conf);
 
     esp_err_t ret;
-    spi_device_handle_t spi;
+    //spi_device_handle_t spi;
 
     spi_bus_config_t buscfg={
         .miso_io_num = EPD_MISO_PIN,
@@ -846,14 +897,20 @@ void init_e_paper_display()
     ret = spi_bus_initialize(HSPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
     ESP_ERROR_CHECK(ret);
     //Attach the LCD to the SPI bus
-    ret = spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
+    ret = spi_bus_add_device(HSPI_HOST, &devcfg, spi);
     ESP_ERROR_CHECK(ret);
 
     //edp_test_display_partial_image_v3(spi);
-    // Test code
+    //Test code
     //edp_test_display_full_image(spi);
-    edp_test_display_partial_image_with_full_scale(spi);
+   
+    ESP_LOGI(EPD_TAG, "Exiting init_e_paper_display().");
+    return ret;
+}
+
+void display_mode(spi_device_handle_t spi, uint8_t mode_num)
+{
+    edp_display_current_mode(spi, mode_num);
 
     edp_deep_sleep(spi);
-    ESP_LOGI(EPD_TAG, "Exiting init_e_paper_display().");
 }

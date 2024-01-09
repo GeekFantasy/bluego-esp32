@@ -1053,7 +1053,6 @@ void hidd_le_create_service(esp_gatt_if_t gatts_if)
 
 void hidd_le_init(void)
 {
-
     // Reset the hid device target environment
     memset(&hidd_le_env, 0, sizeof(hidd_le_env_t));
 }
