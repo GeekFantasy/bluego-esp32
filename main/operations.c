@@ -169,7 +169,7 @@ void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint
     }
 }
 
-esp_err_t write_working_mode_num_to_nvs(uint8_t curr_mode)
+esp_err_t write_mode_num_to_nvs(uint8_t curr_mode)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);

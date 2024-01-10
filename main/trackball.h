@@ -10,7 +10,6 @@
 #define LED_YELLOW_PIN          2      // actually cannot be used in bluego V2.1
 #define LED_BLUE_PIN            20
 #define TRACK_BALL_TOUCH_PIN    15
-#define TRACK_BALL_FUNC_PIN     12
 #define TRACK_BALL_UP_PIN       9
 #define TRACK_BALL_DOWN_PIN     4
 #define TRACK_BALL_LEFT_PIN     10

@@ -41,7 +41,7 @@ esp_err_t init_track_ball()
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_ANYEDGE;
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (1ULL << TRACK_BALL_FUNC_PIN) | (1ULL << TRACK_BALL_TOUCH_PIN) | (1ULL << TRACK_BALL_UP_PIN) | (1ULL << TRACK_BALL_DOWN_PIN | (1ULL << TRACK_BALL_LEFT_PIN) | (1ULL << TRACK_BALL_RIGHT_PIN));
+    io_conf.pin_bit_mask = (1ULL << TRACK_BALL_TOUCH_PIN) | (1ULL << TRACK_BALL_UP_PIN) | (1ULL << TRACK_BALL_DOWN_PIN | (1ULL << TRACK_BALL_LEFT_PIN) | (1ULL << TRACK_BALL_RIGHT_PIN));
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 1;
 

@@ -27,11 +27,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include "esp_log.h"
-#include "hal/gpio_types.h"
 #include "paj7620.h"
-#include "driver/i2c.h"
 
 typedef unsigned char uint8_t;
 
@@ -43,6 +39,8 @@ uint8_t txBuffer[I2C_BUFFER_LENGTH];
 size_t txLength = 0;
 uint16_t txAddress = 0;
 int i2c_master_port = I2C_MASTER_NUM;
+
+static int gesture_triggered = 0;
 
 // PAJ7620U2_20140305.asc
 /* Registers' initialization data */
@@ -356,6 +354,9 @@ uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[])
         data++;
     }
 
+	// clear trigger at the end of the gesture reading
+	gesture_triggered = 0;
+
 	return 0;
 }
 
@@ -380,12 +381,12 @@ void paj7620_select_bank(bank_e bank)
 }
 
 /**************************************************************** 
- * Function Name: paj7620_init
+ * Function Name: init_paj7620
  * Description:  PAJ7620 REG INIT
  * Parameters: none
  * Return: error code; success: return 0
 ****************************************************************/ 
-uint8_t paj7620_init(void) 
+uint8_t init_paj7620(void) 
 {
 	//Near_normal_mode_V5_6.15mm_121017 for 940nm
 	int i = 0;
@@ -436,6 +437,59 @@ uint8_t paj7620_init(void)
 	
 	// Serial.println("Paj7620 initialize register finished.");
     ESP_LOGI(PAJ7620_TAG, "Paj7620 initialize register finished.");
+
+	// Initialize PAJ7620 interrupt
+    init_paj7620_interrupt();
+
 	return 0;
+}
+
+static void paj7620_event_handler(void *arg)
+{
+    gesture_triggered  = 1;
+}
+
+int paj7620_gesture_triggered()
+{
+	return gesture_triggered;
+}
+
+esp_err_t init_paj7620_interrupt()
+{
+    esp_err_t err = 0;
+    gpio_config_t io_conf = {};
+    // interrupt of failing edge
+    io_conf.intr_type = GPIO_INTR_NEGEDGE;
+    // set as input mode
+    io_conf.mode = GPIO_MODE_DEF_INPUT;
+    // bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = (1ULL << PAJ7620_INTERRUPT_PIN);
+    // disable pull-down mode
+    io_conf.pull_down_en = 0;
+    // enable pull-up mode
+    io_conf.pull_up_en = 1;
+
+    err = gpio_config(&io_conf);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(PAJ7620_TAG, "Failed to gpio config, error: %d.", err);
+        return err;
+    }
+
+    err = gpio_install_isr_service(0);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(PAJ7620_TAG, "Failed to install isr service, error: %d.", err);
+        return err;
+    }
+    // hook isr handler for specific gpio pin
+    err = gpio_isr_handler_add(PAJ7620_INTERRUPT_PIN, paj7620_event_handler, NULL);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(PAJ7620_TAG, "Failed to add isr hanlder, error: %d.", err);
+        return err;
+    }
+
+    return err;
 }
 

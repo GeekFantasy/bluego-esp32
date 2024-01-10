@@ -27,6 +27,7 @@
 #include "driver/spi_master.h"
 #include "epaper_display.h"
 #include "trackball.h"
+#include "function_btn.h"
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -51,10 +52,11 @@ const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
-int isr = 0;
 uint8_t curr_mode;
 gesture_state generic_gs;
+int in_mode_setting = 0;
 
+// Action processing queue
 QueueHandle_t oper_queue = NULL;
 
 typedef struct
@@ -221,10 +223,9 @@ int read_ges_from_paj7620()
     uint8_t data = 0, error;
     uint16_t ges_key = 0;
 
-    if (isr)
+    if (paj7620_gesture_triggered())
     {
         error = paj7620_read_reg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
-        isr = 0;
 
         if (!error)
         {
@@ -268,51 +269,6 @@ int read_ges_from_paj7620()
 
     // Delay(GES_REACTION_TIME);
     return ges_key;
-}
-
-static void paj7620_event_handler(void *arg)
-{
-    isr = 1;
-    // ESP_LOGI(HID_DEMO_TAG, "Paj7620 interrup triggered.");
-}
-
-esp_err_t paj7620_interrupt_init()
-{
-    esp_err_t err = 0;
-    gpio_config_t io_conf = {};
-    // interrupt of failing edge
-    io_conf.intr_type = GPIO_INTR_NEGEDGE;
-    // set as input mode
-    io_conf.mode = GPIO_MODE_DEF_INPUT;
-    // bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = (1ULL << INTERRUPT_PIN);
-    // disable pull-down mode
-    io_conf.pull_down_en = 0;
-    // enable pull-up mode
-    io_conf.pull_up_en = 1;
-
-    err = gpio_config(&io_conf);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to gpio config, error: %d.", err);
-        return err;
-    }
-
-    err = gpio_install_isr_service(0);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to install isr service, error: %d.", err);
-        return err;
-    }
-    // hook isr handler for specific gpio pin
-    err = gpio_isr_handler_add(INTERRUPT_PIN, paj7620_event_handler, NULL);
-    if (err != ESP_OK)
-    {
-        ESP_LOGI(HID_DEMO_TAG, "Failed to add isr hanlder, error: %d.", err);
-        return err;
-    }
-
-    return err;
 }
 
 void init_power_voltage_adc()
@@ -407,12 +363,51 @@ void track_ball_task(void *pvParameters)
     } 
 }
 
+/// @brief The task for deal with mode settings 
+/// @param pvParameters 
+void mode_setting_task(void *pvParameters)
+{
+    ESP_LOGI(HID_DEMO_TAG, "Entering mode_setting_task task");
+    int func_btn_state = 1, func_btn_state_old = 1;
+    
+    while (1)
+    {
+        if(in_mode_setting)
+        {
+            Delay(200);
+        }
+        else
+        {
+            Delay(200);
+        }
+
+        // Dealing with entering and exiting mode setting
+        get_func_btn_state(&func_btn_state, NULL);
+        if(func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED)
+        {
+            if(in_mode_setting)
+            {
+                //TODO exit mode setting
+                ESP_LOGI(HID_DEMO_TAG, "Entering mode setting ...");
+                in_mode_setting = 0;
+            }
+            else
+            {
+                //TODO enter mode setting
+                ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
+                in_mode_setting = 1;
+            }
+        }
+        func_btn_state_old = func_btn_state;
+    }
+}
+
 /// @brief Task for checking power voltage ADC
 /// @param pvParameters
-void power_voltage_adc_task(void *pvParameters)
+void power_measure_task(void *pvParameters)
 {
     int average,  read_raw = 0, min, max;
-    ESP_LOGI(HID_DEMO_TAG, "Entering power_voltage_adc_task  task");
+    ESP_LOGI(HID_DEMO_TAG, "Entering power_measure_task  task");
 
     while(1)
     {
@@ -512,7 +507,7 @@ void multi_fun_switch_task(void *pvParameters)
             }
             else
             {   // handle op_key up event 
-                if(op_msg.oper_param.key_state.pressed == 0) // make sure only set  once 
+                if(op_msg.oper_param.key_state.pressed == 0) // make sure only set once 
                 {
                     vTaskDelayUntil(&xLastWakeTime, time_delay_for_mfs);
                     continue;
@@ -690,7 +685,7 @@ void app_main(void)
     if(ESP_OK != read_working_mode_num_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
     {
         curr_mode = 1;
-        write_working_mode_num_to_nvs(curr_mode);
+        write_mode_num_to_nvs(curr_mode);
         write_all_modes_to_nvs();
         ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
     }
@@ -762,10 +757,8 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     // Initialize PAJ7620
-    paj7620_init();
-    // Initialize PAJ7620 interrupt
-    paj7620_interrupt_init();
-
+    init_paj7620();
+    
     // init MPU6500
     mpu6500_init();
     mpu6500_who_am_i();  // check if initialised successfully
@@ -781,6 +774,9 @@ void app_main(void)
     //Init led indicator and touch ball input
     init_track_ball();
 
+    // Init function button
+    init_function_btn();
+
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
@@ -789,11 +785,14 @@ void app_main(void)
 
     //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
     //xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
-    ESP_LOGI(HID_DEMO_TAG, "power_voltage_adc_task task initialised.");
-    xTaskCreate(&power_voltage_adc_task, "power_voltage_adc_task", 2048, NULL, 1, NULL);
+    ESP_LOGI(HID_DEMO_TAG, "power_measure_task task initialised.");
+    xTaskCreate(&power_measure_task, "power_measure_task", 2048, NULL, 1, NULL);
 
     ESP_LOGI(HID_DEMO_TAG, "track_ball_task task initiinitialisedaled.");
     xTaskCreate(&track_ball_task, "track_ball_task", 2048, NULL, 1, NULL);
+
+    ESP_LOGI(HID_DEMO_TAG, "mode_setting_task task initiinitialisedaled.");
+    xTaskCreate(&mode_setting_task, "mode_setting_task", 2048, NULL, 1, NULL);
     
     ESP_LOGI(HID_DEMO_TAG, "ges_check task initialised.");
     xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);

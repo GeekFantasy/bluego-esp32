@@ -122,7 +122,7 @@ void write_all_operations_to_nvs();
 void read_all_operations();
 uint16_t get_action_code(int oper_key);
 void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_param op_param, uint8_t oper_type);
-esp_err_t write_working_mode_num_to_nvs(uint8_t curr_mode);
+esp_err_t write_mode_num_to_nvs(uint8_t curr_mode);
 esp_err_t read_working_mode_num_from_nvs(uint8_t* curr_mode);
 esp_err_t update_operations_tab(const uint8_t* data, int data_len);
 void clear_operations_tab_action_code();

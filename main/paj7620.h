@@ -32,6 +32,12 @@
 #ifndef __PAJ7620_H__
 #define __PAJ7620_H__
 
+#include <stdlib.h>
+#include "esp_log.h"
+#include "hal/gpio_types.h"
+#include "paj7620.h"
+#include "driver/i2c.h"
+
 #define PAJ7620_TAG "PAJ7620 LOG:"
 
 // #define BIT(x)  1 << x
@@ -56,7 +62,7 @@
 #define ACK_VAL    0x0         /*!< I2C ack value */
 #define NACK_VAL   0x1         /*!< I2C nack value */
 
-#define INTERRUPT_PIN 7			//Origianl: 37       /*!< I2C Interrupt pin */ 
+#define PAJ7620_INTERRUPT_PIN 7			//Origianl: 37       /*!< I2C Interrupt pin */ 
 
 #define I2C_MASTER_SCL_IO 	8     //Origianl: 26          /*!< gpio number for I2C master clock */
 #define I2C_MASTER_SDA_IO 	5     //Origianl: 25          /*!< gpio number for I2C master data  */
@@ -125,7 +131,9 @@ typedef enum {
 #define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
 
 
-uint8_t paj7620_init(void);
+uint8_t init_paj7620(void);
+esp_err_t init_paj7620_interrupt();
+int paj7620_gesture_triggered();
 uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd);
 uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[]);
 void paj7620_select_bank(bank_e bank);

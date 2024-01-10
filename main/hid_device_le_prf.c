@@ -933,7 +933,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
                 if (param->write.len >= 1)
                 {
-                    write_working_mode_num_to_nvs(param->write.value[0]);
+                    write_mode_num_to_nvs(param->write.value[0]);
                 }
 
                 if (param->write.need_rsp)
