@@ -386,14 +386,14 @@ void mode_setting_task(void *pvParameters)
             case TRACK_BALL_DIRECTION_LEFT:
                 curr_mode++;
                 curr_mode %= MODE_MAX_NUM;
-                epd_display_mode(epd_spi, curr_mode);
+                epd_partial_display_mode(epd_spi, curr_mode);
                 /* code */
                 break;
             case TRACK_BALL_DIRECTION_DOWN:
             case TRACK_BALL_DIRECTION_RIGHT:
                 curr_mode--;
                 curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
-                epd_display_mode(epd_spi, curr_mode);
+                epd_partial_display_mode(epd_spi, curr_mode);
                 /* code */
                 break;
             default:
@@ -412,17 +412,18 @@ void mode_setting_task(void *pvParameters)
         {
             if(in_mode_setting)
             {
-                TRACK_BALL_TURN_OFF_LED(LED_BLUE_PIN);
-                //TODO exit mode setting
                 ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
+                TRACK_BALL_TURN_OFF_LED(LED_BLUE_PIN);
                 in_mode_setting = 0;
+                epd_deep_sleep(epd_spi);
+                clear_track_ball_step_counters();
             }
             else
             {
-                TRACK_BALL_TURN_ON_LED(LED_BLUE_PIN);
-                //TODO enter mode setting
                 ESP_LOGI(HID_DEMO_TAG, "Entering mode setting ...");
+                TRACK_BALL_TURN_ON_LED(LED_BLUE_PIN);
                 in_mode_setting = 1;
+                epd_power_on_to_partial_display(epd_spi);
             }
         }
         func_btn_state_old = func_btn_state;
@@ -795,7 +796,7 @@ void app_main(void)
 
     // init e-paper-display
     ret = edp_init_spi_device(&epd_spi);
-    epd_display_mode(epd_spi, curr_mode);
+    epd_full_display_mode(epd_spi, curr_mode);
 
     //Init led indicator and touch ball input
     init_track_ball();

@@ -45,6 +45,7 @@ esp_err_t init_track_ball_led();
 esp_err_t init_track_ball();
 track_ball_movement get_track_ball_movement();
 int get_track_ball_touch_state();
+void clear_track_ball_step_counters();
 void get_track_ball_main_movement(int* direction, int* steps);
 
 #endif // end of TRACKBALL

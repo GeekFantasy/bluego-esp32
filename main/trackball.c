@@ -120,7 +120,8 @@ track_ball_movement get_track_ball_movement()
     return tkb_mv;
 }
 
-void clear_step_counters()
+/// @brief This can be used to clear all the step counters to ignore extra movement during slow reactions
+void clear_track_ball_step_counters()
 {
     tkb_move_up_steps = 0;
     tkb_move_down_steps = 0;
@@ -160,7 +161,7 @@ void get_track_ball_main_movement(int* direction, int* steps)
 
         if(*steps > 0 )
         {
-            clear_step_counters();
+            clear_track_ball_step_counters();
         }
         else
         {
