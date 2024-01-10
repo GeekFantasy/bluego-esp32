@@ -372,6 +372,7 @@ void mode_setting_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering mode_setting_task task");
     int func_btn_state = 1, func_btn_state_old = 1;
+    int display_updated = 0;
     int mv_direction = TRACK_BALL_DIRECTION_NONE;
     int mv_steps = 0;
     
@@ -387,6 +388,7 @@ void mode_setting_task(void *pvParameters)
                 curr_mode++;
                 curr_mode %= MODE_MAX_NUM;
                 epd_partial_display_mode(epd_spi, curr_mode);
+                display_updated = 1;
                 /* code */
                 break;
             case TRACK_BALL_DIRECTION_DOWN:
@@ -394,12 +396,21 @@ void mode_setting_task(void *pvParameters)
                 curr_mode--;
                 curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
                 epd_partial_display_mode(epd_spi, curr_mode);
+                display_updated = 1;
                 /* code */
                 break;
             default:
                 break;
             }
-            Delay(200);
+
+            if(display_updated)    // No need to delay if e-paper is updated
+            {
+                display_updated = 0;
+            }
+            else
+            {            
+                Delay(200);
+            }
         }
         else
         {
