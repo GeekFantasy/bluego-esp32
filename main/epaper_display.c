@@ -761,7 +761,7 @@ void epd_power_on_to_partial_display(spi_device_handle_t spi)
 /// @brief Test display partial functions
 /// @param spi 
 /// Status: this is now working
-void epd_full_display_mode(spi_device_handle_t spi, uint8_t mode)
+void epd_full_display_mode(spi_device_handle_t spi, int8_t mode)
 {
     epd_init_full_display(spi);
     unsigned char *image;
@@ -791,7 +791,7 @@ void epd_full_display_mode(spi_device_handle_t spi, uint8_t mode)
     epd_display_full_image(spi, image, EPD_DIS_ARRAY);
 }
 
-void epd_partial_display_mode(spi_device_handle_t spi, uint8_t mode)
+void epd_partial_display_mode(spi_device_handle_t spi, int8_t mode)
 {
     unsigned char *image;
 

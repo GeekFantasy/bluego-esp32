@@ -169,7 +169,7 @@ void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint
     }
 }
 
-esp_err_t write_mode_num_to_nvs(uint8_t curr_mode)
+esp_err_t write_mode_num_to_nvs(int8_t curr_mode)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
@@ -178,7 +178,7 @@ esp_err_t write_mode_num_to_nvs(uint8_t curr_mode)
         return err;
     }
 
-    err = nvs_set_u8(handle, CURRENT_MODE_KEY, curr_mode);
+    err = nvs_set_i8(handle, CURRENT_MODE_KEY, curr_mode);
     err = nvs_commit(handle);
     nvs_close(handle);
 
@@ -186,7 +186,7 @@ esp_err_t write_mode_num_to_nvs(uint8_t curr_mode)
 }
 
 
-esp_err_t read_working_mode_num_from_nvs(uint8_t *curr_mode)
+esp_err_t read_working_mode_num_from_nvs(int8_t *curr_mode)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
@@ -195,7 +195,7 @@ esp_err_t read_working_mode_num_from_nvs(uint8_t *curr_mode)
         return err;
     }
 
-    err = nvs_get_u8(handle, CURRENT_MODE_KEY, curr_mode);
+    err = nvs_get_i8(handle, CURRENT_MODE_KEY, curr_mode);
     nvs_close(handle);
 
     return err;
@@ -221,7 +221,7 @@ void write_all_operations_to_nvs()
 }
 
 // 把所有的operation写入 nvs
-void write_mode_operations_to_nvs(uint8_t mode_num)
+void write_mode_operations_to_nvs(int8_t mode_num)
 {
     // 写入operations record
     nvs_handle_t handle;
@@ -277,7 +277,7 @@ void read_all_operations()
 }
 
 // 读取所有NVS_Record
-void read_mode_to_matrix(uint8_t mode_num)
+void read_mode_to_matrix(int8_t mode_num)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);

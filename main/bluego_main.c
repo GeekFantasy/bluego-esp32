@@ -54,7 +54,7 @@ const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
 static bool ble_connected = false;
-uint8_t curr_mode;
+int8_t curr_mode;
 gesture_state generic_gs;
 int in_mode_setting = 0;
 spi_device_handle_t epd_spi;
