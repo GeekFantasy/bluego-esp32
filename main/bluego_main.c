@@ -372,6 +372,7 @@ void mode_setting_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering mode_setting_task task");
     int func_btn_state = 1, func_btn_state_old = 1;
+    int tb_touch_state = 1, tb_touch_state_old = 1;
     int display_updated = 0;
     int mv_direction = TRACK_BALL_DIRECTION_NONE;
     int mv_steps = 0;
@@ -381,6 +382,8 @@ void mode_setting_task(void *pvParameters)
         if(in_mode_setting)
         {
             get_track_ball_main_movement(&mv_direction, &mv_steps);
+            tb_touch_state = get_track_ball_touch_state();
+            
             switch (mv_direction)
             {
             case TRACK_BALL_DIRECTION_UP:
@@ -388,6 +391,7 @@ void mode_setting_task(void *pvParameters)
                 curr_mode++;
                 curr_mode %= MODE_MAX_NUM;
                 epd_partial_display_mode(epd_spi, curr_mode);
+                clear_track_ball_step_counters();
                 display_updated = 1;
                 /* code */
                 break;
@@ -396,6 +400,7 @@ void mode_setting_task(void *pvParameters)
                 curr_mode--;
                 curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
                 epd_partial_display_mode(epd_spi, curr_mode);
+                clear_track_ball_step_counters();
                 display_updated = 1;
                 /* code */
                 break;
@@ -419,7 +424,8 @@ void mode_setting_task(void *pvParameters)
 
         // Dealing with entering and exiting mode setting
         get_func_btn_state(&func_btn_state, NULL);
-        if(func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED)
+        if((func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED) 
+            || (tb_touch_state != tb_touch_state_old && tb_touch_state == TRACK_BALL_TOUCH_DOWN ))
         {
             if(in_mode_setting)
             {
@@ -428,6 +434,7 @@ void mode_setting_task(void *pvParameters)
                 in_mode_setting = 0;
                 epd_deep_sleep(epd_spi);
                 clear_track_ball_step_counters();
+                write_mode_num_to_nvs(curr_mode);
             }
             else
             {
@@ -435,8 +442,11 @@ void mode_setting_task(void *pvParameters)
                 TRACK_BALL_TURN_ON_LED(LED_BLUE_PIN);
                 in_mode_setting = 1;
                 epd_power_on_to_partial_display(epd_spi);
+                clear_track_ball_step_counters();
             }
         }
+
+        tb_touch_state_old = tb_touch_state;
         func_btn_state_old = func_btn_state;
     }
 }
