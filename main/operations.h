@@ -131,5 +131,6 @@ uint16_t check_stylus_enableed();
 void write_mode_operations_to_nvs(uint8_t mode_num);
 void read_mode_to_matrix(uint8_t mode_num);
 void write_all_modes_to_nvs();
+int  check_module_enabled(int oper_key);
 
 #endif

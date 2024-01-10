@@ -15,6 +15,12 @@
 #define TRACK_BALL_LEFT_PIN     10
 #define TRACK_BALL_RIGHT_PIN    13
 
+#define TRACK_BALL_DIRECTION_NONE    0
+#define TRACK_BALL_DIRECTION_UP      1
+#define TRACK_BALL_DIRECTION_DOWN    2
+#define TRACK_BALL_DIRECTION_LEFT    3
+#define TRACK_BALL_DIRECTION_RIGHT   4
+
 #define TRACK_BALL_TOUCH_DOWN   0
 #define TRACK_BALL_TOUCH_UP     0
 
@@ -22,6 +28,8 @@
 #define TRACK_BALL_TURN_OFF_LED(pin)         gpio_set_level(pin, 1)
 
 #define TRACK_BALL_MOVEMENT_DIVIDER 6   // used to divide the track ball moved steps, if larger than 1, the actual steps will be divided into small steps.
+
+
 
 typedef struct 
 {
@@ -37,5 +45,6 @@ esp_err_t init_track_ball_led();
 esp_err_t init_track_ball();
 track_ball_movement get_track_ball_movement();
 int get_track_ball_touch_state();
+void get_track_ball_main_movement(int* direction, int* steps);
 
 #endif // end of TRACKBALL

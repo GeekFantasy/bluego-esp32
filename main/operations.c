@@ -254,7 +254,7 @@ void write_all_modes_to_nvs()
     for (size_t i = 0; i < mode_cnt; i++)
     {
         copy_mode_to_action_matrix(all_mode_actions[i]);
-        write_mode_operations_to_nvs(i + 1);
+        write_mode_operations_to_nvs(i);
     }
 }
 
@@ -302,6 +302,14 @@ uint16_t get_action_code(int oper_key)
     }
 
     return INVALID_OPER_CODE;
+}
+
+/// @brief check if the speicfied module is enabled or not
+/// @param oper_key  // specify the module, like gyro, gesture, mfs or trackball
+/// @return 
+int  check_module_enabled(int oper_key)
+{
+    return (get_action_code(oper_key) == 1);
 }
 
 esp_err_t update_operation(operation_action *op)

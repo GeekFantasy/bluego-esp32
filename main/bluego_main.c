@@ -41,6 +41,8 @@
 #define SWITCH_KEY_MIDDLE_LEVEL  280
 #define SWITCH_KEY_RANGE         45
 
+#define MODE_MAX_NUM              5
+
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 
 const TickType_t time_delay_for_mfs = 50;
@@ -51,10 +53,11 @@ const TickType_t time_delay_when_idle = 500;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
-static bool sec_conn = false;
+static bool ble_connected = false;
 uint8_t curr_mode;
 gesture_state generic_gs;
 int in_mode_setting = 0;
+spi_device_handle_t epd_spi;
 
 // Action processing queue
 QueueHandle_t oper_queue = NULL;
@@ -148,7 +151,7 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
     }
     case ESP_HIDD_EVENT_BLE_DISCONNECT:
     {
-        sec_conn = false;
+        ble_connected = false;
         ESP_LOGI(HID_DEMO_TAG, "ESP_HIDD_EVENT_BLE_DISCONNECT");
         esp_ble_gap_start_advertising(&hidd_adv_params);
         break;
@@ -190,7 +193,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         ESP_LOGI(HID_DEMO_TAG, "GAP Security responded...");
         break;
     case ESP_GAP_BLE_AUTH_CMPL_EVT:
-        sec_conn = true;
+        ble_connected = true;
         esp_bd_addr_t bd_addr;
         memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
         ESP_LOGI(HID_DEMO_TAG, "remote BD_ADDR: %08x%04x",
@@ -335,7 +338,7 @@ void track_ball_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn && get_action_code(OPER_KEY_TKB) == 1)
+        if (ble_connected && check_module_enabled(OPER_KEY_TKB) && (!in_mode_setting))
         {
             if(TRACK_BALL_TOUCH_DOWN == get_track_ball_touch_state())
             {
@@ -369,11 +372,33 @@ void mode_setting_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering mode_setting_task task");
     int func_btn_state = 1, func_btn_state_old = 1;
+    int mv_direction = TRACK_BALL_DIRECTION_NONE;
+    int mv_steps = 0;
     
     while (1)
     {
         if(in_mode_setting)
         {
+            get_track_ball_main_movement(&mv_direction, &mv_steps);
+            switch (mv_direction)
+            {
+            case TRACK_BALL_DIRECTION_UP:
+            case TRACK_BALL_DIRECTION_LEFT:
+                curr_mode++;
+                curr_mode %= MODE_MAX_NUM;
+                epd_display_mode(epd_spi, curr_mode);
+                /* code */
+                break;
+            case TRACK_BALL_DIRECTION_DOWN:
+            case TRACK_BALL_DIRECTION_RIGHT:
+                curr_mode--;
+                curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
+                epd_display_mode(epd_spi, curr_mode);
+                /* code */
+                break;
+            default:
+                break;
+            }
             Delay(200);
         }
         else
@@ -387,14 +412,16 @@ void mode_setting_task(void *pvParameters)
         {
             if(in_mode_setting)
             {
+                TRACK_BALL_TURN_OFF_LED(LED_BLUE_PIN);
                 //TODO exit mode setting
-                ESP_LOGI(HID_DEMO_TAG, "Entering mode setting ...");
+                ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
                 in_mode_setting = 0;
             }
             else
             {
+                TRACK_BALL_TURN_ON_LED(LED_BLUE_PIN);
                 //TODO enter mode setting
-                ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
+                ESP_LOGI(HID_DEMO_TAG, "Entering mode setting ...");
                 in_mode_setting = 1;
             }
         }
@@ -443,7 +470,7 @@ void multi_fun_switch_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn && get_action_code(OPER_KEY_MFS) == 1 && oper_queue != NULL)
+        if (ble_connected && get_action_code(OPER_KEY_MFS) == 1 && oper_queue != NULL)
         {
             adc2_get_raw(ADC2_CHANNEL_7, ADC_WIDTH_10Bit, &read_raw);
             //ESP_LOGE(HID_DEMO_TAG, "The data from adc is: %d", read_raw);
@@ -536,7 +563,7 @@ void gesture_detect_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn && get_action_code(OPER_KEY_GES) == 1)
+        if (ble_connected && check_module_enabled(OPER_KEY_GES) && (!in_mode_setting))
         {
             ges_key = read_ges_from_paj7620();
 
@@ -577,7 +604,7 @@ void imu_gyro_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn && (get_action_code(OPER_KEY_IMU) == 1))
+        if (ble_connected && check_module_enabled(OPER_KEY_IMU)  && (!in_mode_setting))
         {
             mpu6500_GYR_read(&gyro);
             gettimeofday(&tv_now, NULL);
@@ -627,7 +654,7 @@ void hid_main_task(void *pvParameters)
 
     while (1)
     {
-        if (sec_conn)
+        if (ble_connected && (!in_mode_setting))
         {
             // uint8_t key_vaule = {HID_KEY_A};
             // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
@@ -684,7 +711,7 @@ void app_main(void)
     // Check the current mode of the device.
     if(ESP_OK != read_working_mode_num_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
     {
-        curr_mode = 1;
+        curr_mode = 0;
         write_mode_num_to_nvs(curr_mode);
         write_all_modes_to_nvs();
         ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
@@ -767,9 +794,8 @@ void app_main(void)
     init_power_voltage_adc();
 
     // init e-paper-display
-    spi_device_handle_t edp_spi;
-    ret = init_e_paper_display(&edp_spi);
-    display_mode(edp_spi, 6);
+    ret = edp_init_spi_device(&epd_spi);
+    epd_display_mode(epd_spi, curr_mode);
 
     //Init led indicator and touch ball input
     init_track_ball();
@@ -780,22 +806,23 @@ void app_main(void)
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
+    //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
+    //xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
+
     ESP_LOGI(HID_DEMO_TAG, "imu_gyro_check task initialised.");
     xTaskCreate(&imu_gyro_task, "imu_gyro_check", 2048, NULL, 1, NULL);
 
-    //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
-    //xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
-    ESP_LOGI(HID_DEMO_TAG, "power_measure_task task initialised.");
-    xTaskCreate(&power_measure_task, "power_measure_task", 2048, NULL, 1, NULL);
-
     ESP_LOGI(HID_DEMO_TAG, "track_ball_task task initiinitialisedaled.");
     xTaskCreate(&track_ball_task, "track_ball_task", 2048, NULL, 1, NULL);
-
-    ESP_LOGI(HID_DEMO_TAG, "mode_setting_task task initiinitialisedaled.");
-    xTaskCreate(&mode_setting_task, "mode_setting_task", 2048, NULL, 1, NULL);
     
     ESP_LOGI(HID_DEMO_TAG, "ges_check task initialised.");
     xTaskCreate(&gesture_detect_task, "ges_check", 2048, NULL, 1, NULL);
+
+    ESP_LOGI(HID_DEMO_TAG, "mode_setting_task task initiinitialisedaled.");
+    xTaskCreate(&mode_setting_task, "mode_setting_task", 4096, NULL, 1, NULL);
+
+    ESP_LOGI(HID_DEMO_TAG, "power_measure_task task initialised.");
+    xTaskCreate(&power_measure_task, "power_measure_task", 2048, NULL, 1, NULL);
 
     ESP_LOGI(HID_DEMO_TAG, "hid_task task initialised.");
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);

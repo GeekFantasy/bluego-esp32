@@ -3,7 +3,7 @@
 #define  FUNC_BTN_INFO_TAG   "FUNCTION_BUTTON_LOG"
 
 static TickType_t state_change_time;
-static int button_state;
+static int button_state = 1;
 
 static void func_btn_event_handler(void *arg)
 {
@@ -45,6 +45,8 @@ esp_err_t init_function_btn()
     {
         ESP_LOGI(FUNC_BTN_INFO_TAG, "Failed to add isr hanlder for function button, error: %d.", err);
     }
+
+    state_change_time = xTaskGetTickCount();
 
     return err;
 }

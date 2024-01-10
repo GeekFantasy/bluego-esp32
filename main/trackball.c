@@ -120,6 +120,55 @@ track_ball_movement get_track_ball_movement()
     return tkb_mv;
 }
 
+void clear_step_counters()
+{
+    tkb_move_up_steps = 0;
+    tkb_move_down_steps = 0;
+    tkb_move_left_steps = 0;
+    tkb_move_right_steps = 0;
+}
+
+/// @brief get the main movement 
+/// @return 
+void get_track_ball_main_movement(int* direction, int* steps)
+{
+    if(direction != NULL && steps != NULL)
+    {
+        track_ball_movement tkb_mv = {};
+        tkb_mv = get_track_ball_movement();
+
+        *direction = TRACK_BALL_DIRECTION_UP;
+        *steps = tkb_mv.up;
+
+        if(tkb_mv.down > *steps)
+        {
+            *direction = TRACK_BALL_DIRECTION_DOWN;
+            *steps = tkb_mv.down;
+        }
+
+        if(tkb_mv.left > *steps)
+        {
+            *direction = TRACK_BALL_DIRECTION_LEFT;
+            *steps = tkb_mv.left;
+        }
+
+        if(tkb_mv.right > *steps)
+        {
+            *direction = TRACK_BALL_DIRECTION_RIGHT;
+            *steps = tkb_mv.right;
+        }
+
+        if(*steps > 0 )
+        {
+            clear_step_counters();
+        }
+        else
+        {
+            *direction = TRACK_BALL_DIRECTION_NONE;
+        }       
+    }
+}
+
 int get_track_ball_touch_state()
 {
     int touch_level = gpio_get_level(TRACK_BALL_TOUCH_PIN);
