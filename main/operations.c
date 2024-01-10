@@ -76,6 +76,15 @@ const uint16_t mode_ctm2_actions[OPER_KEY_MAX_NUM] =    // mode actions for cust
     0, 0, 0, 0, 0, 0   
 };
 
+const uint16_t* all_mode_actions[] = 
+{
+    mode_am_actions,
+    mode_ges_actions,
+    mode_tkb_actions,
+    mode_ctm1_actions,
+    mode_ctm2_actions
+};
+
 uint8_t data_buff[] = {'i', 'm', 'u', ':', 0x00, 0x00, ',', 'i', 'm', 'u', '_', 'g', 'y', 'r', 'o', ':', 0x3, 0x3, ',', 'm', 'f', 's', ':', 0x02, 0x0};
 int data_len = sizeof(data_buff);
 uint8_t mouse_key_state = 0; // store the state of 3 mouse op_key
@@ -160,7 +169,7 @@ void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint
     }
 }
 
-esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode)
+esp_err_t write_working_mode_num_to_nvs(uint8_t curr_mode)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
@@ -177,7 +186,7 @@ esp_err_t write_curr_mode_to_nvs(uint8_t curr_mode)
 }
 
 
-esp_err_t read_curr_mode_from_nvs(uint8_t *curr_mode)
+esp_err_t read_working_mode_num_from_nvs(uint8_t *curr_mode)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
@@ -230,6 +239,25 @@ void write_mode_operations_to_nvs(uint8_t mode_num)
     nvs_close(handle);
 }
 
+void copy_mode_to_action_matrix(const uint16_t mode_actions[])
+{
+    for (size_t i = 0; i < OPER_KEY_MAX_NUM; i++)
+    {
+        operation_action_matrix[i].action_code = mode_actions[i];
+    }
+}
+
+void write_all_modes_to_nvs()
+{
+    int mode_cnt = sizeof(all_mode_actions) / sizeof(uint16_t*);
+
+    for (size_t i = 0; i < mode_cnt; i++)
+    {
+        copy_mode_to_action_matrix(all_mode_actions[i]);
+        write_mode_operations_to_nvs(i + 1);
+    }
+}
+
 // 读取所有NVS_Record
 void read_all_operations()
 {
@@ -249,7 +277,7 @@ void read_all_operations()
 }
 
 // 读取所有NVS_Record
-void read_mode_operations(uint8_t mode_num)
+void read_mode_to_matrix(uint8_t mode_num)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);

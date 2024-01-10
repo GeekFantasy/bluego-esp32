@@ -673,10 +673,10 @@ void app_main(void)
 {
     esp_err_t ret;
 
-    if(ESP_OK == nvs_flash_erase())
-    {
-        ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
-    }
+    // if(ESP_OK == nvs_flash_erase())
+    // {
+    //     ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
+    // }
 
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -687,15 +687,15 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Check the current mode of the device.
-    if(ESP_OK != read_curr_mode_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
+    if(ESP_OK != read_working_mode_num_from_nvs(&curr_mode)) //if failed to get the current mode write the defualt operations to nvs
     {
         curr_mode = 1;
-        write_curr_mode_to_nvs(curr_mode);
-        write_mode_operations_to_nvs(curr_mode);
+        write_working_mode_num_to_nvs(curr_mode);
+        write_all_modes_to_nvs();
         ESP_LOGI(HID_DEMO_TAG, "Initialize the operations table to NVS for the first time.");
     }
     // Read the operation matrix to memory.
-    read_mode_operations(curr_mode);
+    read_mode_to_matrix(curr_mode);
 
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.

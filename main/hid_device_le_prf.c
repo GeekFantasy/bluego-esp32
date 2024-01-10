@@ -900,7 +900,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             esp_gatt_rsp_t rsp;
             memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
             uint8_t curr_mode = 0;
-            read_curr_mode_from_nvs(&curr_mode);
+            read_working_mode_num_from_nvs(&curr_mode);
             rsp.attr_value.handle = param->read.handle;
             rsp.attr_value.len = 1;
             rsp.attr_value.value[0] = curr_mode;
@@ -912,7 +912,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             esp_gatt_rsp_t rsp;
             memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
             uint8_t curr_mode = 0;
-            read_curr_mode_from_nvs(&curr_mode);
+            read_working_mode_num_from_nvs(&curr_mode);
             rsp.attr_value.handle = param->read.handle;
             rsp.attr_value.len = 1;
             rsp.attr_value.value[0] = curr_mode;
@@ -933,7 +933,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
                 if (param->write.len >= 1)
                 {
-                    write_curr_mode_to_nvs(param->write.value[0]);
+                    write_working_mode_num_to_nvs(param->write.value[0]);
                 }
 
                 if (param->write.need_rsp)
