@@ -358,7 +358,7 @@ void reset_all_gpio()
 void suspend_imu_and_ges_detector()
 {
     esp_err_t err_code = ESP_OK;
-    err_code = mpu6500_set_sleep(true);  // Always has error when executing this
+    err_code = mpu6500_set_sleep(true);  // Tested, this works well now.
     if(ESP_OK != err_code)
     {
         ESP_LOGE(HID_DEMO_TAG, "Failed to set mpu6500 to sleeep mode before powering off. Error: %d", err_code);
@@ -783,8 +783,8 @@ void hid_main_task(void *pvParameters)
             esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
             rtc_gpio_pullup_en(FUNC_BTN_PIN);
             rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
+            suspend_imu_and_ges_detector(); 
             reset_all_gpio();
-            suspend_imu_and_ges_detector();  // This is not working well
             esp_deep_sleep_start();
         }
     }

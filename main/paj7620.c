@@ -296,17 +296,6 @@ int init_paj7620_i2c(void)
 ****************************************************************/ 
 uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd)
 {
-	// char i = 1;
-	// Wire.beginTransmission(PAJ7620_ID);		// start transmission to device 
-	// //write cmd
-	// Wire.write(addr);						// send register address
-	// Wire.write(cmd);						// send value to write
-    // i = Wire.endTransmission();  		    // end transmission
-	// if(0 != i)
-    // {
-	// 	Serial.print("Transmission error!!!\n");
-	// }
-
     int ret = 0;
     i2c_cmd_handle_t handle = i2c_cmd_link_create();
     i2c_master_start(handle);
@@ -434,9 +423,7 @@ uint8_t init_paj7620(void)
 	
 	paj7620_select_bank(BANK0);  //gesture flage reg in Bank0
 	
-	// Serial.println("Paj7620 initialize register finished.");
     ESP_LOGI(PAJ7620_TAG, "Paj7620 initialize register finished.");
-
 	return 0;
 }
 
@@ -510,14 +497,15 @@ esp_err_t paj7620_wake_up()
 {
 	esp_err_t err = ESP_OK;
 	paj7620_select_bank(BANK1);  // Trigger the sensor to wake up.
+	
+	vTaskDelay(1 / portTICK_PERIOD_MS); // wait for the sensor to stabilize
 	paj7620_select_bank(BANK1);
-
-	vTaskDelay(1 / portTICK_PERIOD_MS); // wait for the sensor to stablelised
 	err = paj7620_write_reg(0x72, 0x01);
 	if(ESP_OK != err)
 	{
 		ESP_LOGE(PAJ7620_TAG, "Failed to enable the sensor, error: %d.", err);
 	}
-	
+
+	paj7620_select_bank(BANK0);  // change back to Bank0 for reading gestures
 	return err;
 }

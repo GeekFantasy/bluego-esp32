@@ -204,7 +204,7 @@ uint8_t mpu6500_write_bytes(uint8_t reg_addr, uint8_t* data, uint8_t data_len)
 uint8_t mpu6500_read_reg(uint8_t reg_addr,uint8_t data[], uint8_t data_len)
 {
     int ret;
-    ret=i2c_master_write_read_device(mpu_i2c_master_port, MPU6500_I2C_ADDR, &reg_addr, 1, data, data_len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);   
+    ret = i2c_master_write_read_device(mpu_i2c_master_port, MPU6500_I2C_ADDR, &reg_addr, 1, data, data_len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);   
     return ret;  
 }
 
