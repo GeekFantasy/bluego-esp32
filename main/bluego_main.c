@@ -44,7 +44,7 @@
 #define SWITCH_KEY_RANGE         45
 
 #define MODE_MAX_NUM              5
-#define HOLD_TIME_MS_TO_SLEEP  3 * 1000
+#define HOLD_TIME_MS_TO_SLEEP  2 * 1000
 
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 
@@ -329,6 +329,31 @@ int get_track_ball_movement_key(track_ball_movement tkb_mv)
     return oper_key;
 }
 
+/// @brief Reset all gpio before go to deep sleep mode to save power
+void reset_all_gpio()
+{
+    gpio_reset_pin(EPD_CS_PIN);
+    gpio_reset_pin(EPD_RST_PIN);
+    gpio_reset_pin(EPD_DC_PIN);
+    gpio_reset_pin(EPD_BUSY_PIN);
+    gpio_reset_pin(EPD_MOSI_PIN);
+    gpio_reset_pin(EPD_CLK_PIN);
+
+    gpio_reset_pin(LED_YELLOW_PIN);
+    gpio_reset_pin(LED_BLUE_PIN);
+    gpio_reset_pin(TRACK_BALL_TOUCH_PIN);
+    gpio_reset_pin(TRACK_BALL_UP_PIN);
+    gpio_reset_pin(TRACK_BALL_DOWN_PIN);
+    gpio_reset_pin(TRACK_BALL_LEFT_PIN);
+    gpio_reset_pin(TRACK_BALL_RIGHT_PIN);
+
+    gpio_reset_pin(PAJ7620_I2C_SCL);
+    gpio_reset_pin(PAJ7620_I2C_SDA);
+    gpio_reset_pin(PAJ7620_INTERRUPT_PIN);
+
+    gpio_reset_pin(MPU6500_I2C_SCL);
+    gpio_reset_pin(MPU6500_I2C_SDA);
+}
 
 void track_ball_task(void *pvParameters)
 {
@@ -741,6 +766,7 @@ void hid_main_task(void *pvParameters)
             esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
             rtc_gpio_pullup_en(FUNC_BTN_PIN);
             rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
+            reset_all_gpio();
             esp_deep_sleep_start();
         }
     }
@@ -774,6 +800,10 @@ void app_main(void)
     }
     // Read the operation matrix to memory.
     read_mode_to_matrix(curr_mode);
+
+    // init e-paper-display
+    ret = edp_init_spi_device(&epd_spi);
+    epd_full_display_mode(epd_spi, curr_mode);
 
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.
@@ -848,10 +878,6 @@ void app_main(void)
 
     // init power voltage adc
     init_power_voltage_adc();
-
-    // init e-paper-display
-    ret = edp_init_spi_device(&epd_spi);
-    epd_full_display_mode(epd_spi, curr_mode);
 
     //Init led indicator and touch ball input
     init_track_ball();

@@ -8,18 +8,6 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "image_data.h"
-
-
-#define EPD_WIDTH       80
-#define EPD_HEIGHT      128
-#define EPD_CS_PIN      25
-#define EPD_RST_PIN     27
-#define EPD_DC_PIN      26
-#define EPD_BUSY_PIN    14 
-
-#define EPD_MOSI_PIN    32
-#define EPD_MISO_PIN    -1
-#define EPD_CLK_PIN     33
  
 #define SET_PIN_HIGH(pin)   gpio_set_level(pin, 1)
 #define SET_PIN_LOW(pin)    gpio_set_level(pin, 0)
