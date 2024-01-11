@@ -54,7 +54,7 @@ int mpu_i2c_master_init(void)
 
 void mpu6500_init(void)
 {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    //vTaskDelay(100 / portTICK_PERIOD_MS);
 	
     ESP_ERROR_CHECK(mpu_i2c_master_init());
 	// Serial.println("INIT SENSOR...");

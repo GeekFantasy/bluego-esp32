@@ -156,9 +156,11 @@ void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint
     if (record != NULL)
     {
         char mode_str[5] = {0};
+        char key_str[16] = {0};
         itoa(mode_num, mode_str, 10);
+        strcpy(key_str, record->op_key);
 
-        if (nvs_get_u16(handle, strcat(record->op_key, mode_str), &(record->action_code)))
+        if (nvs_get_u16(handle, strcat(key_str, mode_str), &(record->action_code)))
         {
             ESP_LOGE(OPERATIONS_TAG, "Failed to read op_key %s, original action_code = %d", record->op_key, record->action_code);
         }

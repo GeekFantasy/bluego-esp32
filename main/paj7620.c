@@ -266,7 +266,7 @@ unsigned char initRegisterArray[][2] = {	// Initial Gesture
 	{0x7E,0x01},
 };
 
-int i2c_master_init(void)
+int init_paj7620_i2c(void)
 {
    
     i2c_config_t conf = {
@@ -281,7 +281,7 @@ int i2c_master_init(void)
 
     int err = i2c_param_config(i2c_master_port, &conf);
     if (err != ESP_OK) {
-        ESP_LOGI(PAJ7620_TAG, "Failed to config I2C, error：%d", err);
+        ESP_LOGI(PAJ7620_TAG, "Failed to config I2C, error:%d", err);
         return err;
     }
     ESP_LOGI(PAJ7620_TAG,"I2C configed sucessfully!");
@@ -317,10 +317,10 @@ uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd)
     ret = i2c_master_cmd_begin(i2c_master_port, handle, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(handle);
     if (ret != ESP_OK) {
-        ESP_LOGI(PAJ7620_TAG,"Failed to write pag7620 reg!");
+        ESP_LOGE(PAJ7620_TAG,"Failed to write pag7620 reg!");
         return ret;
     }
-    ESP_LOGI(PAJ7620_TAG,"Succeeded to write pag7620 reg!");
+    ESP_LOGI(PAJ7620_TAG,"Succeeded to write addr: %x, data: %x", addr, cmd);
 	return ret;
 }
 
@@ -393,13 +393,11 @@ uint8_t init_paj7620(void)
 	uint8_t error;
 	uint8_t data0 = 0, data1 = 0;
 	//wakeup the sensor
-	// delayMicroseconds(700);	//Wait 700us for PAJ7620U2 to stabilize	
-    vTaskDelay(700 / portTICK_PERIOD_MS);
+	//Wait 700us for PAJ7620U2 to stabilize	
+    //vTaskDelay(700 / portTICK_PERIOD_MS);
 	
-	// Wire.begin();
-    i2c_master_init();
+    init_paj7620_i2c();
 	
-	// Serial.println("INIT SENSOR...");
     ESP_LOGI(PAJ7620_TAG, "INIT SENSOR...");
 
 	paj7620_select_bank(BANK0);
@@ -423,6 +421,7 @@ uint8_t init_paj7620(void)
 	{
 		return 0xff;
 	}
+
 	if ( data0 == 0x20 )
 	{
         ESP_LOGI(PAJ7620_TAG, "wake-up finish.");
@@ -437,9 +436,6 @@ uint8_t init_paj7620(void)
 	
 	// Serial.println("Paj7620 initialize register finished.");
     ESP_LOGI(PAJ7620_TAG, "Paj7620 initialize register finished.");
-
-	// Initialize PAJ7620 interrupt
-    init_paj7620_interrupt();
 
 	return 0;
 }
@@ -458,15 +454,10 @@ esp_err_t init_paj7620_interrupt()
 {
     esp_err_t err = 0;
     gpio_config_t io_conf = {};
-    // interrupt of failing edge
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
-    // set as input mode
     io_conf.mode = GPIO_MODE_DEF_INPUT;
-    // bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = (1ULL << PAJ7620_INTERRUPT_PIN);
-    // disable pull-down mode
     io_conf.pull_down_en = 0;
-    // enable pull-up mode
     io_conf.pull_up_en = 1;
 
     err = gpio_config(&io_conf);
@@ -493,3 +484,40 @@ esp_err_t init_paj7620_interrupt()
     return err;
 }
 
+esp_err_t paj7620_suspend()
+{
+	esp_err_t err = ESP_OK;
+	paj7620_select_bank(BANK1);
+	err = paj7620_write_reg(0x72, 0x00); //Firstly disable paj7620
+
+	if(ESP_OK != err)
+	{
+		ESP_LOGE(PAJ7620_TAG, "Failed to disable the sensor, error: %d.", err);
+	}
+
+	paj7620_select_bank(BANK0);
+	err = paj7620_write_reg(0x03, 0x01); //Suspend the sensor
+
+	if(ESP_OK != err)
+	{
+		ESP_LOGE(PAJ7620_TAG, "Failed to suspend the sensor, error: %d.", err);
+	}
+
+	return err;
+}
+
+esp_err_t paj7620_wake_up()
+{
+	esp_err_t err = ESP_OK;
+	paj7620_select_bank(BANK1);  // Trigger the sensor to wake up.
+	paj7620_select_bank(BANK1);
+
+	vTaskDelay(1 / portTICK_PERIOD_MS); // wait for the sensor to stablelised
+	err = paj7620_write_reg(0x72, 0x01);
+	if(ESP_OK != err)
+	{
+		ESP_LOGE(PAJ7620_TAG, "Failed to enable the sensor, error: %d.", err);
+	}
+	
+	return err;
+}

@@ -130,13 +130,14 @@ typedef enum {
 
 #define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
 
-
+int init_paj7620_i2c(void);
 uint8_t init_paj7620(void);
 esp_err_t init_paj7620_interrupt();
 int paj7620_gesture_triggered();
 uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd);
 uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[]);
 void paj7620_select_bank(bank_e bank);
-
+esp_err_t paj7620_suspend();
+esp_err_t paj7620_wake_up();
 
 #endif

@@ -355,6 +355,22 @@ void reset_all_gpio()
     gpio_reset_pin(MPU6500_I2C_SDA);
 }
 
+void suspend_imu_and_ges_detector()
+{
+    esp_err_t err_code = ESP_OK;
+    err_code = mpu6500_set_sleep(true);  // Always has error when executing this
+    if(ESP_OK != err_code)
+    {
+        ESP_LOGE(HID_DEMO_TAG, "Failed to set mpu6500 to sleeep mode before powering off. Error: %d", err_code);
+    }
+ 
+    err_code = paj7620_suspend();       // Able to suspend, but not working well after power on again.
+    if(ESP_OK != err_code)
+    {
+        ESP_LOGE(HID_DEMO_TAG, "Failed to suspend PAJ7620 before powering off.");
+    }
+}
+
 void track_ball_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
@@ -463,6 +479,7 @@ void mode_setting_task(void *pvParameters)
                 epd_deep_sleep(epd_spi);
                 clear_track_ball_step_counters();
                 write_mode_num_to_nvs(curr_mode);
+                read_mode_to_matrix(curr_mode);
             }
             else
             {
@@ -742,7 +759,7 @@ void hid_main_task(void *pvParameters)
 
         // Go to deep sleep (power off) mode
         get_func_btn_state(&func_btn_state, &state_last_time_ms);
-        ESP_LOGI(HID_DEMO_TAG, "******FUNC KEY STATE: %d and state last time: %d.", func_btn_state, state_last_time_ms);
+        //ESP_LOGI(HID_DEMO_TAG, "******FUNC KEY STATE: %d and state last time: %d.", func_btn_state, state_last_time_ms);
         if(FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP)
         {
             // Show power off screen
@@ -767,6 +784,7 @@ void hid_main_task(void *pvParameters)
             rtc_gpio_pullup_en(FUNC_BTN_PIN);
             rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
             reset_all_gpio();
+            suspend_imu_and_ges_detector();  // This is not working well
             esp_deep_sleep_start();
         }
     }
@@ -870,7 +888,18 @@ void app_main(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
     // Initialize PAJ7620
-    init_paj7620();
+    ESP_LOGE(HID_DEMO_TAG, "******The cause of wakeup is %d", esp_sleep_get_wakeup_cause());
+    if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
+    {
+        init_paj7620();
+        init_paj7620_interrupt();
+    }
+    else
+    {
+        init_paj7620_i2c();
+        init_paj7620_interrupt();
+        paj7620_wake_up();
+    }    
     
     // init MPU6500
     mpu6500_init();
