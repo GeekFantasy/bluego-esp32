@@ -569,14 +569,11 @@ void epd_display_full_black_v2(spi_device_handle_t spi)
 /// @brief 
 /// @param spi 
 /// Status: same issue with epd_display_full_white_v2
-void epd_display_full_white(spi_device_handle_t spi)
+void epd_full_display_full_white(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_display_full_white().");
-    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
-    {
-        epd_buff[i] = 0xFF;
-    }
-
+    ESP_LOGI(EPD_TAG, "Entering epd_full_display_full_white().");
+    
+    memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_send_command(spi, 0x10);
     epd_send_data(spi, epd_buff, sizeof(epd_buff));
 
@@ -584,8 +581,17 @@ void epd_display_full_white(spi_device_handle_t spi)
     epd_send_data(spi, epd_buff, sizeof(epd_buff));  
 
     epd_update_display(spi);
-    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_white().");
+    ESP_LOGI(EPD_TAG, "Exiting epd_full_display_full_white().");
 }
+
+void epd_partial_display_full_white(spi_device_handle_t spi)
+{
+    ESP_LOGI(EPD_TAG, "Entering epd_partial_display_full_white.");
+    memset(epd_buff, 0xFF, sizeof(epd_buff));
+    epd_partial_display_full_image(spi, epd_buff, sizeof(epd_buff));
+    ESP_LOGI(EPD_TAG, "Exiting epd_partial_display_full_white().");
+}
+
 
 void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int len)
 {
@@ -662,7 +668,7 @@ void epd_test_display_full_image(spi_device_handle_t spi)
     epd_init_full_display(spi);
     //Delay(6000);
 
-    epd_display_full_white(spi);
+    epd_full_display_full_white(spi);
     //Delay(6000);
 
     // uint8_t rx = 0;
@@ -783,6 +789,9 @@ void epd_full_display_mode(spi_device_handle_t spi, int8_t mode)
     case 4:
         image = gImage_custom2;
         break;
+    case 5:
+        image = gImage_poweringoff;
+        break;
     default:
         image = gImage_config;
         break;
@@ -812,9 +821,12 @@ void epd_partial_display_mode(spi_device_handle_t spi, int8_t mode)
     case 4:
         image = gImage_custom2;
         break;
+    case 5:
+        image = gImage_poweringoff;
+        break;
     default:
         image = gImage_config;
-        break;
+        break;        
     }
 
     epd_partial_display_full_image(spi, image, EPD_DIS_ARRAY);
@@ -827,11 +839,7 @@ void epd_test_display_partial_image_v2(spi_device_handle_t spi)
 {
     epd_init_full_display(spi);
 
-    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
-    {
-        epd_buff[i] = 0xFF;
-    }
-    
+    memset(epd_buff, 0xFF, sizeof(epd_buff)); 
     epd_set_raw_value_base_map(spi, epd_buff);
     Delay(2000);
 
@@ -850,11 +858,7 @@ void epd_test_display_partial_image_v3(spi_device_handle_t spi)
 {
     epd_init_full_display(spi);
 
-    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
-    {
-        epd_buff[i] = 0xFF;
-    }
-    
+    memset(epd_buff, 0xFF, sizeof(epd_buff)); 
     epd_set_raw_value_base_map(spi, epd_buff);
 
     epd_init_partial_display(spi);  

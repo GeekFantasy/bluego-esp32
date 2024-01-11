@@ -28,6 +28,8 @@
 #include "epaper_display.h"
 #include "trackball.h"
 #include "function_btn.h"
+#include "esp_sleep.h"
+#include "driver/rtc_io.h"
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -42,6 +44,7 @@
 #define SWITCH_KEY_RANGE         45
 
 #define MODE_MAX_NUM              5
+#define HOLD_TIME_MS_TO_SLEEP  3 * 1000
 
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 
@@ -673,6 +676,8 @@ void hid_main_task(void *pvParameters)
 
     oper_message op_msg;
     uint16_t action_code;
+    int func_btn_state = 1;
+    int state_last_time_ms = xTaskGetTickCount();
 
     while (1)
     {
@@ -708,6 +713,35 @@ void hid_main_task(void *pvParameters)
         else
         {
             Delay(time_delay_when_idle);
+        }
+
+        // Go to deep sleep (power off) mode
+        get_func_btn_state(&func_btn_state, &state_last_time_ms);
+        ESP_LOGI(HID_DEMO_TAG, "******FUNC KEY STATE: %d and state last time: %d.", func_btn_state, state_last_time_ms);
+        if(FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP)
+        {
+            // Show power off screen
+            epd_power_on_to_partial_display(epd_spi);
+            epd_partial_display_mode(epd_spi, 5);
+            Delay(1500);
+            // Show white screen
+            epd_init_full_display(epd_spi);
+            epd_full_display_full_white(epd_spi);
+            epd_deep_sleep(epd_spi);
+
+            // Wait untill func btn is released          
+            do
+            {
+                Delay(100);
+                get_func_btn_state(&func_btn_state, &state_last_time_ms);
+            } while(FUNC_BTN_PRESSED == func_btn_state );
+            
+            ESP_LOGI(HID_DEMO_TAG, "Will make ESP32 go into deep sleep mode.");
+            // Go to deep sleep mode
+            esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
+            rtc_gpio_pullup_en(FUNC_BTN_PIN);
+            rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
+            esp_deep_sleep_start();
         }
     }
 }
