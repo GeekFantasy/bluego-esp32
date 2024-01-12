@@ -347,24 +347,29 @@ void reset_all_gpio()
     gpio_reset_pin(TRACK_BALL_LEFT_PIN);
     gpio_reset_pin(TRACK_BALL_RIGHT_PIN);
 
-    gpio_reset_pin(PAJ7620_I2C_SCL);
-    gpio_reset_pin(PAJ7620_I2C_SDA);
-    gpio_reset_pin(PAJ7620_INTERRUPT_PIN);
+    // F*** this! Reset pin hurted a lot, all the weird behavor after suspend is caused by this
+    // F***! Comment out this cannot fix the issue completely, but sometimes it works well. Weird, really weird!
+    //gpio_reset_pin(PAJ7620_I2C_SCL);             
+    //gpio_reset_pin(PAJ7620_I2C_SDA);
+    //gpio_reset_pin(PAJ7620_INTERRUPT_PIN);
 
-    gpio_reset_pin(MPU6500_I2C_SCL);
-    gpio_reset_pin(MPU6500_I2C_SDA);
+    // Comment out this to avoid potential issue like paj7620.
+    //gpio_reset_pin(MPU6500_I2C_SCL);
+    //gpio_reset_pin(MPU6500_I2C_SDA);
 }
 
 void suspend_imu_and_ges_detector()
 {
     esp_err_t err_code = ESP_OK;
-    err_code = mpu6500_set_sleep(true);  // Tested, this works well now.
+    err_code = mpu6500_set_sleep(true); 
     if(ESP_OK != err_code)
     {
         ESP_LOGE(HID_DEMO_TAG, "Failed to set mpu6500 to sleeep mode before powering off. Error: %d", err_code);
     }
- 
-    err_code = paj7620_suspend();       // Able to suspend, but not working well after power on again.
+    
+    // Able to suspend, but not working well after power on again.
+    // Found that paj7620 sometimes works well, sometimes not after power off/on. 
+    err_code = paj7620_suspend(); 
     if(ESP_OK != err_code)
     {
         ESP_LOGE(HID_DEMO_TAG, "Failed to suspend PAJ7620 before powering off.");
@@ -376,6 +381,7 @@ void track_ball_task(void *pvParameters)
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
 
     uint16_t tkb_key;
+    int tb_touch_state = 1, tb_touch_state_old = 1;
     oper_message op_msg;
     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
     TickType_t last_wake_time = xTaskGetTickCount();
@@ -384,7 +390,8 @@ void track_ball_task(void *pvParameters)
     {
         if (ble_connected && check_module_enabled(OPER_KEY_TKB) && (!in_mode_setting))
         {
-            if(TRACK_BALL_TOUCH_DOWN == get_track_ball_touch_state())
+            tb_touch_state = get_track_ball_touch_state();
+            if((TRACK_BALL_TOUCH_DOWN == tb_touch_state) && (TRACK_BALL_TOUCH_DOWN != tb_touch_state_old))
             {
                 tkb_key = OPER_KEY_TKB_TOUCH;
             }
@@ -392,6 +399,7 @@ void track_ball_task(void *pvParameters)
             {
                 tkb_key = get_track_ball_movement_key(get_track_ball_movement());
             }
+            tb_touch_state_old = tb_touch_state;
 
             if(tkb_key != 0 && oper_queue != NULL)
             {
@@ -628,6 +636,8 @@ void gesture_detect_task(void *pvParameters)
     TickType_t last_wake_time = xTaskGetTickCount();
     ESP_LOGI(HID_DEMO_TAG, "Entering gesture detect task");
 
+    int state_switch = 0,  tb_touch_state = 1, tb_touch_state_old = 1;
+
     while (1)
     {
         if (ble_connected && check_module_enabled(OPER_KEY_GES) && (!in_mode_setting))
@@ -648,6 +658,26 @@ void gesture_detect_task(void *pvParameters)
         {
             Delay(time_delay_when_idle);
         }
+
+        tb_touch_state = get_track_ball_touch_state();
+        if((TRACK_BALL_TOUCH_DOWN == tb_touch_state) && (TRACK_BALL_TOUCH_DOWN != tb_touch_state_old))
+        {
+            // After suspend and wake up, sometimes paj7620 would be work well again.
+            if(state_switch == 0)
+            {
+                ESP_LOGI(HID_DEMO_TAG, "paj7620_suspend");
+                paj7620_suspend();
+            }
+            
+            if(state_switch == 1)
+            {
+                ESP_LOGI(HID_DEMO_TAG, "paj7620_wake_up.");
+                paj7620_wake_up();
+            }
+            state_switch++; 
+            state_switch = state_switch % 2;
+        }
+        tb_touch_state_old = tb_touch_state;
     }
 }
 
@@ -725,12 +755,6 @@ void hid_main_task(void *pvParameters)
     {
         if (ble_connected && (!in_mode_setting))
         {
-            // uint8_t key_vaule = {HID_KEY_A};
-            // esp_hidd_send_keyboard_value(hid_conn_id, 0, &key_vaule, 1);
-            // esp_hidd_send_consumer_value()
-            // esp_hidd_send_mouse_value(hid_conn_id, 0, 0, 0, 1);
-            // Delay(200);
-
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
                 ESP_LOGI(HID_DEMO_TAG, "msg op_key:%d", op_msg.oper_key);
@@ -770,7 +794,6 @@ void hid_main_task(void *pvParameters)
             epd_init_full_display(epd_spi);
             epd_full_display_full_white(epd_spi);
             epd_deep_sleep(epd_spi);
-
             // Wait untill func btn is released          
             do
             {
@@ -786,6 +809,14 @@ void hid_main_task(void *pvParameters)
             suspend_imu_and_ges_detector(); 
             reset_all_gpio();
             esp_deep_sleep_start();
+
+            // Energy saving test results:
+            // Working without ble connection but broadcasting: ~50 ma
+            // Working with ble connection: ~42 ma, air mouse sending： 62 ma
+            // Sleeping with reset gpio and suspend sensors: 0.732 ma 
+            // Sleeping Without reset gpio: 0.8 ma
+            // Sleeping without reset gpio and suspend mpu & gesture: 4.38 ma, when gesture detected: 6 ma 
+            // Burning code : 20 ma
         }
     }
 }
@@ -889,9 +920,11 @@ void app_main(void)
 
     // Initialize PAJ7620
     ESP_LOGE(HID_DEMO_TAG, "******The cause of wakeup is %d", esp_sleep_get_wakeup_cause());
+    
     if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
     {
-        init_paj7620();
+        init_paj7620_i2c();
+        init_paj7620_registers();
         init_paj7620_interrupt();
     }
     else
@@ -899,6 +932,8 @@ void app_main(void)
         init_paj7620_i2c();
         init_paj7620_interrupt();
         paj7620_wake_up();
+        //paj7620_reset();
+        init_paj7620_registers();
     }    
     
     // init MPU6500
