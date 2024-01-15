@@ -43,8 +43,9 @@
 #define SWITCH_KEY_MIDDLE_LEVEL  280
 #define SWITCH_KEY_RANGE         45
 
-#define MODE_MAX_NUM              5
-#define HOLD_TIME_MS_TO_SLEEP  2 * 1000
+#define MODE_MAX_NUM             5
+#define HOLD_TIME_MS_TO_SLEEP    2 * 1000
+#define ILDE_TIME_TO_POWER_OFF   5 * 60 * 1000          // If there is no operation for 5 minutes, it will power off
 
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 
@@ -61,6 +62,7 @@ int8_t curr_mode;
 gesture_state generic_gs;
 int in_mode_setting = 0;
 spi_device_handle_t epd_spi;
+TickType_t last_oper_time;
 
 // Action processing queue
 QueueHandle_t oper_queue = NULL;
@@ -358,6 +360,8 @@ void reset_all_gpio()
     //gpio_reset_pin(MPU6500_I2C_SDA);
 }
 
+
+
 void suspend_imu_and_ges_detector()
 {
     esp_err_t err_code = ESP_OK;
@@ -374,6 +378,43 @@ void suspend_imu_and_ges_detector()
     {
         ESP_LOGE(HID_DEMO_TAG, "Failed to suspend PAJ7620 before powering off.");
     }
+}
+
+int is_valid_operation(oper_message op_msg)
+{
+    int valid_op = 0;
+    switch (op_msg.oper_key)
+    {
+    case OPER_KEY_IMU_GYRO:
+        if(op_msg.oper_param.mouse.point_x > 2 || op_msg.oper_param.mouse.point_y > 2 || op_msg.oper_param.mouse.wheel > 0)  // Filter small movement
+            valid_op = 1;
+        break;
+    case OPER_KEY_MFS_UP:
+    case OPER_KEY_MFS_DOWN:
+    case OPER_KEY_MFS_LEFT:
+    case OPER_KEY_MFS_RIGHT:
+    case OPER_KEY_MFS_MIDDLE:
+    case OPER_KEY_GES_UP:
+    case OPER_KEY_GES_DOWN:
+    case OPER_KEY_GES_LEFT:
+    case OPER_KEY_GES_RIGHT:
+    case OPER_KEY_GES_FORWOARD:
+    case OPER_KEY_GES_CLK:
+    case OPER_KEY_GES_ACLK:
+    case OPER_KEY_TKB_UP:
+    case OPER_KEY_TKB_DOWN:
+    case OPER_KEY_TKB_LEFT:
+    case OPER_KEY_TKB_RIGHT:
+    case OPER_KEY_TKB_TOUCH:
+        if(op_msg.oper_param.key_state.pressed)
+            valid_op = 1;
+        break;    
+    default:
+        valid_op = 1;
+        break;
+    }
+    
+    return valid_op;
 }
 
 void track_ball_task(void *pvParameters)
@@ -463,6 +504,7 @@ void mode_setting_task(void *pvParameters)
             if(display_updated)    // No need to delay if e-paper is updated
             {
                 display_updated = 0;
+                last_oper_time = xTaskGetTickCount();
             }
             else
             {            
@@ -497,6 +539,8 @@ void mode_setting_task(void *pvParameters)
                 epd_power_on_to_partial_display(epd_spi);
                 clear_track_ball_step_counters();
             }
+
+            last_oper_time = xTaskGetTickCount();
         }
 
         tb_touch_state_old = tb_touch_state;
@@ -749,6 +793,7 @@ void hid_main_task(void *pvParameters)
     oper_message op_msg;
     uint16_t action_code;
     int func_btn_state = 1;
+    TickType_t current_tick = 0;
     int state_last_time_ms = xTaskGetTickCount();
 
     while (1)
@@ -762,6 +807,8 @@ void hid_main_task(void *pvParameters)
                 {
                     action_code = get_action_code(op_msg.oper_key);
                     send_operation_action(hid_conn_id, action_code, op_msg.oper_param, op_msg.oper_type);
+                    if(is_valid_operation(op_msg))
+                        last_oper_time = xTaskGetTickCount(); 
                 }
                 else
                 {
@@ -783,8 +830,10 @@ void hid_main_task(void *pvParameters)
 
         // Go to deep sleep (power off) mode
         get_func_btn_state(&func_btn_state, &state_last_time_ms);
+        current_tick = xTaskGetTickCount();
         //ESP_LOGI(HID_DEMO_TAG, "******FUNC KEY STATE: %d and state last time: %d.", func_btn_state, state_last_time_ms);
-        if(FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP)
+        if((current_tick - last_oper_time > ILDE_TIME_TO_POWER_OFF) 
+            || (FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP))
         {
             // Show power off screen
             epd_power_on_to_partial_display(epd_spi);
@@ -951,6 +1000,9 @@ void app_main(void)
 
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
+
+    // Record the last operation time which is used for power off
+    last_oper_time = xTaskGetTickCount(); 
 
     //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
     //xTaskCreate(&multi_fun_switch_task, "multi_fun_switch", 2048, NULL, 1, NULL);
