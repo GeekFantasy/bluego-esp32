@@ -62,7 +62,7 @@ void mpu6500_init(void)
 
     if(mpu6500_reset()) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 reset with error");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 reset with error");
     }
     else
     {
@@ -71,7 +71,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_sleep(false)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 wake up modules with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 wake up modules with error.");
     }
     else
     {
@@ -102,7 +102,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_gyro_offset(&gyro_r))
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro offset with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set gyro offset with error.");
     }
     else
     {
@@ -114,7 +114,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_clock_source(CLOCK_PLL)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set clock source with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set clock source with error.");
     }
     else
     {
@@ -123,7 +123,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_gyro_full_scale(GYRO_FS_SETTING)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro scale with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set gyro scale with error.");
     }
     else
     {
@@ -132,7 +132,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_accel_full_scale(ACCEL_FS_16G)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set accel scale with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set accel scale with error.");
     }
     else
     {
@@ -141,7 +141,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_digital_low_pass_filter(DLPF_42HZ)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set low pass filter with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set low pass filter with error.");
     }
     else
     {
@@ -150,7 +150,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_sample_rate(100)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set sample rate with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set sample rate with error.");
     }
     else
     {
@@ -171,7 +171,7 @@ uint8_t mpu6500_who_am_i(void)
     }
     else
     {
-        ESP_LOGI(MPU6500_TAG,"Failed to read who am I!");
+        ESP_LOGE(MPU6500_TAG,"Failed to read who am I!");
     }
 
     return ret;

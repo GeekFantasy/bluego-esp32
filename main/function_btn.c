@@ -24,7 +24,7 @@ esp_err_t init_function_btn()
     err = gpio_config(&io_conf);
     if (err != ESP_OK)
     {
-        ESP_LOGI(FUNC_BTN_INFO_TAG, "Failed to function button gpio config, error: %d.", err);
+        ESP_LOGE(FUNC_BTN_INFO_TAG, "Failed to function button gpio config, error: %d.", err);
     }
     else
     {
@@ -43,7 +43,7 @@ esp_err_t init_function_btn()
     err = gpio_isr_handler_add(FUNC_BTN_PIN, func_btn_event_handler, NULL);
     if (err != ESP_OK)
     {
-        ESP_LOGI(FUNC_BTN_INFO_TAG, "Failed to add isr hanlder for function button, error: %d.", err);
+        ESP_LOGE(FUNC_BTN_INFO_TAG, "Failed to add isr hanlder for function button, error: %d.", err);
     }
 
     state_change_time = xTaskGetTickCount();

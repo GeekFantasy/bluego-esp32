@@ -336,10 +336,9 @@ int init_paj7620_i2c(void)
 
     int err = i2c_param_config(i2c_master_port, &conf);
     if (err != ESP_OK) {
-        ESP_LOGI(PAJ7620_TAG, "Failed to config I2C, error:%d", err);
+        ESP_LOGE(PAJ7620_TAG, "Failed to config I2C, error:%d", err);
         return err;
     }
-    ESP_LOGI(PAJ7620_TAG,"I2C configed sucessfully!");
     return i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
 
@@ -364,7 +363,7 @@ uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd)
         ESP_LOGE(PAJ7620_TAG,"Failed to write pag7620 reg!");
         return ret;
     }
-    ESP_LOGI(PAJ7620_TAG,"Succeeded to write addr: %x, data: %x", addr, cmd);
+    ESP_LOGD(PAJ7620_TAG,"Succeeded to write addr: %x, data: %x", addr, cmd);
 	return ret;
 }
 
@@ -385,7 +384,7 @@ uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[])
     error = i2c_master_write_read_device(i2c_master_port, PAJ7620_ID, txBuffer, txLength, rxBuffer, qty, 50 / portTICK_RATE_MS);
     if(error)
     {
-        ESP_LOGI(PAJ7620_TAG,"i2cWriteReadNonStop returned Error %d", error);
+        ESP_LOGE(PAJ7620_TAG,"i2cWriteReadNonStop returned Error %d", error);
         return error;
     }
 
@@ -393,8 +392,7 @@ uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[])
     while(rxIndex < qty)
     {
         *data = rxBuffer[rxIndex++];
-        ESP_LOGI(PAJ7620_TAG,"read addr: %d", addr);
-        ESP_LOGI(PAJ7620_TAG,"read data: %d", *data);
+        ESP_LOGD(PAJ7620_TAG, "read addr: %x, data: %x", addr, *data);
         data++;
     }
 
@@ -434,13 +432,13 @@ uint8_t init_paj7620_registers(void)
 {
 	//Near_normal_mode_V5_6.15mm_121017 for 940nm
 	int i = 0;
-	uint8_t error;
+	uint8_t error = 0;
 	uint8_t data0 = 0, data1 = 0;
 	//wakeup the sensor
 	//Wait 700us for PAJ7620U2 to stabilize	
     //vTaskDelay(700 / portTICK_PERIOD_MS);
 	
-    ESP_LOGI(PAJ7620_TAG, "INIT SENSOR...");
+    ESP_LOGI(PAJ7620_TAG, "Begin to initialize ...");
 
 	paj7620_select_bank(BANK0);
 	paj7620_select_bank(BANK0);
@@ -478,7 +476,7 @@ uint8_t init_paj7620_registers(void)
 	paj7620_select_bank(BANK0);  //gesture flage reg in Bank0
 	
     ESP_LOGI(PAJ7620_TAG, "Paj7620 initialize register finished.");
-	return 0;
+	return error;
 }
 
 static void paj7620_event_handler(void *arg)
@@ -504,21 +502,21 @@ esp_err_t init_paj7620_interrupt()
     err = gpio_config(&io_conf);
     if (err != ESP_OK)
     {
-        ESP_LOGI(PAJ7620_TAG, "Failed to gpio config, error: %d.", err);
+        ESP_LOGE(PAJ7620_TAG, "Failed to gpio config, error: %d.", err);
         return err;
     }
 
     err = gpio_install_isr_service(0);
     if (err != ESP_OK)
     {
-        ESP_LOGI(PAJ7620_TAG, "Failed to install isr service, error: %d.", err);
+        ESP_LOGE(PAJ7620_TAG, "Failed to install isr service, error: %d.", err);
         return err;
     }
     // hook isr handler for specific gpio pin
     err = gpio_isr_handler_add(PAJ7620_INTERRUPT_PIN, paj7620_event_handler, NULL);
     if (err != ESP_OK)
     {
-        ESP_LOGI(PAJ7620_TAG, "Failed to add isr hanlder, error: %d.", err);
+        ESP_LOGE(PAJ7620_TAG, "Failed to add isr hanlder, error: %d.", err);
         return err;
     }
 

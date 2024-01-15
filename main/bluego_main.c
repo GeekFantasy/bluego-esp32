@@ -286,7 +286,7 @@ void init_power_voltage_adc()
     ret = adc1_config_width(ADC_WIDTH_BIT_12);
     if (ret)
     {
-        ESP_LOGI(HID_DEMO_TAG, "Power ADC initialization failed. \n");
+        ESP_LOGE(HID_DEMO_TAG, "Power ADC initialization failed. \n");
     }
     else
     {
@@ -898,6 +898,7 @@ void app_main(void)
     }
     // Read the operation matrix to memory.
     read_mode_to_matrix(curr_mode);
+    ESP_LOGI(HID_DEMO_TAG, "Initialized the mode matrix.");
 
     // init e-paper-display
     ret = edp_init_spi_device(&epd_spi);
@@ -908,7 +909,7 @@ void app_main(void)
     if(check_stylus_enableed())
     {
         hidd_set_report_map(HIDD_REPORT_MAP_STYLUS_CC);
-        ESP_LOGI(HID_DEMO_TAG, "***Stylus is used***");
+        ESP_LOGI(HID_DEMO_TAG, "Stylus is used in current mode.");
     }
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
@@ -948,8 +949,11 @@ void app_main(void)
     }
 
     /// register the callback function to the gap module
-    esp_ble_gap_register_callback(gap_event_handler);
-    esp_hidd_register_callbacks(hidd_event_callback);
+    if(esp_ble_gap_register_callback(gap_event_handler) != ESP_OK)
+        ESP_LOGE(HID_DEMO_TAG, "esp_ble_gap_register_callback failed\n");
+
+    if(esp_hidd_register_callbacks(hidd_event_callback)!= ESP_OK)
+        ESP_LOGE(HID_DEMO_TAG, "esp_hidd_register_callbacks failed\n");;
 
     /* set the security iocap & auth_req & op_key size & init op_key response op_key parameters to the stack*/
     esp_ble_auth_req_t auth_req = ESP_LE_AUTH_BOND; // bonding with peer device after authentication
@@ -966,23 +970,26 @@ void app_main(void)
     and the init op_key means which op_key you can distribute to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
-
-    // Initialize PAJ7620
-    ESP_LOGE(HID_DEMO_TAG, "******The cause of wakeup is %d", esp_sleep_get_wakeup_cause());
+ 
+    ESP_LOGI(HID_DEMO_TAG, "The cause of wakeup is %d", esp_sleep_get_wakeup_cause());
     
+    // Initialize PAJ7620
     if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
     {
-        init_paj7620_i2c();
-        init_paj7620_registers();
+        if(init_paj7620_i2c() == ESP_OK)
+            ESP_LOGI(HID_DEMO_TAG,"PAJ7620 I2C configed sucessfully!");
+        if(init_paj7620_registers() != ESP_OK)
+            ESP_LOGI(HID_DEMO_TAG,"PAJ7620 registers configed sucessfully!");
         init_paj7620_interrupt();
     }
     else
     {
-        init_paj7620_i2c();
+        if(init_paj7620_i2c() == ESP_OK)
+            ESP_LOGI(HID_DEMO_TAG,"PAJ7620 I2C configed sucessfully!");
         init_paj7620_interrupt();
         paj7620_wake_up();
-        //paj7620_reset();
-        init_paj7620_registers();
+        if(init_paj7620_registers() != ESP_OK)
+            ESP_LOGI(HID_DEMO_TAG,"PAJ7620 registers configed sucessfully!");
     }    
     
     // init MPU6500

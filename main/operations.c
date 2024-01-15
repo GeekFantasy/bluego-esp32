@@ -106,11 +106,11 @@ void write_oper_to_nvs(nvs_handle_t handle, operation_action record)
 {
     if (nvs_set_u16(handle, record.op_key, record.action_code))
     {
-        ESP_LOGE(OPERATIONS_TAG, "Failed to write op_key %s,action_code = %d", record.op_key, record.action_code);
+        ESP_LOGE(OPERATIONS_TAG, "Failed to write op_key %s, action_code = %d", record.op_key, record.action_code);
     }
     else
     {
-        ESP_LOGE(OPERATIONS_TAG, "Write op_key %s,action_code = %d", record.op_key, record.action_code);
+        ESP_LOGD(OPERATIONS_TAG, "Write op_key %s, action_code = %d", record.op_key, record.action_code);
     }
 
     nvs_commit(handle);
@@ -124,11 +124,11 @@ void write_mode_oper_to_nvs(nvs_handle_t handle, operation_action record, int mo
 
     if (nvs_set_u16(handle, strcat(record.op_key, mode_str), record.action_code))
     {
-        ESP_LOGE(OPERATIONS_TAG, "Failed to write op_key %s,action_code = %d", record.op_key, record.action_code);
+        ESP_LOGE(OPERATIONS_TAG, "Failed to write op_key %s, action_code = %d", record.op_key, record.action_code);
     }
     else
     {
-        ESP_LOGI(OPERATIONS_TAG, "Write op_key %s,action_code = %d", record.op_key, record.action_code);
+        ESP_LOGD(OPERATIONS_TAG, "Write op_key %s, action_code = %d", record.op_key, record.action_code);
     }
 
     nvs_commit(handle);
@@ -145,7 +145,7 @@ void read_oper_from_nvs(nvs_handle_t handle, operation_action *record)
         }
         else
         {
-            ESP_LOGI(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
+            ESP_LOGD(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
         }
     }
 }
@@ -166,7 +166,7 @@ void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint
         }
         else
         {
-            ESP_LOGI(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
+            ESP_LOGD(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
         }
     }
 }
@@ -356,7 +356,7 @@ esp_err_t update_operations_tab(const uint8_t *data, int data_len)
         op.action_code = data[i] << 8 | data[i + 1];
 
         j = 0, i++;
-        ESP_LOGE(OPERATIONS_TAG, "Parsed op_key %s, action_code = %x", op.op_key, op.action_code);
+        ESP_LOGD(OPERATIONS_TAG, "Parsed op_key %s, action_code = %x", op.op_key, op.action_code);
         if (update_operation(&op))
         {
             err = 1;
@@ -393,7 +393,7 @@ void send_keyboard_key_with_mask(uint16_t hid_conn_id, uint8_t mask, uint8_t op_
 
 void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_param op_param, uint8_t oper_type)
 {
-    ESP_LOGI(OPERATIONS_TAG, "send op code: %d", action_code);
+    ESP_LOGD(OPERATIONS_TAG, "send op code: %d", action_code);
 
     switch (action_code)
     {

@@ -80,7 +80,7 @@ uint8_t epd_buff[1280] = {0xFF};
 
 void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_send_command() with cmd: 0x %hx", cmd);
+    ESP_LOGD(EPD_TAG, "Entering epd_send_command() with cmd: 0x %hx", cmd);
     esp_err_t ret;
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));       //Zero out the transaction
@@ -93,7 +93,6 @@ void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
 
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
-    ESP_LOGI(EPD_TAG, "Exiting epd_send_command().");
 }
 
 void epd_send_data(spi_device_handle_t spi, const uint8_t *data, int len)
@@ -120,37 +119,33 @@ void epd_send_byte_data(spi_device_handle_t spi, const uint8_t data)
 
 void epd_set_full_reg(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_set_full_reg().");
+    ESP_LOGD(EPD_TAG, "Entering epd_set_full_reg().");
 
     epd_send_command(spi, 0x23);
     epd_send_data(spi, lut_w1, sizeof(lut_w1));
   
     epd_send_command(spi, 0x24);
     epd_send_data(spi, lut_w1, sizeof(lut_b1));
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_set_full_reg().");
 }
 
 void epd_reset(void)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_reset().");
+    ESP_LOGD(EPD_TAG, "Entering epd_reset().");
     SET_PIN_LOW(EPD_RST_PIN);
     Delay(10);
     SET_PIN_HIGH(EPD_RST_PIN);
     Delay(10);
-    ESP_LOGI(EPD_TAG, "Exiting epd_reset().");
 }
 
 void epd_wait_until_ilde(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_wait_until_ilde().");
+    ESP_LOGD(EPD_TAG, "Entering epd_wait_until_ilde().");
     int busy;
     do{
         busy = gpio_get_level(EPD_BUSY_PIN);
         Delay(1);
     }while(!busy);
     Delay(10);
-    ESP_LOGI(EPD_TAG, "Exiting epd_wait_until_ilde().");
 }
 
 void epd_spi_pre_transfer_callback(spi_transaction_t *t)
@@ -210,7 +205,7 @@ void epd_dis_part_ram(spi_device_handle_t spi, unsigned int x_start,unsigned int
                         const uint8_t * data_E, unsigned char num,
                         unsigned int PART_COLUMN, unsigned int PART_LINE)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_dis_part_ram()");
+    ESP_LOGD(EPD_TAG, "Entering epd_dis_part_ram()");
     unsigned int i, x_end, y_end;
     x_start = x_start - x_start % 8;
     x_end = x_start + PART_LINE - 1; 
@@ -290,7 +285,7 @@ void epd_dis_part_ram_v2(spi_device_handle_t spi, unsigned int x_start,unsigned 
                         const uint8_t * data_E, unsigned char num,
                         unsigned int PART_COLUMN, unsigned int PART_LINE)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_dis_part_ram()");
+    ESP_LOGD(EPD_TAG, "Entering epd_dis_part_ram()");
     unsigned int i, x_end, y_end;
     x_start = x_start - x_start % 8;
     x_end = x_start + PART_LINE - 1; 
@@ -379,13 +374,13 @@ void epd_dis_part_time_v2(spi_device_handle_t spi, unsigned int x_start,unsigned
                         const uint8_t * datas_E, unsigned char num,
                         unsigned int PART_COLUMN, unsigned int PART_LINE)
 {
-    ESP_LOGI(EPD_TAG, "***************Display new image on partial mode*********************.");
+    ESP_LOGD(EPD_TAG, "***************Display new image on partial mode*********************.");
     epd_dis_part_ram_v2(spi, x_start, y_start, datas_A, datas_B, datas_C, datas_D, datas_E, num, PART_COLUMN, PART_LINE);
 }
 
 void epd_init_full_display(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_init_full_display().");
+    ESP_LOGD(EPD_TAG, "Entering epd_init_full_display().");
     epd_reset();
     epd_wait_until_ilde(spi);
 
@@ -401,13 +396,11 @@ void epd_init_full_display(spi_device_handle_t spi)
 
     epd_send_command(spi, 0x50);        //VCOM AND DATA INTERVAL SETTING
     epd_send_byte_data(spi, 0x97);      //WBmode:VBDF 17|D7 VBDW 97 VBDB 57   WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_init_full_display().");
 }
 
 void epd_init_partial_display(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_init_partial_display().");
+    ESP_LOGD(EPD_TAG, "Entering epd_init_partial_display().");
     epd_reset();
     epd_wait_until_ilde(spi);
 
@@ -449,8 +442,6 @@ void epd_init_partial_display(spi_device_handle_t spi)
 
     epd_send_command(spi, 0x04);
     epd_wait_until_ilde(spi);
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_init_partial_display().");
 }
 
 //Enter the sleep mode and please do not delete it, otherwise it will reduce the lifespan of the screen.
@@ -476,7 +467,7 @@ void epd_update_display(spi_device_handle_t spi)
 
 void epd_display_full_black(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_display_full_black().");
+    ESP_LOGD(EPD_TAG, "Entering epd_display_full_black().");
 
     int Width = (EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1);
     epd_send_command(spi, 0x10);
@@ -498,8 +489,6 @@ void epd_display_full_black(spi_device_handle_t spi)
     }
 
     epd_update_display(spi);
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_black().");
 }
 
 
@@ -508,7 +497,7 @@ void epd_display_full_black(spi_device_handle_t spi)
 /// Status: Working well excepting the first black line emerging later after a while
 void epd_display_full_white_v2(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_display_full_white_v2().");
+    ESP_LOGD(EPD_TAG, "Entering epd_display_full_white_v2().");
 
     int Width = (EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1);
     epd_send_command(spi, 0x10);
@@ -530,13 +519,11 @@ void epd_display_full_white_v2(spi_device_handle_t spi)
     }
 
     epd_update_display(spi);
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_white_v2().");
 }
 
 void epd_display_full_black_v2(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_display_full_black().");
+    ESP_LOGD(EPD_TAG, "Entering epd_display_full_black().");
 
     epd_send_command(spi, 0x10);
     epd_send_data(spi, epd_buff, sizeof(epd_buff));
@@ -550,8 +537,6 @@ void epd_display_full_black_v2(spi_device_handle_t spi)
     epd_send_data(spi, epd_buff, sizeof(epd_buff));    
 
     epd_update_display(spi);
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_black().");
 }
 
 /// @brief 
@@ -559,7 +544,7 @@ void epd_display_full_black_v2(spi_device_handle_t spi)
 /// Status: same issue with epd_display_full_white_v2
 void epd_full_display_full_white(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_full_display_full_white().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_full_white().");
     
     memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_send_command(spi, 0x10);
@@ -569,21 +554,18 @@ void epd_full_display_full_white(spi_device_handle_t spi)
     epd_send_data(spi, epd_buff, sizeof(epd_buff));  
 
     epd_update_display(spi);
-    ESP_LOGI(EPD_TAG, "Exiting epd_full_display_full_white().");
 }
 
 void epd_partial_display_full_white(spi_device_handle_t spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_partial_display_full_white.");
+    ESP_LOGD(EPD_TAG, "Entering epd_partial_display_full_white.");
     memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_partial_display_full_image(spi, epd_buff, sizeof(epd_buff));
-    ESP_LOGI(EPD_TAG, "Exiting epd_partial_display_full_white().");
 }
-
 
 void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int len)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_display_full_image().");
+    ESP_LOGD(EPD_TAG, "Entering epd_display_full_image().");
     
     memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_send_command(spi, 0x10);
@@ -594,7 +576,6 @@ void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int le
     memcpy(old_data, data, len);
 
     epd_update_display(spi);
-    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_image().");
 }
 
 /// @brief Show full image in the partial display mode
@@ -603,7 +584,7 @@ void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int le
 /// @param len 
 void epd_partial_display_full_image(spi_device_handle_t spi, const uint8_t* data, int len)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_display_full_image().");
+    ESP_LOGD(EPD_TAG, "Entering epd_display_full_image().");
         
     epd_send_command(spi, 0x10);
     epd_send_data(spi, old_data, sizeof(old_data));
@@ -613,12 +594,11 @@ void epd_partial_display_full_image(spi_device_handle_t spi, const uint8_t* data
     memcpy(old_data, data, len);
     
     epd_update_display(spi);
-    ESP_LOGI(EPD_TAG, "Exiting epd_display_full_image().");
 }
 
 uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
 {
-    ESP_LOGI(EPD_TAG, "Entering epd_get_byte().");
+    ESP_LOGD(EPD_TAG, "Entering epd_get_byte().");
     epd_send_command(spi, cmd);
 
     spi_transaction_t t;
@@ -631,21 +611,16 @@ uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
     esp_err_t ret = spi_device_polling_transmit(spi, &t);
     assert( ret == ESP_OK );
 
-    ESP_LOGI(EPD_TAG, "Exiting epd_get_byte().");
-
     return t.rx_data[0];
 }
 
 uint8_t epd_get_ic_status(spi_device_handle_t spi)
 {
     uint8_t rx = 0;
-    ESP_LOGI(EPD_TAG, "Entering epd_get_ic_status().");
+    ESP_LOGD(EPD_TAG, "Entering epd_get_ic_status().");
     epd_send_command(spi, 0x71);
 
     rx = epd_get_byte(spi, 0x71);
-
-    ESP_LOGI(EPD_TAG, "Exiting epd_get_ic_status().");
-
     return rx;
 }
 
@@ -862,7 +837,7 @@ void epd_test_display_partial_image_v3(spi_device_handle_t spi)
 
 esp_err_t  edp_init_spi_device(spi_device_handle_t *spi)
 {
-    ESP_LOGI(EPD_TAG, "Entering edp_init_spi_device().");
+    ESP_LOGD(EPD_TAG, "Entering edp_init_spi_device().");
 
     //zero-initialize the config structure.
     gpio_config_t io_conf = {};
@@ -920,8 +895,6 @@ esp_err_t  edp_init_spi_device(spi_device_handle_t *spi)
     //epd_test_display_partial_image_v3(spi);
     //Test code
     //epd_test_display_full_image(spi);
-   
-    ESP_LOGI(EPD_TAG, "Exiting edp_init_spi_device().");
     return ret;
 }
 

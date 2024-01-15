@@ -48,7 +48,7 @@ esp_err_t init_track_ball()
     err = gpio_config(&io_conf);
     if (err != ESP_OK)
     {
-        ESP_LOGI(TRACK_BALL_INFO_TAG, "Failed to init_track_ball gpio config, error: %d.", err);
+        ESP_LOGE(TRACK_BALL_INFO_TAG, "Failed to init_track_ball gpio config, error: %d.", err);
     }
     else
     {
@@ -66,28 +66,28 @@ esp_err_t init_track_ball()
     err = gpio_isr_handler_add(TRACK_BALL_UP_PIN, track_ball_event_handler, (void*)&tkb_move_up_steps);
     if (err != ESP_OK)
     {
-        ESP_LOGI(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball up, error: %d.", err);
+        ESP_LOGE(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball up, error: %d.", err);
         return err;
     }
 
     err = gpio_isr_handler_add(TRACK_BALL_DOWN_PIN, track_ball_event_handler, (void*)&tkb_move_down_steps);
     if (err != ESP_OK)
     {
-        ESP_LOGI(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball down, error: %d.", err);
+        ESP_LOGE(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball down, error: %d.", err);
         return err;
     }
 
     err = gpio_isr_handler_add(TRACK_BALL_LEFT_PIN, track_ball_event_handler, (void*)&tkb_move_left_steps);
     if (err != ESP_OK)
     {
-        ESP_LOGI(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball left, error: %d.", err);
+        ESP_LOGE(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball left, error: %d.", err);
         return err;
     }
 
     err = gpio_isr_handler_add(TRACK_BALL_RIGHT_PIN, track_ball_event_handler, (void*)&tkb_move_right_steps);
     if (err != ESP_OK)
     {
-        ESP_LOGI(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball right, error: %d.", err);
+        ESP_LOGE(TRACK_BALL_INFO_TAG, "Failed to add isr hanlder for track ball right, error: %d.", err);
         return err;
     }
 
