@@ -26,6 +26,7 @@
 #include "esp_system.h"
 #include "driver/spi_master.h"
 #include "epaper_display.h"
+#include "image_display.h"
 #include "trackball.h"
 #include "function_btn.h"
 #include "esp_sleep.h"
@@ -359,8 +360,6 @@ void reset_all_gpio()
     //gpio_reset_pin(MPU6500_I2C_SCL);
     //gpio_reset_pin(MPU6500_I2C_SDA);
 }
-
-
 
 void suspend_imu_and_ges_detector()
 {
@@ -841,7 +840,7 @@ void hid_main_task(void *pvParameters)
             Delay(1500);
             // Show white screen
             epd_init_full_display(epd_spi);
-            epd_full_display_full_white(epd_spi);
+            epd_full_display_white(epd_spi);
             epd_deep_sleep(epd_spi);
             // Wait untill func btn is released          
             do

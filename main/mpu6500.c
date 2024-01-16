@@ -110,7 +110,7 @@ void mpu6500_init(void)
     }
 
     gyro_r = mpu6500_get_gyro_offset();
-    ESP_LOGI(MPU6500_TAG, "Set gyro offset is, x = %d, y = %d, z = %d.", gyro_r.x, gyro_r.y, gyro_r.z);
+    ESP_LOGI(MPU6500_TAG, "Set gyro offset, x = %d, y = %d, z = %d.", gyro_r.x, gyro_r.y, gyro_r.z);
 
     if(mpu6500_set_clock_source(CLOCK_PLL)) 
     {
@@ -479,7 +479,7 @@ esp_err_t mpu6500_get_gyro_bias(gyro_fs_t gyroFS, gyro_raw* gyro_bias)
         gyro_y  += (int16_t)((buffer[2] << 8) | buffer[3]);
         gyro_z  += (int16_t)((buffer[4] << 8) | buffer[5]);
 
-        ESP_LOGI(MPU6500_TAG, "Package num: %d, x=%d, y=%d, z=%d", i, (int16_t)((buffer[0] << 8) | buffer[1]), (int16_t)((buffer[2] << 8) | buffer[3]), (int16_t)((buffer[4] << 8) | buffer[5]));
+        ESP_LOGD(MPU6500_TAG, "Package num: %d, x=%d, y=%d, z=%d", i, (int16_t)((buffer[0] << 8) | buffer[1]), (int16_t)((buffer[2] << 8) | buffer[3]), (int16_t)((buffer[4] << 8) | buffer[5]));
     }
 
     // calculate average

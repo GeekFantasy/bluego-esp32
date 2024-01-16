@@ -1413,5 +1413,4 @@ const unsigned char gImage_poweringoff[1280] = { /* 0X00,0X01,0X50,0X00,0X80,0X0
 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
 };
 
-
 #endif // end of IMAGE_DATA

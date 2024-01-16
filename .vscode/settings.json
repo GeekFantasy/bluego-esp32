@@ -58,6 +58,7 @@
         "esp_gap_ble_api.h": "c",
         "stdlib.h": "c",
         "epaper_display.h": "c",
+        "image_display.h": "c",
         "trackball.h": "c",
         "function_btn.h": "c"
     },

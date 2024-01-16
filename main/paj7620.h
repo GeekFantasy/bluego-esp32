@@ -128,8 +128,8 @@ typedef enum {
 #define GES_QUIT_TIME     0
 
 
-#define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
-//#define INIT_REG_ARRAY_SIZE (sizeof(initial_register_array)/sizeof(initial_register_array[0]))
+//#define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
+#define INIT_REG_ARRAY_SIZE (sizeof(initial_register_array)/sizeof(initial_register_array[0]))
 
 int init_paj7620_i2c(void);
 uint8_t init_paj7620_registers(void);

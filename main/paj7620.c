@@ -469,8 +469,8 @@ uint8_t init_paj7620_registers(void)
 	
 	for (i = 0; i < INIT_REG_ARRAY_SIZE; i++) 
 	{
-		paj7620_write_reg(initRegisterArray[i][0], initRegisterArray[i][1]);
-		//paj7620_write_reg(initial_register_array[i][0], initial_register_array[i][1]);
+		//paj7620_write_reg(initRegisterArray[i][0], initRegisterArray[i][1]);
+		paj7620_write_reg(initial_register_array[i][0], initial_register_array[i][1]);
 	}
 	
 	paj7620_select_bank(BANK0);  //gesture flage reg in Bank0

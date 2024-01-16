@@ -1,4 +1,5 @@
-idf_component_register(SRCS "function_btn.c" 
+idf_component_register(SRCS "image_display.c" 
+                            "function_btn.c" 
                             "trackball.c" 
                             "epaper_display.c" 
                             "bluego_main.c" 

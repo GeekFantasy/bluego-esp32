@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
-#include "image_data.h"
  
 #define SET_PIN_HIGH(pin)   gpio_set_level(pin, 1)
 #define SET_PIN_LOW(pin)    gpio_set_level(pin, 0)
@@ -83,16 +82,16 @@ void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
     ESP_LOGD(EPD_TAG, "Entering epd_send_command() with cmd: 0x %hx", cmd);
     esp_err_t ret;
     spi_transaction_t t;
-    memset(&t, 0, sizeof(t));       //Zero out the transaction
-    t.length=8;                     //Command is 8 bits
-    t.tx_buffer=&cmd;               //The data is the cmd itself
-    t.user=(void*)0;                //D/C needs to be set to 0
+    memset(&t, 0, sizeof(t));           //Zero out the transaction
+    t.length = 8;                       //Command is 8 bits
+    t.tx_buffer = &cmd;                 //The data is the cmd itself
+    t.user = (void*)0;                  //D/C needs to be set to 0
     
     int dc = (int)t.user;
     ESP_LOGD(EPD_TAG, "epd_send_command(), dc is : %x", dc);
 
-    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
-    assert(ret==ESP_OK);            //Should have had no issues.
+    ret = spi_device_polling_transmit(spi, &t);  //Transmit!
+    assert(ret == ESP_OK);            //Should have had no issues.
 }
 
 void epd_send_data(spi_device_handle_t spi, const uint8_t *data, int len)
@@ -117,9 +116,9 @@ void epd_send_byte_data(spi_device_handle_t spi, const uint8_t data)
     epd_send_data(spi, &data, 1);
 }
 
-void epd_set_full_reg(spi_device_handle_t spi)
+void epd_set_lut_reg(spi_device_handle_t spi)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_set_full_reg().");
+    ESP_LOGD(EPD_TAG, "Entering epd_set_lut_reg().");
 
     epd_send_command(spi, 0x23);
     epd_send_data(spi, lut_w1, sizeof(lut_w1));
@@ -128,9 +127,9 @@ void epd_set_full_reg(spi_device_handle_t spi)
     epd_send_data(spi, lut_w1, sizeof(lut_b1));
 }
 
-void epd_reset(void)
+void epd_reset_device(void)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_reset().");
+    ESP_LOGD(EPD_TAG, "Entering epd_reset_device().");
     SET_PIN_LOW(EPD_RST_PIN);
     Delay(10);
     SET_PIN_HIGH(EPD_RST_PIN);
@@ -145,7 +144,7 @@ void epd_wait_until_ilde(spi_device_handle_t spi)
         busy = gpio_get_level(EPD_BUSY_PIN);
         Delay(1);
     }while(!busy);
-    Delay(10);
+    Delay(5);
 }
 
 void epd_spi_pre_transfer_callback(spi_transaction_t *t)
@@ -172,18 +171,14 @@ void epd_lut_bw(spi_device_handle_t spi)
 void epd_set_raw_value_base_map(spi_device_handle_t spi, const uint8_t* data )
 {
     epd_send_command(spi, 0x10);
-    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
-    {
-        epd_send_byte_data(spi, 0xFF);
-    }
+
+    memset(epd_buff, 0xFF, sizeof(epd_buff));
+    epd_send_data(spi, epd_buff, sizeof(epd_buff));
 
     epd_send_command(spi, 0x13);
-    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
-    {
-        epd_send_byte_data(spi, data[i]);
-        old_data[i] = data[i];
-    }
-    
+    epd_send_data(spi, data, EPD_DIS_ARRAY);
+    memcpy(old_data, data, EPD_DIS_ARRAY);
+
     epd_update_display(spi);
 }
 
@@ -212,7 +207,7 @@ void epd_dis_part_ram(spi_device_handle_t spi, unsigned int x_start,unsigned int
     y_end = y_start + PART_COLUMN * num - 1;
 
     epd_init_partial_display(spi);
-    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
+    epd_send_command(spi, 0x91);     //This command makes the display enter partial display
     epd_send_command(spi, 0x90);     //resolution setting
 
     epd_send_byte_data(spi, x_start);
@@ -292,7 +287,7 @@ void epd_dis_part_ram_v2(spi_device_handle_t spi, unsigned int x_start,unsigned 
     y_end = y_start + PART_COLUMN * num - 1;
 
     // epd_init_partial_display(spi);       // move inital code out 
-    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
+    epd_send_command(spi, 0x91);     //This command makes the display enter partial display
     epd_send_command(spi, 0x90);     //resolution setting
 
     epd_send_byte_data(spi, x_start);
@@ -374,14 +369,14 @@ void epd_dis_part_time_v2(spi_device_handle_t spi, unsigned int x_start,unsigned
                         const uint8_t * datas_E, unsigned char num,
                         unsigned int PART_COLUMN, unsigned int PART_LINE)
 {
-    ESP_LOGD(EPD_TAG, "***************Display new image on partial mode*********************.");
+    ESP_LOGD(EPD_TAG, "***************Display new image on partial display*********************.");
     epd_dis_part_ram_v2(spi, x_start, y_start, datas_A, datas_B, datas_C, datas_D, datas_E, num, PART_COLUMN, PART_LINE);
 }
 
 void epd_init_full_display(spi_device_handle_t spi)
 {
     ESP_LOGD(EPD_TAG, "Entering epd_init_full_display().");
-    epd_reset();
+    epd_reset_device();
     epd_wait_until_ilde(spi);
 
     epd_send_command(spi, 0x00);
@@ -401,7 +396,7 @@ void epd_init_full_display(spi_device_handle_t spi)
 void epd_init_partial_display(spi_device_handle_t spi)
 {
     ESP_LOGD(EPD_TAG, "Entering epd_init_partial_display().");
-    epd_reset();
+    epd_reset_device();
     epd_wait_until_ilde(spi);
 
     epd_send_command(spi, 0xD2);
@@ -465,9 +460,9 @@ void epd_update_display(spi_device_handle_t spi)
     epd_wait_until_ilde(spi);
 }
 
-void epd_display_full_black(spi_device_handle_t spi)
+void epd_full_display_black(spi_device_handle_t spi)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_display_full_black().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_black().");
 
     int Width = (EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1);
     epd_send_command(spi, 0x10);
@@ -491,13 +486,12 @@ void epd_display_full_black(spi_device_handle_t spi)
     epd_update_display(spi);
 }
 
-
 /// @brief Display full white on screen 
 /// @param spi 
 /// Status: Working well excepting the first black line emerging later after a while
-void epd_display_full_white_v2(spi_device_handle_t spi)
+void epd_full_display_white_v2(spi_device_handle_t spi)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_display_full_white_v2().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_white_v2().");
 
     int Width = (EPD_WIDTH % 8 == 0)? (EPD_WIDTH / 8 ): (EPD_WIDTH / 8 + 1);
     epd_send_command(spi, 0x10);
@@ -521,9 +515,9 @@ void epd_display_full_white_v2(spi_device_handle_t spi)
     epd_update_display(spi);
 }
 
-void epd_display_full_black_v2(spi_device_handle_t spi)
+void epd_full_display_black_v2(spi_device_handle_t spi)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_display_full_black().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_black_v2().");
 
     epd_send_command(spi, 0x10);
     epd_send_data(spi, epd_buff, sizeof(epd_buff));
@@ -541,10 +535,10 @@ void epd_display_full_black_v2(spi_device_handle_t spi)
 
 /// @brief 
 /// @param spi 
-/// Status: same issue with epd_display_full_white_v2
-void epd_full_display_full_white(spi_device_handle_t spi)
+/// Status: same issue with epd_full_display_white_v2
+void epd_full_display_white(spi_device_handle_t spi)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_full_display_full_white().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_white().");
     
     memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_send_command(spi, 0x10);
@@ -556,16 +550,16 @@ void epd_full_display_full_white(spi_device_handle_t spi)
     epd_update_display(spi);
 }
 
-void epd_partial_display_full_white(spi_device_handle_t spi)
+void epd_partial_display_white(spi_device_handle_t spi)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_partial_display_full_white.");
+    ESP_LOGD(EPD_TAG, "Entering epd_partial_display_white.");
     memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_partial_display_full_image(spi, epd_buff, sizeof(epd_buff));
 }
 
-void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int len)
+void epd_full_display_image(spi_device_handle_t spi, const uint8_t* data, int len)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_display_full_image().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_image().");
     
     memset(epd_buff, 0xFF, sizeof(epd_buff));
     epd_send_command(spi, 0x10);
@@ -578,13 +572,13 @@ void epd_display_full_image(spi_device_handle_t spi, const uint8_t* data, int le
     epd_update_display(spi);
 }
 
-/// @brief Show full image in the partial display mode
+/// @brief Show full image in the partial display 
 /// @param spi 
 /// @param data 
 /// @param len 
 void epd_partial_display_full_image(spi_device_handle_t spi, const uint8_t* data, int len)
 {
-    ESP_LOGD(EPD_TAG, "Entering epd_display_full_image().");
+    ESP_LOGD(EPD_TAG, "Entering epd_full_display_image().");
         
     epd_send_command(spi, 0x10);
     epd_send_data(spi, old_data, sizeof(old_data));
@@ -595,6 +589,32 @@ void epd_partial_display_full_image(spi_device_handle_t spi, const uint8_t* data
     
     epd_update_display(spi);
 }
+
+void epd_enter_partial_display(spi_device_handle_t spi)
+{
+    epd_send_command(spi, 0x91);     //This command makes the display enter partial display
+    epd_send_command(spi, 0x90);     //resolution setting
+
+    epd_send_byte_data(spi, 0);
+    epd_send_byte_data(spi, 79);
+    epd_send_byte_data(spi, 0);
+    epd_send_byte_data(spi, 127);
+    epd_send_byte_data(spi, 0x00);
+}
+
+void epd_exit_partial_to_full_display(spi_device_handle_t spi)
+{
+    epd_send_command(spi, 0x92); 
+}
+
+/// @brief Power on the e-paer and entering partial display mode with full scale window 80*128
+/// @param spi 
+void epd_power_on_to_partial_display(spi_device_handle_t spi)
+{
+    epd_init_partial_display(spi);
+    epd_enter_partial_display(spi);
+}
+
 
 uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
 {
@@ -624,216 +644,92 @@ uint8_t epd_get_ic_status(spi_device_handle_t spi)
     return rx;
 }
 
-/// @brief Test display full functions
-/// @param spi 
-void epd_test_display_full_image(spi_device_handle_t spi)
-{
-    epd_init_full_display(spi);
-    //Delay(6000);
 
-    epd_full_display_full_white(spi);
-    //Delay(6000);
 
-    // uint8_t rx = 0;
-    // rx = epd_get_byte(spi, 0x11);
-    // ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
-    epd_display_full_image(spi, g_image_naruto, sizeof(g_image_naruto));
+// /// @brief Test display partial functions
+// /// @param spi 
+// /// Status: this is now working
+// void epd_test_partial_display_image_with_full_scale(spi_device_handle_t spi)
+// {
+//     epd_init_full_display(spi);
 
-    Delay(5000);
-
-    epd_display_full_image(spi, gImage_airmouse, sizeof(gImage_airmouse));
-
-    Delay(5000);
-
-    epd_display_full_image(spi, gImage_gesture, sizeof(gImage_airmouse));
-
-    Delay(5000);
-
-    epd_display_full_image(spi, gImage_trackball, sizeof(gImage_airmouse));
-
-    Delay(5000);
-
-    epd_display_full_image(spi, gImage_custom1, sizeof(gImage_airmouse));
-
-    Delay(5000);
-
-    epd_display_full_image(spi, gImage_custom2, sizeof(gImage_airmouse));
-
-    Delay(5000);
-}
-
-/// @brief Test display partial functions
-/// @param spi 
-/// Status: this is now working
-void epd_test_display_partial_image_with_full_scale(spi_device_handle_t spi)
-{
-    epd_init_full_display(spi);
-
-    for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
-    {
-        epd_buff[i] = 0xFF;
-    }
+//     for (size_t i = 0; i < EPD_DIS_ARRAY; i++)
+//     {
+//         epd_buff[i] = 0xFF;
+//     }
     
-    epd_set_raw_value_base_map(spi, epd_buff);
-    //Delay(2000);
+//     epd_set_raw_value_base_map(spi, epd_buff);
+//     //Delay(2000);
 
-    epd_init_partial_display(spi);
-    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
-    epd_send_command(spi, 0x90);     //resolution setting
+//     epd_init_partial_display(spi);
+//     epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
+//     epd_send_command(spi, 0x90);     //resolution setting
 
-    epd_send_byte_data(spi, 0);
-    epd_send_byte_data(spi, 79);
-    epd_send_byte_data(spi, 0);
-    epd_send_byte_data(spi, 127);
-    epd_send_byte_data(spi, 0x00);
+//     epd_send_byte_data(spi, 0);
+//     epd_send_byte_data(spi, 79);
+//     epd_send_byte_data(spi, 0);
+//     epd_send_byte_data(spi, 127);
+//     epd_send_byte_data(spi, 0x00);
 
-    // uint8_t rx = 0;
-    // rx = epd_get_byte(spi, 0x11);
-    // ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
+//     // uint8_t rx = 0;
+//     // rx = epd_get_byte(spi, 0x11);
+//     // ESP_LOGI(EPD_TAG, "The data read from 0x11 before send data is: %x.", rx);
 
-    epd_partial_display_full_image(spi, gImage_airmouse, sizeof(gImage_airmouse));
-    //Delay(3000);
+//     epd_partial_display_full_image(spi, gImage_airmouse, sizeof(gImage_airmouse));
+//     //Delay(3000);
 
-    epd_partial_display_full_image(spi, gImage_gesture, sizeof(g_image_naruto));
-    //Delay(3000);
+//     epd_partial_display_full_image(spi, gImage_gesture, sizeof(g_image_naruto));
+//     //Delay(3000);
 
-    epd_partial_display_full_image(spi, gImage_trackball, sizeof(g_image_naruto));
-    //Delay(3000);
+//     epd_partial_display_full_image(spi, gImage_trackball, sizeof(g_image_naruto));
+//     //Delay(3000);
 
-    epd_partial_display_full_image(spi, gImage_custom1, sizeof(g_image_naruto));
-    //Delay(3000);
+//     epd_partial_display_full_image(spi, gImage_custom1, sizeof(g_image_naruto));
+//     //Delay(3000);
 
-    epd_partial_display_full_image(spi, gImage_custom2, sizeof(g_image_naruto));
-    //Delay(3000);
-}
+//     epd_partial_display_full_image(spi, gImage_custom2, sizeof(g_image_naruto));
+//     //Delay(3000);
+// }
 
-void epd_entering_partial_display(spi_device_handle_t spi)
-{
-    epd_send_command(spi, 0x91);     //This command makes the display enter partial mode
-    epd_send_command(spi, 0x90);     //resolution setting
-
-    epd_send_byte_data(spi, 0);
-    epd_send_byte_data(spi, 79);
-    epd_send_byte_data(spi, 0);
-    epd_send_byte_data(spi, 127);
-    epd_send_byte_data(spi, 0x00);
-}
-
-/// @brief Power on the e-paer and entering partial display mode with full scale window 80*128
-/// @param spi 
-void epd_power_on_to_partial_display(spi_device_handle_t spi)
-{
-    epd_init_partial_display(spi);
-    epd_entering_partial_display(spi);
-}
-
-/// @brief Test display partial functions
-/// @param spi 
-/// Status: this is now working
-void epd_full_display_mode(spi_device_handle_t spi, int8_t mode)
-{
-    epd_init_full_display(spi);
-    unsigned char *image;
-
-    switch (mode)
-    {
-    case 0:
-        image = gImage_airmouse;
-        break;
-    case 1:
-        image = gImage_gesture;
-        break;
-    case 2:
-        image = gImage_trackball;
-        break;
-    case 3:
-        image = gImage_custom1;
-        break;
-    case 4:
-        image = gImage_custom2;
-        break;
-    case 5:
-        image = gImage_poweringoff;
-        break;
-    default:
-        image = gImage_config;
-        break;
-    }
-
-    epd_display_full_image(spi, image, EPD_DIS_ARRAY);
-}
-
-void epd_partial_display_mode(spi_device_handle_t spi, int8_t mode)
-{
-    unsigned char *image;
-
-    switch (mode)
-    {
-    case 0:
-        image = gImage_airmouse;
-        break;
-    case 1:
-        image = gImage_gesture;
-        break;
-    case 2:
-        image = gImage_trackball;
-        break;
-    case 3:
-        image = gImage_custom1;
-        break;
-    case 4:
-        image = gImage_custom2;
-        break;
-    case 5:
-        image = gImage_poweringoff;
-        break;
-    default:
-        image = gImage_config;
-        break;        
-    }
-
-    epd_partial_display_full_image(spi, image, EPD_DIS_ARRAY);
-}
 
 /// @brief Test display partial functions
 /// @param spi 
 /// Status: this is not working
-void epd_test_display_partial_image_v2(spi_device_handle_t spi)
-{
-    epd_init_full_display(spi);
+// void epd_test_partial_display_image_v2(spi_device_handle_t spi)
+// {
+//     epd_init_full_display(spi);
 
-    memset(epd_buff, 0xFF, sizeof(epd_buff)); 
-    epd_set_raw_value_base_map(spi, epd_buff);
-    Delay(2000);
+//     memset(epd_buff, 0xFF, sizeof(epd_buff)); 
+//     epd_set_raw_value_base_map(spi, epd_buff);
+//     Delay(2000);
 
-    for (size_t i = 0; i < 10; i++)
-    {
-        epd_dis_part_time(spi, 24, 4, number[i], number[0], g_image_numdot, number[0], number[1], 5, 24, 32);
-    }
+//     for (size_t i = 0; i < 10; i++)
+//     {
+//         epd_dis_part_time(spi, 24, 4, number[i], number[0], g_image_numdot, number[0], number[1], 5, 24, 32);
+//     }
     
-    Delay(2000);
-}
+//     Delay(2000);
+// }
 
 /// @brief Test display partial functions
 /// @param spi 
 /// Status: this is not working
-void epd_test_display_partial_image_v3(spi_device_handle_t spi)
-{
-    epd_init_full_display(spi);
+// void epd_test_partial_display_image_v3(spi_device_handle_t spi)
+// {
+//     epd_init_full_display(spi);
 
-    memset(epd_buff, 0xFF, sizeof(epd_buff)); 
-    epd_set_raw_value_base_map(spi, epd_buff);
+//     memset(epd_buff, 0xFF, sizeof(epd_buff)); 
+//     epd_set_raw_value_base_map(spi, epd_buff);
 
-    epd_init_partial_display(spi);  
+//     epd_init_partial_display(spi);  
 
-    for (size_t i = 0; i < 10; i++)
-    {
-        epd_dis_part_time_v2(spi, 24, 4, number[i], number[0], g_image_numdot, number[0], number[1], 5, 24, 32);
-    }
+//     for (size_t i = 0; i < 10; i++)
+//     {
+//         epd_dis_part_time_v2(spi, 24, 4, number[i], number[0], g_image_numdot, number[0], number[1], 5, 24, 32);
+//     }
     
-    Delay(2000);
-}
-
+//     Delay(2000);
+// }
 
 esp_err_t  edp_init_spi_device(spi_device_handle_t *spi)
 {
@@ -892,9 +788,6 @@ esp_err_t  edp_init_spi_device(spi_device_handle_t *spi)
     ret = spi_bus_add_device(HSPI_HOST, &devcfg, spi);
     ESP_ERROR_CHECK(ret);
 
-    //epd_test_display_partial_image_v3(spi);
-    //Test code
-    //epd_test_display_full_image(spi);
     return ret;
 }
 
