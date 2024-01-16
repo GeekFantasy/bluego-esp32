@@ -25,12 +25,13 @@
 #include "operations.h"
 #include "esp_system.h"
 #include "driver/spi_master.h"
-#include "epaper_display.h"
-#include "image_display.h"
 #include "trackball.h"
 #include "function_btn.h"
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
+#include "image_data.h"
+#include "epaper_display.h"
+#include "image_display.h"
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -482,7 +483,7 @@ void mode_setting_task(void *pvParameters)
             case TRACK_BALL_DIRECTION_LEFT:
                 curr_mode++;
                 curr_mode %= MODE_MAX_NUM;
-                epd_partial_display_mode(epd_spi, curr_mode);
+                partial_display_work_mode(epd_spi, curr_mode);
                 clear_track_ball_step_counters();
                 display_updated = 1;
                 /* code */
@@ -491,7 +492,7 @@ void mode_setting_task(void *pvParameters)
             case TRACK_BALL_DIRECTION_RIGHT:
                 curr_mode--;
                 curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
-                epd_partial_display_mode(epd_spi, curr_mode);
+                partial_display_work_mode(epd_spi, curr_mode);
                 clear_track_ball_step_counters();
                 display_updated = 1;
                 /* code */
@@ -836,8 +837,8 @@ void hid_main_task(void *pvParameters)
         {
             // Show power off screen
             epd_power_on_to_partial_display(epd_spi);
-            epd_partial_display_mode(epd_spi, 5);
-            Delay(1500);
+            partial_display_work_mode(epd_spi, 5);
+            Delay(1000);
             // Show white screen
             epd_init_full_display(epd_spi);
             epd_full_display_white(epd_spi);
@@ -901,8 +902,9 @@ void app_main(void)
 
     // init e-paper-display
     ret = edp_init_spi_device(&epd_spi);
-    epd_full_display_mode(epd_spi, curr_mode);
-
+    epd_power_on_to_partial_display(epd_spi);
+    epd_partial_display_full_image(epd_spi, gImage_poweringon, EPD_DIS_ARRAY);
+    
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.
     if(check_stylus_enableed())
@@ -1030,4 +1032,8 @@ void app_main(void)
 
     ESP_LOGI(HID_DEMO_TAG, "hid_task task initialised.");
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
+
+    // Show current working mode after initialization done.
+    partial_display_work_mode(epd_spi, curr_mode);
+    epd_deep_sleep(epd_spi);
 }

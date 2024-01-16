@@ -9,6 +9,7 @@ const unsigned char *mode_image_array[] =
     gImage_custom1,
     gImage_custom2,
     gImage_poweringoff,
+    gImage_poweringon,
     gImage_config
 };
 
@@ -16,7 +17,7 @@ const unsigned char *mode_image_array[] =
 /// @brief Test display partial functions
 /// @param spi 
 /// Status: this is now working
-void epd_full_display_mode(spi_device_handle_t spi, int8_t mode)
+void full_display_work_mode(spi_device_handle_t spi, int8_t mode)
 {
     epd_init_full_display(spi);
 
@@ -29,7 +30,7 @@ void epd_full_display_mode(spi_device_handle_t spi, int8_t mode)
 /// @brief Need to init as partial display mode first before calling this funciton
 /// @param spi 
 /// @param mode 
-void epd_partial_display_mode(spi_device_handle_t spi, int8_t mode)
+void partial_display_work_mode(spi_device_handle_t spi, int8_t mode)
 {
     if(mode >=0 && mode <= 5)
         epd_partial_display_full_image(spi, mode_image_array[mode], EPD_DIS_ARRAY);
@@ -37,9 +38,10 @@ void epd_partial_display_mode(spi_device_handle_t spi, int8_t mode)
         epd_partial_display_full_image(spi, mode_image_array[6], EPD_DIS_ARRAY);
 }
 
+
 /// @brief Test display full functions
 /// @param spi 
-void epd_test_full_display_image(spi_device_handle_t spi)
+void test_full_display_image(spi_device_handle_t spi)
 {
     epd_init_full_display(spi);
     //Delay(6000);

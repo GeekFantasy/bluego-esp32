@@ -14,6 +14,7 @@
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 uint8_t old_data[EPD_DIS_ARRAY] = {0};
+int old_data_init_flag = 0;
 uint8_t old_data_p[256];
 uint8_t old_data_a[256];
 uint8_t old_data_b[256];
@@ -391,6 +392,12 @@ void epd_init_full_display(spi_device_handle_t spi)
 
     epd_send_command(spi, 0x50);        //VCOM AND DATA INTERVAL SETTING
     epd_send_byte_data(spi, 0x97);      //WBmode:VBDF 17|D7 VBDW 97 VBDB 57   WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
+
+    if(!old_data_init_flag)
+    {
+        memset(old_data, 0xFF, sizeof(old_data));
+        old_data_init_flag = 1;
+    }
 }
 
 void epd_init_partial_display(spi_device_handle_t spi)
@@ -437,11 +444,18 @@ void epd_init_partial_display(spi_device_handle_t spi)
 
     epd_send_command(spi, 0x04);
     epd_wait_until_ilde(spi);
+
+    if(!old_data_init_flag)
+    {
+        memset(old_data, 0xFF, sizeof(old_data));
+        old_data_init_flag = 1;
+    }
 }
 
 //Enter the sleep mode and please do not delete it, otherwise it will reduce the lifespan of the screen.
 void epd_deep_sleep(spi_device_handle_t spi)
 {
+    epd_wait_until_ilde(spi);
     epd_send_command(spi, 0x50);         //VCOM AND DATA INTERVAL SETTING 
     epd_send_byte_data(spi, 0x7F);       //WBmode:VBDF 17|D7 VBDW 97 VBDB 57    WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
 
@@ -457,7 +471,7 @@ void epd_deep_sleep(spi_device_handle_t spi)
 void epd_update_display(spi_device_handle_t spi)
 {
     epd_send_command(spi, 0x12); //start refreshing the screen
-    epd_wait_until_ilde(spi);
+    //epd_wait_until_ilde(spi);
 }
 
 void epd_full_display_black(spi_device_handle_t spi)
@@ -579,7 +593,9 @@ void epd_full_display_image(spi_device_handle_t spi, const uint8_t* data, int le
 void epd_partial_display_full_image(spi_device_handle_t spi, const uint8_t* data, int len)
 {
     ESP_LOGD(EPD_TAG, "Entering epd_full_display_image().");
-        
+    
+    epd_wait_until_ilde(spi);
+
     epd_send_command(spi, 0x10);
     epd_send_data(spi, old_data, sizeof(old_data));
 
