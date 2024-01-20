@@ -32,6 +32,8 @@
 #include "image_data.h"
 #include "epaper_display.h"
 #include "image_display.h"
+#include "lvgl.h"
+#include "driver/timer.h"
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -870,6 +872,155 @@ void hid_main_task(void *pvParameters)
     }
 }
 
+#define EPD_HOR_RES         80
+#define EPD_VER_RES         128
+#define TIMER_DIVIDER         16  // 硬件定时器时钟分频器
+#define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
+#define TIMER_INTERVAL0_SEC   (0.01) // 定时器间隔为10毫秒
+
+static int timer_test_cnt = 0;
+
+/*Flush the content of the internal buffer the specific area on the display
+ *You can use DMA or any hardware acceleration to do this operation in the background but
+ *'lv_disp_flush_ready()' has to be called when finished.*/
+static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p)
+{
+    ESP_LOGI(HID_DEMO_TAG, "***Display flush is called.***");
+
+    /*IMPORTANT!!!
+     *Inform the graphics library that you are ready with the flushing*/
+    lv_disp_flush_ready(disp_drv);
+}
+
+// 定时器回调函数
+void IRAM_ATTR timer_group0_isr(void *para) {
+    // 定时器的状态将在这里处理
+    int timer_idx = (int) para;
+
+    // 清除中断并获取中断状态
+    TIMERG0.int_clr_timers.t0 = 1;
+
+    timer_test_cnt++;
+    lv_tick_inc(10);
+    // 重新启用闹钟
+    TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
+}
+
+void ui_demo()
+ {
+     lv_obj_t * screen = lv_scr_act();
+
+     /*Create a spinner*/
+    lv_obj_t * spinner = lv_spinner_create(screen, 1000, 60);
+    lv_obj_set_size(spinner, 80, 80);
+    lv_obj_center(spinner);
+ }
+
+int16_t enc_get_new_moves()
+{
+    int16_t moves = 0;
+    int mv_direction = TRACK_BALL_DIRECTION_NONE;
+    int mv_steps = 0;
+    get_track_ball_main_movement(&mv_direction, &mv_steps);
+
+    if(mv_direction == TRACK_BALL_DIRECTION_UP || mv_direction == TRACK_BALL_DIRECTION_LEFT)
+    {
+        moves = -mv_steps;
+    }
+    else if(mv_direction == TRACK_BALL_DIRECTION_DOWN || mv_direction == TRACK_BALL_DIRECTION_RIGHT)
+    {
+        moves = mv_steps;
+    }
+
+    return moves;
+}
+
+int enc_pressed()
+{
+    return (get_track_ball_touch_state() == 0);
+}
+
+void encoder_read(lv_indev_drv_t * drv, lv_indev_data_t*data)
+{
+    data->enc_diff = enc_get_new_moves();
+
+    if(enc_pressed()) data->state = LV_INDEV_STATE_PRESSED;
+    else data->state = LV_INDEV_STATE_RELEASED;
+
+    ESP_LOGI(HID_DEMO_TAG, "*Diff: %d, Press: %d *", data->enc_diff, data->state);
+}
+
+lv_indev_t * my_indev = NULL;
+
+void lv_indev_init()
+{
+    static lv_indev_drv_t indev_drv;
+    lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
+    indev_drv.type = LV_INDEV_TYPE_ENCODER;                 /*See below.*/
+    indev_drv.read_cb = encoder_read;              /*See below.*/
+    /*Register the driver in LVGL and save the created input device object*/
+    my_indev = lv_indev_drv_register(&indev_drv);
+}
+
+void lv_disp_init()
+{
+    //Create a buffer for drawing
+    static lv_disp_draw_buf_t draw_buf_dsc_3;
+    static lv_color_t buf_3_1[EPD_HOR_RES * EPD_VER_RES];            /*A screen sized buffer*/
+    static lv_color_t buf_3_2[EPD_HOR_RES * EPD_VER_RES];            /*Another screen sized buffer*/
+    lv_disp_draw_buf_init(&draw_buf_dsc_3, buf_3_1, buf_3_2, EPD_HOR_RES * EPD_VER_RES);   /*Initialize the display buffer*/
+
+    //Register the display in LVGL
+    static lv_disp_drv_t disp_drv;                         /*Descriptor of a display driver*/
+    lv_disp_drv_init(&disp_drv);                    /*Basic initialization*/
+
+    /*Set up the functions to access to your display*/
+
+    /*Set the resolution of the display*/
+    disp_drv.hor_res = EPD_HOR_RES;
+    disp_drv.ver_res = EPD_VER_RES;
+
+    /*Used to copy the buffer's content to the display*/
+    disp_drv.flush_cb = disp_flush;
+
+    /*Set a display buffer*/
+    disp_drv.draw_buf = &draw_buf_dsc_3;
+
+    /*Required for Example 3)*/
+    disp_drv.full_refresh = 1;
+
+    /*Finally register the driver*/
+    lv_disp_drv_register(&disp_drv);
+
+    // 定时器组0，定时器0的配置
+    timer_config_t config = {
+    .divider = TIMER_DIVIDER,
+    .counter_dir = TIMER_COUNT_UP,
+    .counter_en = TIMER_PAUSE,
+    .alarm_en = TIMER_ALARM_EN,
+    .auto_reload = true,
+    };
+
+    timer_init(TIMER_GROUP_0, TIMER_0, &config);
+
+    // 定时器的中断服务和中断优先级配置
+    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *) TIMER_0, ESP_INTR_FLAG_IRAM, NULL);
+
+    // 设置定时器间隔
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
+    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+    timer_start(TIMER_GROUP_0, TIMER_0);
+}
+
+void lv_task(void *pvParameters)
+{
+    while(1){
+        lv_timer_handler();
+        Delay(200);
+        ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
+    }
+}
 
 void app_main(void)
 {
@@ -1033,7 +1184,15 @@ void app_main(void)
     ESP_LOGI(HID_DEMO_TAG, "hid_task task initialised.");
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 
+    lv_init();
+    lv_disp_init();
+    lv_indev_init();
+    ui_demo();
+
+    ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
+    xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
+
     // Show current working mode after initialization done.
-    partial_display_work_mode(epd_spi, curr_mode);
-    epd_deep_sleep(epd_spi);
+    //partial_display_work_mode(epd_spi, curr_mode);
+    //epd_deep_sleep(epd_spi);
 }

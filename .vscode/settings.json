@@ -60,7 +60,8 @@
         "epaper_display.h": "c",
         "image_display.h": "c",
         "trackball.h": "c",
-        "function_btn.h": "c"
+        "function_btn.h": "c",
+        "lvgl.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
