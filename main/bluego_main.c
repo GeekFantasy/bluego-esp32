@@ -879,6 +879,9 @@ void hid_main_task(void *pvParameters)
 #define TIMER_INTERVAL0_SEC   (0.01) // 定时器间隔为10毫秒
 
 static int timer_test_cnt = 0;
+lv_indev_t * encoder_indev = NULL;
+
+uint8_t flush_buff[1280] = {};
 
 /*Flush the content of the internal buffer the specific area on the display
  *You can use DMA or any hardware acceleration to do this operation in the background but
@@ -886,6 +889,22 @@ static int timer_test_cnt = 0;
 static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p)
 {
     ESP_LOGI(HID_DEMO_TAG, "***Display flush is called.***");
+    ESP_LOGI(HID_DEMO_TAG, "Area: (%d, %d), (%d, %d)", area->x1, area->y1, area->x2, area->y2);
+
+    for(int y = area->y1; y <= area->y2; y++) {
+        for(int x = area->x1; x <= area->x2; x++) {
+            uint8_t color = color_p->full; 
+            bool pixel = (color == 1); 
+            // Convert lvgl pixel to the buff of e paper
+            if (pixel) {
+                flush_buff[y * (EPD_HOR_RES / 8) + x / 8] |= (1 << (7 - x % 8));
+            } else {
+                flush_buff[y * (EPD_HOR_RES / 8) + x / 8] &= ~(1 << (7 - x % 8));
+            }
+            color_p++;
+        }
+    }
+    epd_partial_display_full_image(epd_spi, flush_buff, sizeof(flush_buff));
 
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/
@@ -906,15 +925,84 @@ void IRAM_ATTR timer_group0_isr(void *para) {
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
 }
 
+void btn_event_cb(lv_event_t * e) {
+    lv_obj_t * obj = lv_event_get_target(e);
+    lv_event_code_t code = lv_event_get_code(e);
+    int data = lv_event_get_user_data(e);
+    
+    if(code == LV_EVENT_CLICKED) {
+        // 处理按钮点击事件
+        ESP_LOGI(HID_DEMO_TAG, "*Button %d is clicked*.", data);
+    }
+}
+
 void ui_demo()
  {
-     lv_obj_t * screen = lv_scr_act();
+     lv_obj_t *label1, *label2, *label3 ;
 
-     /*Create a spinner*/
-    lv_obj_t * spinner = lv_spinner_create(screen, 1000, 60);
-    lv_obj_set_size(spinner, 80, 80);
-    lv_obj_center(spinner);
- }
+     static lv_style_t my_style;
+     lv_style_init(&my_style);
+
+    // 设置样式的文本颜色
+    lv_style_set_text_color(&my_style, lv_color_make(0x00, 0x00, 0x00));
+
+    lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
+   // lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
+    //lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0); // 将标签居中
+
+    lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
+   // lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
+   // lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_align(btn3, LV_ALIGN_CENTER, 0, 40);
+
+    label1 = lv_label_create(btn1);
+    lv_label_set_text(label1, "Button 1");
+    lv_obj_add_style(label1,  &my_style, LV_PART_MAIN );
+    lv_obj_center(label1);
+
+     label2 = lv_label_create(btn2);
+    lv_label_set_text(label2, "Button 2");
+    lv_obj_add_style(label2,  &my_style, LV_PART_MAIN );
+    lv_obj_center(label2);
+
+     label3 = lv_label_create(btn3);
+    lv_label_set_text(label3, "Button 3");
+    lv_obj_add_style(label3,  &my_style, LV_PART_MAIN );
+    lv_obj_center(label3);
+
+    static lv_style_t style_btn;
+    lv_style_init(&style_btn);
+    // lv_style_set_bg_color(&style_btn, LV_COLOR_WHITE);
+    // lv_style_set_border_color(&style_btn, LV_COLOR_BLACK);
+    // lv_style_set_border_width(&style_btn,  2);
+    // 设置背景颜色为白色
+    lv_style_set_bg_opa(&style_btn, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_btn, lv_color_white());
+
+    // 设置边框颜色为黑色和边框宽度
+    lv_style_set_border_color(&style_btn, lv_color_black());
+    lv_style_set_border_width(&style_btn, 2);
+
+    lv_obj_add_style(btn1,  &style_btn, 0);
+    lv_obj_add_style(btn2,  &style_btn, 0);
+    lv_obj_add_style(btn3,  &style_btn, 0);
+
+    lv_group_t * g = lv_group_create();
+    lv_group_add_obj(g, btn1); // 将按钮添加到组
+    lv_group_add_obj(g, btn2); // 将按钮添加到组
+    lv_group_add_obj(g, btn3); // 将按钮添加到组
+
+    lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, (void*)1);
+    lv_obj_add_event_cb(btn2, btn_event_cb, LV_EVENT_CLICKED, (void*)2);
+    lv_obj_add_event_cb(btn3, btn_event_cb, LV_EVENT_CLICKED, (void*)3);
+
+    // 添加其他UI元素到组
+    lv_indev_set_group(encoder_indev, g); // 将编码器和组关联
+}
 
 int16_t enc_get_new_moves()
 {
@@ -946,11 +1034,9 @@ void encoder_read(lv_indev_drv_t * drv, lv_indev_data_t*data)
 
     if(enc_pressed()) data->state = LV_INDEV_STATE_PRESSED;
     else data->state = LV_INDEV_STATE_RELEASED;
-
-    ESP_LOGI(HID_DEMO_TAG, "*Diff: %d, Press: %d *", data->enc_diff, data->state);
+    if(data->enc_diff != 0 || data->state == LV_INDEV_STATE_PRESSED )
+        ESP_LOGI(HID_DEMO_TAG, "*Diff: %d, Press: %d *", data->enc_diff, data->state);
 }
-
-lv_indev_t * my_indev = NULL;
 
 void lv_indev_init()
 {
@@ -959,7 +1045,7 @@ void lv_indev_init()
     indev_drv.type = LV_INDEV_TYPE_ENCODER;                 /*See below.*/
     indev_drv.read_cb = encoder_read;              /*See below.*/
     /*Register the driver in LVGL and save the created input device object*/
-    my_indev = lv_indev_drv_register(&indev_drv);
+    encoder_indev = lv_indev_drv_register(&indev_drv);
 }
 
 void lv_disp_init()
@@ -1018,7 +1104,7 @@ void lv_task(void *pvParameters)
     while(1){
         lv_timer_handler();
         Delay(200);
-        ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
+        //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
     }
 }
 
