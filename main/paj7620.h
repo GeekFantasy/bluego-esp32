@@ -67,6 +67,8 @@
 #define PAJ7620_I2C_SCL 	8     //Origianl: 26          /*!< gpio number for I2C master clock */
 #define PAJ7620_I2C_SDA 	5     //Origianl: 25          /*!< gpio number for I2C master data  */
 
+#define PAJ7620_PWR_CONTROL    2
+
 #define I2C_MASTER_NUM I2C_NUM_1   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
@@ -141,5 +143,6 @@ void paj7620_select_bank(bank_e bank);
 esp_err_t paj7620_suspend();
 esp_err_t paj7620_wake_up();
 esp_err_t paj7620_reset();
+esp_err_t init_paj7620_power_control();
 
 #endif

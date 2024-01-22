@@ -355,13 +355,15 @@ void reset_all_gpio()
 
     // F*** this! Reset pin hurted a lot, all the weird behavor after suspend is caused by this
     // F***! Comment out this cannot fix the issue completely, but sometimes it works well. Weird, really weird!
-    //gpio_reset_pin(PAJ7620_I2C_SCL);             
-    //gpio_reset_pin(PAJ7620_I2C_SDA);
-    //gpio_reset_pin(PAJ7620_INTERRUPT_PIN);
+    // Fixed the issue mentioned above by adding a power switch for paj7620
+    gpio_reset_pin(PAJ7620_I2C_SCL);             
+    gpio_reset_pin(PAJ7620_I2C_SDA);
+    gpio_reset_pin(PAJ7620_INTERRUPT_PIN);
+    gpio_reset_pin(PAJ7620_PWR_CONTROL);
 
     // Comment out this to avoid potential issue like paj7620.
-    //gpio_reset_pin(MPU6500_I2C_SCL);
-    //gpio_reset_pin(MPU6500_I2C_SDA);
+    gpio_reset_pin(MPU6500_I2C_SCL);
+    gpio_reset_pin(MPU6500_I2C_SDA);
 }
 
 void suspend_imu_and_ges_detector()
@@ -853,17 +855,22 @@ void hid_main_task(void *pvParameters)
             } while(FUNC_BTN_PRESSED == func_btn_state );
             
             ESP_LOGI(HID_DEMO_TAG, "Will make ESP32 go into deep sleep mode.");
-            // Go to deep sleep mode
+            // Deep sleep mode preparation
             esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
             rtc_gpio_pullup_en(FUNC_BTN_PIN);
             rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
+
+            // disable sensor to save power
             suspend_imu_and_ges_detector(); 
             reset_all_gpio();
+
+            // Officially go to deep sleep
             esp_deep_sleep_start();
 
             // Energy saving test results:
             // Working without ble connection but broadcasting: ~50 ma
             // Working with ble connection: ~42 ma, air mouse sending： 62 ma
+            // Sleeping with reset all gpio, mpu6500 sleep and paj8720 power off : ~0.52 ma on BlueGo V2.1.1
             // Sleeping with reset gpio and suspend sensors: 0.732 ma 
             // Sleeping Without reset gpio: 0.8 ma
             // Sleeping without reset gpio and suspend mpu & gesture: 4.38 ma, when gesture detected: 6 ma 
@@ -1002,6 +1009,8 @@ void ui_demo()
 
     // 添加其他UI元素到组
     lv_indev_set_group(encoder_indev, g); // 将编码器和组关联
+
+    
 }
 
 int16_t enc_get_new_moves()
@@ -1211,6 +1220,8 @@ void app_main(void)
  
     ESP_LOGI(HID_DEMO_TAG, "The cause of wakeup is %d", esp_sleep_get_wakeup_cause());
     
+    init_paj7620_power_control();
+    Delay(10);
     // Initialize PAJ7620
     if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
     {
@@ -1270,15 +1281,16 @@ void app_main(void)
     ESP_LOGI(HID_DEMO_TAG, "hid_task task initialised.");
     xTaskCreate(&hid_main_task, "hid_task", 2048 * 2, NULL, 5, NULL);
 
-    lv_init();
-    lv_disp_init();
-    lv_indev_init();
-    ui_demo();
+    // Lvgl related initialization
+    // lv_init();
+    // lv_disp_init();
+    // lv_indev_init();
+    // ui_demo();
 
-    ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
-    xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
+    // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
+    // xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
 
     // Show current working mode after initialization done.
-    //partial_display_work_mode(epd_spi, curr_mode);
-    //epd_deep_sleep(epd_spi);
+    partial_display_work_mode(epd_spi, curr_mode);
+    epd_deep_sleep(epd_spi);
 }

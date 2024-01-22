@@ -489,6 +489,28 @@ int paj7620_gesture_triggered()
 	return gesture_triggered;
 }
 
+esp_err_t init_paj7620_power_control()
+{
+    esp_err_t err = 0;
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << PAJ7620_PWR_CONTROL);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    err = gpio_config(&io_conf);
+	err = gpio_set_level(PAJ7620_PWR_CONTROL, 0);
+    if (err != ESP_OK)
+    {
+        ESP_LOGI(PAJ7620_TAG, "Failed to init_paj7620_power_control gpio config, error: %d.", err);
+    }
+    else
+    {
+        ESP_LOGI(PAJ7620_TAG, "Success to init paj7620 power gpio.");
+    }
+    return err;
+}
+
 esp_err_t init_paj7620_interrupt()
 {
     esp_err_t err = 0;
