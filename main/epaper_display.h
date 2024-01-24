@@ -30,5 +30,6 @@ void epd_partial_display_white(spi_device_handle_t spi);
 void epd_full_display_white(spi_device_handle_t spi);
 void epd_exit_partial_to_full_display(spi_device_handle_t spi);
 void epd_full_display_image(spi_device_handle_t spi, const uint8_t* data, int len);
+void epd_wait_until_ilde(spi_device_handle_t spi);
 
 #endif // end of EPAPER_DISPLAY
