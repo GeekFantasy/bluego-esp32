@@ -10,6 +10,7 @@
 
 #define MPU6500_I2C_SCL 22               /*!< gpio number for I2C master clock */
 #define MPU6500_I2C_SDA 19               /*!< gpio number for I2C master data  */
+#define MPU6500_MPU_INT 21                
 
 // #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 // #define I2C_MASTER_FREQ_HZ    400000 

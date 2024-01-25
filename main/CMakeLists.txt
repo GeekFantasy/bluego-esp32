@@ -1,4 +1,5 @@
-idf_component_register(SRCS "image_display.c" 
+idf_component_register(SRCS "mode_setting_ui.c"
+                            "image_display.c" 
                             "image_data.c" 
                             "function_btn.c" 
                             "trackball.c" 

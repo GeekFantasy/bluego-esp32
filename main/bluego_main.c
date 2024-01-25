@@ -34,6 +34,7 @@
 #include "image_display.h"
 #include "lvgl.h"
 #include "driver/timer.h"
+#include "mode_setting_ui.h"
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -52,6 +53,18 @@
 #define ILDE_TIME_TO_POWER_OFF   5 * 60 * 1000          // If there is no operation for 5 minutes, it will power off
 
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
+#define POWER_ADC_PIN           35
+
+#define EPD_HOR_RES             80
+#define EPD_VER_RES             128
+#define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
+#define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
+#define TIMER_INTERVAL0_SEC     (0.01) // 定时器间隔为10毫秒
+
+//static int timer_test_cnt = 0;
+lv_indev_t * encoder_indev = NULL;
+
+static uint8_t flush_buff[1280] = {};
 
 const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 200;
@@ -364,6 +377,9 @@ void reset_all_gpio()
     // Comment out this to avoid potential issue like paj7620.
     gpio_reset_pin(MPU6500_I2C_SCL);
     gpio_reset_pin(MPU6500_I2C_SDA);
+    //gpio_reset_pin(MPU6500_MPU_INT);
+
+    //gpio_reset_pin(POWER_ADC_PIN);    // reset this will inscrease power comsuption
 }
 
 void suspend_imu_and_ges_detector()
@@ -884,23 +900,12 @@ void hid_main_task(void *pvParameters)
     }
 }
 
-#define EPD_HOR_RES         80
-#define EPD_VER_RES         128
-#define TIMER_DIVIDER         16  // 硬件定时器时钟分频器
-#define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
-#define TIMER_INTERVAL0_SEC   (0.01) // 定时器间隔为10毫秒
-
-static int timer_test_cnt = 0;
-lv_indev_t * encoder_indev = NULL;
-
-uint8_t flush_buff[1280] = {};
-
 /*Flush the content of the internal buffer the specific area on the display
  *You can use DMA or any hardware acceleration to do this operation in the background but
  *'lv_disp_flush_ready()' has to be called when finished.*/
 static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p)
 {
-    ESP_LOGI(HID_DEMO_TAG, "***Display flush is called.***");
+    //ESP_LOGI(HID_DEMO_TAG, "***Display flush is called.***");
     ESP_LOGI(HID_DEMO_TAG, "Area: (%d, %d), (%d, %d)", area->x1, area->y1, area->x2, area->y2);
 
     for(int y = area->y1; y <= area->y2; y++) {
@@ -918,198 +923,15 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
     }
     epd_partial_display_full_image(epd_spi, flush_buff, sizeof(flush_buff));
 
-    /*IMPORTANT!!!
-     *Inform the graphics library that you are ready with the flushing*/
     lv_disp_flush_ready(disp_drv);
 }
 
-// 定时器回调函数
 void IRAM_ATTR timer_group0_isr(void *para) {
-    // 定时器的状态将在这里处理
     int timer_idx = (int) para;
-
-    // 清除中断并获取中断状态
     TIMERG0.int_clr_timers.t0 = 1;
-
-    timer_test_cnt++;
+    //timer_test_cnt++;
     lv_tick_inc(10);
-    // 重新启用闹钟
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
-}
-
-void btn_event_cb(lv_event_t * e) {
-    lv_obj_t * obj = lv_event_get_target(e);
-    lv_event_code_t code = lv_event_get_code(e);
-    int data = lv_event_get_user_data(e);
-    
-    if(code == LV_EVENT_CLICKED) {
-        // 处理按钮点击事件
-        ESP_LOGI(HID_DEMO_TAG, "*Button %d is clicked*.", data);
-    }
-}
-
-lv_obj_t * scr_gyro = NULL;
-
-void create_gyro_setting()
-{
-    lv_obj_t * label;
-    lv_obj_t * sw;
-    lv_obj_t * btn;
-
-    scr_gyro = lv_obj_create(NULL);
-
-    label = lv_label_create(scr_gyro);
-    lv_label_set_text(label, "IMU");
-    lv_obj_align(label, LV_ALIGN_TOP_LEFT, 0,0);
-
-    static lv_style_t style_sw;
-    lv_style_init(&style_sw);
-
-    // 设置背景颜色为白色
-    lv_style_set_bg_opa(&style_sw, LV_OPA_COVER);
-    lv_style_set_bg_color(&style_sw, lv_color_white());
-
-    // 设置边框颜色为黑色和边框宽度
-    lv_style_set_border_color(&style_sw, lv_color_black());
-    lv_style_set_border_width(&style_sw, 1);
-
-    lv_style_set_width(&style_sw, 40);
-    lv_style_set_height(&style_sw, 12);
-
-    sw = lv_switch_create(scr_gyro);
-    lv_obj_align(sw, LV_ALIGN_CENTER, 5, 30); // 将开关放在标签的右边
-    //lv_obj_add_style(sw, &style_sw, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    //lv_obj_add_style(sw, &style_sw, LV_PART_KNOB | LV_STATE_DEFAULT);
-
-    lv_obj_add_state(sw, LV_STATE_CHECKED);
-
-
-    // 创建一个按钮 "Gyroscope"
-    btn = lv_btn_create(scr_gyro);
-    lv_obj_set_size(btn, 70, 20); // 设置按钮的大小
-    lv_obj_align(btn, LV_ALIGN_CENTER, 0, 0); // 将按钮放在新的一行
-
-    // 为按钮添加一个标签
-    lv_obj_t * btn_label = lv_label_create(btn);
-    lv_label_set_text(btn_label, "Gyro " LV_SYMBOL_RIGHT );
-    lv_obj_center(btn_label); // 将标签居中于按钮
-}
-
-void ui_demo()
- {
-     lv_obj_t *label_title,  *label1, *label2, *label3 ;
-
-    //  static lv_style_t my_style;
-    //  lv_style_init(&my_style);
-
-    // // 设置样式的文本颜色
-    // lv_style_set_text_color(&my_style, lv_color_white());
-
-    label_title = lv_label_create(lv_scr_act());
-    lv_label_set_text(label_title, " Air Mouse ");
-
-
-    /*Create an array for the points of the line*/
-    static lv_point_t line_points[] = {{0, 15}, {79, 15}};
-
-    /*Create style*/
-    static lv_style_t style_line;
-    lv_style_init(&style_line);
-    lv_style_set_line_width(&style_line, 2);
-    lv_style_set_line_color(&style_line, lv_color_black());
-
-    /*Create a line and apply the new style*/
-    lv_obj_t * line1;
-    line1 = lv_line_create(lv_scr_act());
-    lv_line_set_points(line1, line_points, 2);     /*Set the points*/
-    lv_obj_add_style(line1, &style_line, 0);
-    //lv_obj_center(line1);
-
-    lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
-   // lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
-    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -20);
-    //lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0); // 将标签居中
-
-    lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
-   // lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
-    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 10);
-
-    lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
-   // lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
-    lv_obj_align(btn3, LV_ALIGN_CENTER, 0, 40);
-
-    
-    label1 = lv_label_create(btn1);
-    lv_label_set_text(label1, "IMU " LV_SYMBOL_RIGHT );
-    //lv_obj_add_style(label1,  &my_style, LV_PART_MAIN );
-    lv_obj_center(label1);
-
-    label2 = lv_label_create(btn2);
-    lv_label_set_text(label2, "Gesture " LV_SYMBOL_RIGHT );
-    //lv_obj_add_style(label2,  &my_style, LV_PART_MAIN );
-    lv_obj_center(label2);
-
-    label3 = lv_label_create(btn3);
-    lv_label_set_text(label3, "Track Ball " LV_SYMBOL_RIGHT );
-    //lv_obj_add_style(label3,  &my_style, LV_PART_MAIN );
-    lv_obj_center(label3);
-
-    // static lv_style_t style_label_focused;
-    // lv_style_init(&style_label_focused);
-    // lv_style_set_text_color(&style_label_focused, lv_color_white()); // 设置文本颜色为白色
-
-    // // 应用新样式到按钮内的标签
-    // lv_obj_add_style(label1, &style_label_focused, LV_STATE_FOCUSED);
-    // lv_obj_add_style(label2, &style_label_focused, LV_STATE_FOCUSED);
-    // lv_obj_add_style(label3, &style_label_focused, LV_STATE_FOCUSED);
-
-    static lv_style_t style_btn;
-    lv_style_init(&style_btn);
-
-    // 设置背景颜色为白色
-    lv_style_set_bg_opa(&style_btn, LV_OPA_COVER);
-    lv_style_set_bg_color(&style_btn, lv_color_white());
-    lv_style_set_text_color(&style_btn, lv_color_black()); // 文本为白色
-
-    // 设置边框颜色为黑色和边框宽度
-    lv_style_set_border_color(&style_btn, lv_color_black());
-    lv_style_set_border_width(&style_btn, 1);
-
-    lv_style_set_width(&style_btn, 78);
-    lv_style_set_height(&style_btn, 20);
-
-    lv_obj_add_style(btn1,  &style_btn, 0);
-    lv_obj_add_style(btn2,  &style_btn, 0);
-    lv_obj_add_style(btn3,  &style_btn, 0);
-
-    static lv_style_t style_focused;
-    lv_style_init(&style_focused);
-
-    // 为选中状态设置反向颜色
-    lv_style_set_bg_color(&style_focused, lv_color_black()); // 背景为黑色
-    lv_style_set_text_color(&style_focused, lv_color_white()); // 文本为白色
-    //lv_style_set_border_color(&style_focused, lv_color_white()); // 边框为白色
-
-    // 将新样式应用于按钮的选中状态
-    lv_obj_add_style(btn1, &style_focused, LV_STATE_FOCUSED);
-    lv_obj_add_style(btn2, &style_focused, LV_STATE_FOCUSED);
-    lv_obj_add_style(btn3, &style_focused, LV_STATE_FOCUSED);
-
-    lv_group_t * g = lv_group_create();
-    lv_group_add_obj(g, btn1); // 将按钮添加到组
-    lv_group_add_obj(g, btn2); // 将按钮添加到组
-    lv_group_add_obj(g, btn3); // 将按钮添加到组
-
-    lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, (void*)1);
-    lv_obj_add_event_cb(btn2, btn_event_cb, LV_EVENT_CLICKED, (void*)2);
-    lv_obj_add_event_cb(btn3, btn_event_cb, LV_EVENT_CLICKED, (void*)3);
-
-    // 添加其他UI元素到组
-    lv_indev_set_group(encoder_indev, g); // 将编码器和组关联
-
-    create_gyro_setting();
-    lv_scr_load(scr_gyro);
 }
 
 int16_t enc_get_new_moves()
@@ -1196,11 +1018,7 @@ void lv_disp_init()
     };
 
     timer_init(TIMER_GROUP_0, TIMER_0, &config);
-
-    // 定时器的中断服务和中断优先级配置
     timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *) TIMER_0, ESP_INTR_FLAG_IRAM, NULL);
-
-    // 设置定时器间隔
     timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
     timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
@@ -1393,6 +1211,7 @@ void app_main(void)
     lv_init();
     lv_disp_init();
     lv_indev_init();
+    init_mode_setting_ui(encoder_indev);
     ui_demo();
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
