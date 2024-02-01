@@ -27,7 +27,7 @@
 #define TRACK_BALL_TURN_ON_LED(pin)          gpio_set_level(pin, 0)
 #define TRACK_BALL_TURN_OFF_LED(pin)         gpio_set_level(pin, 1)
 
-#define TRACK_BALL_MOVEMENT_DIVIDER 6   // used to divide the track ball moved steps, if larger than 1, the actual steps will be divided into small steps.
+#define TRACK_BALL_MOVEMENT_DIVIDER 4   // used to divide the track ball moved steps, if larger than 1, the actual steps will be divided into small steps.
 
 
 

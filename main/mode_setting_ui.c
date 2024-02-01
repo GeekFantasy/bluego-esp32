@@ -5,6 +5,8 @@
 
 static lv_indev_t * encoder_indev = NULL;
 lv_obj_t * scr_setting = NULL;
+lv_obj_t * scr_actions = NULL;
+lv_obj_t * scr_acts_slide = NULL;
 
 
 void init_mode_setting_ui(lv_indev_t * enc_indev)
@@ -22,6 +24,230 @@ static void sw_event_cb(lv_event_t * event)
     } else {
         lv_obj_add_flag(layout, LV_OBJ_FLAG_HIDDEN); // 隐藏 layout
     }
+}
+
+lv_obj_t *list1;
+
+static void event_handler(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * obj = lv_event_get_target(e);
+    if(code == LV_EVENT_CLICKED) {
+        ESP_LOGI(MODE_SETTING_UI_TAG, "Button is clicked: %s.", lv_list_get_btn_text(list1, obj));
+    }
+}
+
+static void radio_event_cb(lv_event_t * e) {
+    ESP_LOGI(MODE_SETTING_UI_TAG, "Radio button event is triggered");
+    if(lv_event_get_code(e) == LV_EVENT_KEY) 
+    {
+        const uint32_t * key = lv_event_get_param(e);
+        lv_obj_t * obj = lv_event_get_target(e);
+        lv_group_t * g = lv_obj_get_group(obj);
+        if(*key == LV_KEY_RIGHT) 
+        {
+            lv_group_focus_next(g);
+        } 
+        else if(*key == LV_KEY_LEFT) 
+        {
+            lv_group_focus_prev(g);
+        }
+    }
+}
+
+void create_actions_slide_ui()
+{
+    scr_acts_slide = lv_obj_create(NULL);
+
+    lv_group_t * g = lv_group_create();
+    lv_indev_set_group(encoder_indev, g);
+
+    lv_obj_t *label = lv_label_create(scr_acts_slide);
+    lv_label_set_text(label, "Select: ");
+    lv_obj_align(label, LV_ALIGN_TOP_LEFT, 2 , 2);
+
+    lv_obj_t *cont1 = lv_list_create(scr_acts_slide);
+    lv_obj_set_size(cont1, LV_PCT(100), 110 );
+    lv_obj_set_scrollbar_mode(cont1, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_flex_flow(cont1, LV_FLEX_FLOW_COLUMN);
+    //lv_cont_set_layout(cont1, LV_LAYOUT_COLUMN_LEFT); // 设置为垂直布局
+    lv_obj_align_to(cont1, label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+
+    /*Add buttons to the list*/
+
+    static lv_style_t style_radio;
+    static lv_style_t style_radio_chk;
+    static lv_style_t style_main;
+    static lv_style_t style_main_focused;
+
+    lv_style_init(&style_main);
+    lv_style_set_pad_all(&style_main, 1);
+    lv_style_set_border_color(&style_main, lv_color_white());
+    lv_style_set_border_width(&style_main, 1);
+    lv_style_set_text_font(&style_main, &lv_font_montserrat_10);
+
+    lv_style_init(&style_main_focused);
+    lv_style_set_pad_all(&style_main_focused, 1);
+    lv_style_set_border_color(&style_main_focused, lv_color_black());
+    lv_style_set_border_width(&style_main_focused, 1);
+    lv_style_set_text_font(&style_main_focused, &lv_font_montserrat_10);
+
+    lv_style_init(&style_radio);
+    lv_style_set_radius(&style_radio, LV_RADIUS_CIRCLE);
+    lv_style_set_pad_all(&style_radio, 2);
+    lv_style_set_border_color(&style_radio, lv_color_black());
+    lv_style_set_border_width(&style_radio, 1);
+    lv_style_set_bg_opa(&style_radio, LV_OPA_COVER );
+    lv_style_set_bg_color(&style_radio, lv_color_white());
+    
+    lv_style_init(&style_radio_chk);
+    lv_style_set_radius(&style_radio_chk, LV_RADIUS_CIRCLE);
+    lv_style_set_pad_all(&style_radio_chk, 2);
+    lv_style_set_border_color(&style_radio_chk, lv_color_black());
+    lv_style_set_border_width(&style_radio_chk, 2);
+    lv_style_set_bg_opa(&style_radio_chk, LV_OPA_COVER );
+    lv_style_set_bg_color(&style_radio_chk, lv_color_black());
+
+    //lv_style_set_bg_img_src(&style_radio_chk, NULL);
+
+
+    lv_obj_t * chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Slide Up");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Slide Down");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Slide Left");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Slide Right");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Tap");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Dbl Tap");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    chx = lv_checkbox_create(cont1);
+    lv_group_add_obj(g, chx);
+    lv_obj_add_event_cb(chx, radio_event_cb, LV_EVENT_KEY, NULL);
+    lv_checkbox_set_text(chx, " Backward");
+    //lv_obj_add_flag(chx, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_add_style(chx, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(chx, &style_main_focused, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_add_style(chx, &style_radio, LV_PART_INDICATOR);
+    lv_obj_add_style(chx, &style_radio_chk, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    //lv_obj_add_state(lv_obj_get_child(cont1, 0), LV_STATE_CHECKED);
+}
+
+void create_actions_ui()
+{
+    scr_actions = lv_obj_create(NULL);
+
+    lv_group_t * g = lv_group_create();
+    lv_indev_set_group(encoder_indev, g);
+
+    list1 = lv_list_create(scr_actions);
+    lv_obj_set_size(list1, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_align(list1, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    /*Add buttons to the list*/
+    lv_obj_t * btn;
+
+    static lv_style_t list_label;
+    static lv_style_t list_main;
+    static lv_style_t list_button;
+    static lv_style_t list_button_foc;
+
+    lv_style_init(&list_label);
+    lv_style_set_pad_top(&list_label, 2);
+    lv_style_set_pad_bottom(&list_label, 2);
+
+    lv_style_init(&list_main);
+    lv_style_set_pad_left(&list_main, 5);
+    lv_obj_add_style(list1, &list_main, 0);
+
+    lv_style_init(&list_button);
+    lv_style_set_pad_left(&list_button, 2);
+    lv_style_set_bg_opa(&list_button, LV_OPA_COVER);
+    lv_style_set_bg_color(&list_button, lv_color_white());
+    lv_style_set_text_color(&list_button, lv_color_black());
+
+    lv_style_init(&list_button_foc);
+    lv_style_set_pad_left(&list_button_foc, 2);
+    lv_style_set_bg_opa(&list_button_foc, LV_OPA_COVER);
+    lv_style_set_bg_color(&list_button_foc, lv_color_black());
+    lv_style_set_text_color(&list_button_foc, lv_color_white());
+    
+    lv_list_add_text(list1, "Actions");
+
+    btn = lv_list_add_btn(list1, LV_SYMBOL_FILE, "Slide");
+    lv_obj_add_style(btn, &list_button, LV_STATE_DEFAULT);
+    lv_obj_add_style(btn, &list_button_foc, LV_STATE_FOCUSED);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
+
+    btn = lv_list_add_btn(list1, LV_SYMBOL_DIRECTORY, "Mouse");
+    lv_obj_add_style(btn, &list_button, LV_STATE_DEFAULT);
+    lv_obj_add_style(btn, &list_button_foc, LV_STATE_FOCUSED);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
+
+    btn = lv_list_add_btn(list1, LV_SYMBOL_SAVE, "Keyboard");
+    lv_obj_add_style(btn, &list_button, LV_STATE_DEFAULT);
+    lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_style(btn, &list_button_foc, LV_STATE_FOCUSED);
+
+    btn = lv_list_add_btn(list1, LV_SYMBOL_CLOSE, "Dev Ctrl");
+    lv_obj_add_style(btn, &list_button, LV_STATE_DEFAULT);
+    lv_obj_add_style(btn, &list_button_foc, LV_STATE_FOCUSED);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
 }
 
 void create_setting_ui()
@@ -53,6 +279,7 @@ void create_setting_ui()
     static lv_style_t style_sw_knob;
     static lv_style_t style_sw_knob_foc;
     static lv_style_t styel_btn_focused;
+    static lv_style_t styel_btn;
 
     lv_style_init(&style_sw_main);
     lv_style_set_width(&style_sw_main, 25);
@@ -88,8 +315,18 @@ void create_setting_ui()
     lv_style_set_bg_opa(&styel_btn_focused, LV_OPA_COVER);
     lv_style_set_bg_color(&styel_btn_focused, lv_color_black()); 
     lv_style_set_border_color(&styel_btn_focused, lv_color_black()); 
-    lv_style_set_border_width(&styel_btn_focused, 2);
+    lv_style_set_border_width(&styel_btn_focused, 1);
     lv_style_set_text_color(&styel_btn_focused, lv_color_white());
+    lv_style_set_text_font(&styel_btn_focused, &lv_font_montserrat_10);
+
+    lv_style_init(&styel_btn);
+    lv_style_set_bg_opa(&styel_btn, LV_OPA_COVER);
+    lv_style_set_bg_color(&styel_btn, lv_color_white()); 
+    lv_style_set_border_color(&styel_btn, lv_color_white()); 
+    lv_style_set_border_width(&styel_btn, 1);
+    lv_style_set_text_color(&styel_btn, lv_color_black());
+    lv_style_set_text_font(&styel_btn, &lv_font_montserrat_10);
+
     
     sw = lv_switch_create(cont_title);
     lv_group_add_obj(g, sw);
@@ -128,6 +365,7 @@ void create_setting_ui()
     btn = lv_btn_create(cont_imu);
     //lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
@@ -173,6 +411,7 @@ void create_setting_ui()
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_group_add_obj(g, btn);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
 
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Wave Up " LV_SYMBOL_RIGHT); 
@@ -182,6 +421,7 @@ void create_setting_ui()
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_group_add_obj(g, btn);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
 
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Wave Down " LV_SYMBOL_RIGHT); 
@@ -190,6 +430,7 @@ void create_setting_ui()
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_group_add_obj(g, btn);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
 
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Wave Left " LV_SYMBOL_RIGHT); 
@@ -198,6 +439,7 @@ void create_setting_ui()
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_group_add_obj(g, btn);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
 
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Wave Right " LV_SYMBOL_RIGHT); 
@@ -241,6 +483,7 @@ void create_setting_ui()
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_group_add_obj(g, btn);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
 
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Scroll Up " LV_SYMBOL_RIGHT); 
@@ -248,6 +491,7 @@ void create_setting_ui()
     btn = lv_btn_create(cont_track);
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
@@ -256,6 +500,7 @@ void create_setting_ui()
     btn = lv_btn_create(cont_track);
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
@@ -264,6 +509,7 @@ void create_setting_ui()
     btn = lv_btn_create(cont_track);
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
@@ -392,6 +638,11 @@ void ui_demo()
 
     lv_indev_set_group(encoder_indev, g); // 将编码器和组关联
 
-    create_setting_ui();
-    lv_scr_load(scr_setting);
+    //create_setting_ui();
+    //lv_scr_load(scr_setting);
+    //create_actions_ui();
+    //lv_scr_load(scr_actions);
+
+    create_actions_slide_ui();
+    lv_scr_load(scr_acts_slide);
 }

@@ -608,6 +608,8 @@ void epd_partial_display_full_image(spi_device_handle_t spi, const uint8_t* data
 
 void epd_enter_partial_display(spi_device_handle_t spi)
 {
+    epd_wait_until_ilde(spi);
+      
     epd_send_command(spi, 0x91);     //This command makes the display enter partial display
     epd_send_command(spi, 0x90);     //resolution setting
 
