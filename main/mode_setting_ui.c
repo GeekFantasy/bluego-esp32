@@ -1,4 +1,5 @@
 #include "mode_setting_ui.h"
+#include "operations.h"
 
 #define MODE_SETTING_UI_TAG     "MODE SETTING"
 
@@ -16,13 +17,13 @@ void init_mode_setting_ui(lv_indev_t * enc_indev)
 
 static void sw_event_cb(lv_event_t * event)
 {
-    lv_obj_t * sw = lv_event_get_target(event); // 获取触发事件的开关对象
-    lv_obj_t * layout = lv_event_get_user_data(event); // 获取传递给事件处理函数的用户数据，即 layout 对象
+    lv_obj_t * sw = lv_event_get_target(event); 
+    lv_obj_t * container = lv_event_get_user_data(event); 
 
     if(lv_obj_has_state(sw, LV_STATE_CHECKED)) {
-        lv_obj_clear_flag(layout, LV_OBJ_FLAG_HIDDEN); // 显示 layout
+        lv_obj_clear_flag(container, LV_OBJ_FLAG_HIDDEN); 
     } else {
-        lv_obj_add_flag(layout, LV_OBJ_FLAG_HIDDEN); // 隐藏 layout
+        lv_obj_add_flag(container, LV_OBJ_FLAG_HIDDEN); 
     }
 }
 
@@ -256,6 +257,11 @@ void create_setting_ui()
     lv_obj_t * sw;
     lv_obj_t * btn;
     lv_obj_t * btn_label;
+
+    uint16_t  imu_flag = get_action_code_from_tmp_matrix(OPER_KEY_IMU);
+    uint16_t  ges_flag = get_action_code_from_tmp_matrix(OPER_KEY_GES);
+    uint16_t  tbk_flag = get_action_code_from_tmp_matrix(OPER_KEY_TKB);
+
     lv_group_t * g = lv_group_create();
     lv_indev_set_group(encoder_indev, g);
 
@@ -266,14 +272,6 @@ void create_setting_ui()
     lv_obj_align(container, LV_ALIGN_TOP_LEFT, 0, 0);
     lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
 
-    // Setting section for IMU
-    lv_obj_t * cont_title = lv_obj_create(container);
-    lv_obj_set_size(cont_title, LV_PCT(100), LV_SIZE_CONTENT);
-    lv_obj_set_flex_flow(cont_title, LV_FLEX_FLOW_ROW);
-
-    label = lv_label_create(cont_title);
-    lv_label_set_text(label, "IMU ");
-
     static lv_style_t style_sw_main;
     static lv_style_t style_sw_indic;
     static lv_style_t style_sw_knob;
@@ -282,13 +280,14 @@ void create_setting_ui()
     static lv_style_t styel_btn;
 
     lv_style_init(&style_sw_main);
-    lv_style_set_width(&style_sw_main, 25);
-    lv_style_set_height(&style_sw_main, 13);
+    lv_style_set_width(&style_sw_main, 24);
+    lv_style_set_height(&style_sw_main, 12);
     lv_style_set_bg_opa(&style_sw_main, LV_OPA_COVER);
     lv_style_set_bg_color(&style_sw_main, lv_color_white());
     lv_style_set_radius(&style_sw_main, LV_RADIUS_CIRCLE); 
     lv_style_set_border_color(&style_sw_main, lv_color_black());
     lv_style_set_border_width(&style_sw_main, 1);
+    //lv_style_set_text_font(&style_sw_main, &lv_font_montserrat_10);
 
     lv_style_init(&style_sw_indic);
     lv_style_set_bg_opa(&style_sw_indic, LV_OPA_COVER);
@@ -327,7 +326,15 @@ void create_setting_ui()
     lv_style_set_text_color(&styel_btn, lv_color_black());
     lv_style_set_text_font(&styel_btn, &lv_font_montserrat_10);
 
-    
+    // Setting section for IMU
+    lv_obj_t * cont_title = lv_obj_create(container);
+    lv_obj_set_size(cont_title, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(cont_title, LV_FLEX_FLOW_ROW);
+
+    label = lv_label_create(cont_title);
+    lv_label_set_text(label, "IMU ");
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_12, 0);
+
     sw = lv_switch_create(cont_title);
     lv_group_add_obj(g, sw);
     lv_obj_add_style(sw, &style_sw_knob, LV_PART_KNOB);
@@ -355,6 +362,18 @@ void create_setting_ui()
     lv_obj_t * cont_imu = lv_obj_create(container);
     lv_obj_add_event_cb(sw, sw_event_cb, LV_EVENT_VALUE_CHANGED, cont_imu);
 
+    // Set the state of IMU switch and container
+    if(imu_flag == 1)
+    {
+        lv_obj_add_state(sw, LV_STATE_CHECKED);
+        lv_obj_clear_flag(cont_imu, LV_OBJ_FLAG_HIDDEN);
+    }
+    else
+    {
+        lv_obj_clear_state(sw, LV_STATE_CHECKED);
+        lv_obj_add_flag(cont_imu, LV_OBJ_FLAG_HIDDEN);
+    }
+
     //lv_obj_set_width(cont_ges, LV_PCT(100));
     lv_obj_set_size(cont_imu, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_align_to(cont_imu, line, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
@@ -379,6 +398,7 @@ void create_setting_ui()
 
     label = lv_label_create(cont_title);
     lv_label_set_text(label, "Gesture ");
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_12, 0);
     //lv_obj_align_to(label, cont_ges, LV_ALIGN_OUT_BOTTOM_LEFT, 0,5);
 
     sw = lv_switch_create(cont_title);
@@ -400,6 +420,18 @@ void create_setting_ui()
     /*Create a container with COLUMN flex direction*/
     lv_obj_t * cont_ges = lv_obj_create(container);
     lv_obj_add_event_cb(sw, sw_event_cb, LV_EVENT_VALUE_CHANGED, cont_ges);
+
+    if(ges_flag == 1)
+    {
+        lv_obj_add_state(sw, LV_STATE_CHECKED);
+        lv_obj_clear_flag(cont_ges, LV_OBJ_FLAG_HIDDEN);
+    }
+    else
+    {
+        lv_obj_clear_state(sw, LV_STATE_CHECKED);
+        lv_obj_add_flag(cont_ges, LV_OBJ_FLAG_HIDDEN);
+    }
+
     //lv_obj_set_width(cont_ges, LV_PCT(100));
     lv_obj_set_size(cont_ges, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_align_to(cont_ges, line, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
@@ -444,13 +476,41 @@ void create_setting_ui()
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Wave Right " LV_SYMBOL_RIGHT); 
 
+    btn = lv_btn_create(cont_ges);
+    lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
+
+    btn_label = lv_label_create(btn);
+    lv_label_set_text(btn_label, "Push Forward " LV_SYMBOL_RIGHT); 
+
+    btn = lv_btn_create(cont_ges);
+    lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
+
+    btn_label = lv_label_create(btn);
+    lv_label_set_text(btn_label, "Clockwise " LV_SYMBOL_RIGHT);
+
+    btn = lv_btn_create(cont_ges);
+    lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_group_add_obj(g, btn);
+    lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
+
+    btn_label = lv_label_create(btn);
+    lv_label_set_text(btn_label, "Counter-clock " LV_SYMBOL_RIGHT);
+
     // Setting section for TrackBall
     cont_title = lv_obj_create(container);
     lv_obj_set_size(cont_title, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(cont_title, LV_FLEX_FLOW_ROW);
 
     label = lv_label_create(cont_title);
-    lv_label_set_text(label, "TrackBall ");
+    lv_label_set_text(label, "Trackball ");
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_12, 0);
     //lv_obj_align_to(label, cont_ges, LV_ALIGN_OUT_BOTTOM_LEFT, 0,5);
 
     sw = lv_switch_create(cont_title);
@@ -472,6 +532,18 @@ void create_setting_ui()
     /*Create a container with COLUMN flex direction*/
     lv_obj_t * cont_track = lv_obj_create(container);
     lv_obj_add_event_cb(sw, sw_event_cb, LV_EVENT_VALUE_CHANGED, cont_track);
+
+    if(tbk_flag == 1)
+    {
+        lv_obj_add_state(sw, LV_STATE_CHECKED);
+        lv_obj_clear_flag(cont_track, LV_OBJ_FLAG_HIDDEN);
+    }
+    else
+    {
+        lv_obj_clear_state(sw, LV_STATE_CHECKED);
+        lv_obj_add_flag(cont_track, LV_OBJ_FLAG_HIDDEN);
+    }
+
     //lv_obj_set_width(cont_track, LV_PCT(100));
     lv_obj_set_size(cont_track, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_align_to(cont_track, line, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
@@ -486,7 +558,7 @@ void create_setting_ui()
     lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
 
     btn_label = lv_label_create(btn);
-    lv_label_set_text(btn_label, "Scroll Up " LV_SYMBOL_RIGHT); 
+    lv_label_set_text(btn_label, "Slide Up " LV_SYMBOL_RIGHT); 
 
     btn = lv_btn_create(cont_track);
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
@@ -495,7 +567,7 @@ void create_setting_ui()
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
-    lv_label_set_text(btn_label, "Scroll Down " LV_SYMBOL_RIGHT);
+    lv_label_set_text(btn_label, "Slide Down " LV_SYMBOL_RIGHT);
 
     btn = lv_btn_create(cont_track);
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
@@ -504,7 +576,7 @@ void create_setting_ui()
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
-    lv_label_set_text(btn_label, "Scroll Left " LV_SYMBOL_RIGHT);
+    lv_label_set_text(btn_label, "Slide Left " LV_SYMBOL_RIGHT);
 
     btn = lv_btn_create(cont_track);
     lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
@@ -513,7 +585,16 @@ void create_setting_ui()
     lv_group_add_obj(g, btn);
 
     btn_label = lv_label_create(btn);
-    lv_label_set_text(btn_label, "Scroll Right " LV_SYMBOL_RIGHT);
+    lv_label_set_text(btn_label, "Slide Right " LV_SYMBOL_RIGHT);
+
+    btn = lv_btn_create(cont_track);
+    lv_obj_set_size(btn, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_add_style(btn, &styel_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(btn, &styel_btn, LV_STATE_DEFAULT);
+    lv_group_add_obj(g, btn);
+
+    btn_label = lv_label_create(btn);
+    lv_label_set_text(btn_label, "Press " LV_SYMBOL_RIGHT);
 }
 
 void btn_event_cb(lv_event_t * e) {
@@ -638,11 +719,11 @@ void ui_demo()
 
     lv_indev_set_group(encoder_indev, g); // 将编码器和组关联
 
-    //create_setting_ui();
-    //lv_scr_load(scr_setting);
+    create_setting_ui();
+    lv_scr_load(scr_setting);
     //create_actions_ui();
     //lv_scr_load(scr_actions);
 
-    create_actions_slide_ui();
-    lv_scr_load(scr_acts_slide);
+    //create_actions_slide_ui();
+    //lv_scr_load(scr_acts_slide);
 }

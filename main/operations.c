@@ -36,6 +36,65 @@ operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
     {"tkb_right", 104},
     {"tkb_touch", 106}};
 
+operation_action operation_action_matrix_tmp[OPER_KEY_MAX_NUM] = {
+    {"imu", 1},
+    {"imu_gyro", 201},
+    {"mfs", 0},
+    {"mfs_up", 204},        // mfs hardware is remove from bluego v2.1
+    {"mfs_down", 203},      // so this piece of code is kept but not used
+    {"mfs_left", 0},
+    {"mfs_right", 0},
+    {"mfs_middle", 202},
+    {"ges", 0},
+    {"ges_up", 101},
+    {"ges_down", 102},
+    {"ges_left", 103},
+    {"ges_right", 104},
+    {"ges_forward", 105},
+    {"ges_clk", 106},
+    {"ges_aclk", 107}, 
+    {"tbk", 0},
+    {"tkb_up", 101},
+    {"tkb_down", 102},
+    {"tkb_left", 103},
+    {"tkb_right", 104},
+    {"tkb_touch", 106}};
+
+const action_str action_strs[] =
+{
+    {101, "Slide up"},
+    {102, "Slide down"},
+    {103, "Slide left"},
+    {104, "Slede right"},
+    {105, "Tap"},
+    {106, "Double Tap"},
+    {107, "Backward"},
+
+    {201, "Pointer"},
+    {202, "Left click"},
+    {203, "Right click"},
+    {204, "Middle click"},
+    {205, "Wheel"},
+
+    {301, "Key up"},
+    {302, "Key down"},
+    {303, "Key left"},
+    {304, "Key right"},
+    {305, "Key space"},
+    {306, "Key enter"},
+    {307, "Switch window"},
+    {308, "Desktop next"},
+    {309, "Desktop prev"},
+    {310, "Minimize all"},
+
+    {401, "Volume up"},
+    {402, "Volume down"},
+    {403, "Mute"},
+    {404, "Power"},
+    {405, "Rest"},
+    {406, "Sleep"},
+};
+
 const uint16_t mode_am_actions[OPER_KEY_MAX_NUM] =  // mode actions for air mouse
 {
     1, 201,
@@ -166,7 +225,7 @@ void read_mode_oper_from_nvs(nvs_handle_t handle, operation_action *record, uint
         }
         else
         {
-            ESP_LOGD(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
+            ESP_LOGI(OPERATIONS_TAG, "Read op_key %s, action_code = %d", record->op_key, record->action_code);
         }
     }
 }
@@ -278,8 +337,7 @@ void read_all_operations()
     nvs_close(handle);
 }
 
-// 读取所有NVS_Record
-void read_mode_to_matrix(int8_t mode_num)
+void read_mode_from_nvs(int mode_num, operation_action op_act_mat[])
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
@@ -290,10 +348,16 @@ void read_mode_to_matrix(int8_t mode_num)
 
     for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
     {
-        read_mode_oper_from_nvs(handle, &operation_action_matrix[i], mode_num);
+        read_mode_oper_from_nvs(handle, &op_act_mat[i], mode_num);
     }
 
     nvs_close(handle);
+}
+
+// 读取所有NVS_Record to matrix
+void read_mode_to_matrix(int8_t mode_num)
+{
+    read_mode_from_nvs(mode_num, operation_action_matrix);
 }
 
 uint16_t get_action_code(int oper_key)
@@ -303,7 +367,7 @@ uint16_t get_action_code(int oper_key)
         return operation_action_matrix[oper_key].action_code;
     }
 
-    return INVALID_OPER_CODE;
+    return INVALID_ACTION_CODE;
 }
 
 /// @brief check if the speicfied module is enabled or not
@@ -582,4 +646,20 @@ void clear_operations_tab_action_code()
     {
         operation_action_matrix[i].action_code = 0;
     }
+}
+
+// 读取所有NVS_Record to temp matrix
+void read_mode_to_matrix_tmp(int8_t mode_num)
+{
+    read_mode_from_nvs(mode_num, operation_action_matrix_tmp);
+}
+
+uint16_t get_action_code_from_tmp_matrix(int index)
+{
+    uint16_t act_code = INVALID_ACTION_CODE;
+    if(index >= 0 &&  index < OPER_KEY_MAX_NUM)
+    {
+        act_code = operation_action_matrix_tmp[index].action_code;
+    }
+    return act_code;
 }

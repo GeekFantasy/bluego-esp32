@@ -38,7 +38,7 @@
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
-#define HIDD_DEVICE_NAME "Bluego"
+#define HIDD_DEVICE_NAME "BlueGo"
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 #define SWITCH_KEY_UP_LEVEL      135
@@ -971,9 +971,9 @@ void encoder_read(lv_indev_drv_t * drv, lv_indev_data_t*data)
 void lv_indev_init()
 {
     static lv_indev_drv_t indev_drv;
-    lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
-    indev_drv.type = LV_INDEV_TYPE_ENCODER;                 /*See below.*/
-    indev_drv.read_cb = encoder_read;              /*See below.*/
+    lv_indev_drv_init(&indev_drv);     
+    indev_drv.type = LV_INDEV_TYPE_ENCODER;                
+    indev_drv.read_cb = encoder_read;              
     /*Register the driver in LVGL and save the created input device object*/
     encoder_indev = lv_indev_drv_register(&indev_drv);
 }
@@ -1038,10 +1038,10 @@ void app_main(void)
 {
     esp_err_t ret;
 
-    // if(ESP_OK == nvs_flash_erase())
-    // {
-    //     ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
-    // }
+    if(ESP_OK == nvs_flash_erase())
+    {
+        ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
+    }
 
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -1212,6 +1212,8 @@ void app_main(void)
     lv_disp_init();
     lv_indev_init();
     init_mode_setting_ui(encoder_indev);
+
+    read_mode_to_matrix_tmp(2);
     ui_demo();
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");

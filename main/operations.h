@@ -39,7 +39,7 @@
 #define ACTION_CODE_CONSUMER_RESET          405
 #define ACTION_CODE_CONSUMER_SLEEP          406
 
-#define INVALID_OPER_CODE 0xFF
+#define INVALID_ACTION_CODE 0xFF
 
 #define MOUSE_LEFT_KEY_SET_MASK         0X01;
 #define MOUSE_LEFT_KEY_CLEAR_MASK       0XFE; 
@@ -98,6 +98,12 @@ typedef struct
     uint16_t action_code;
 } operation_action;
 
+typedef struct
+{
+    uint16_t key;
+    char action_str[20];
+} action_str;
+
 typedef union 
 {
     struct {
@@ -133,5 +139,7 @@ void write_mode_operations_to_nvs(int8_t mode_num);
 void read_mode_to_matrix(int8_t mode_num);
 void write_all_modes_to_nvs();
 int  check_module_enabled(int oper_key);
+void read_mode_to_matrix_tmp(int8_t mode_num);
+uint16_t get_action_code_from_tmp_matrix(int index);
 
 #endif
