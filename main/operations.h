@@ -141,5 +141,6 @@ void write_all_modes_to_nvs();
 int  check_module_enabled(int oper_key);
 void read_mode_to_matrix_tmp(int8_t mode_num);
 uint16_t get_action_code_from_tmp_matrix(int index);
+int get_action_str(uint16_t act_key, char act_str[20]);
 
 #endif

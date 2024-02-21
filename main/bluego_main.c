@@ -1212,7 +1212,6 @@ void app_main(void)
     lv_disp_init();
     lv_indev_init();
     init_mode_setting_ui(encoder_indev);
-
     read_mode_to_matrix_tmp(2);
     ui_demo();
 

@@ -663,3 +663,26 @@ uint16_t get_action_code_from_tmp_matrix(int index)
     }
     return act_code;
 }
+
+// get actoin string by action key from constrait array: action_strs
+int get_action_str(uint16_t act_key, char act_str[20])
+{
+    if(act_key > 0 && act_str != NULL)
+    {
+        for (size_t i = 0; i < sizeof(action_strs)/sizeof(action_str); i++)
+        {
+            if(action_strs[i].key == act_key)
+            {
+                strcpy(act_str, action_strs[i].action_str);
+                return 0;
+            }
+            else
+                continue;
+        } 
+        return 1;
+    }
+    else
+    {
+        return 1;
+    }
+}

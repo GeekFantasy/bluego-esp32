@@ -187,14 +187,51 @@ void create_actions_slide_ui()
 
 void create_actions_ui()
 {
+    uint16_t  action_key = 204;
+    char action_string[20] = {};
+
     scr_actions = lv_obj_create(NULL);
 
     lv_group_t * g = lv_group_create();
     lv_indev_set_group(encoder_indev, g);
 
+    lv_obj_t *label = lv_label_create(scr_actions);
+    lv_label_set_text(label, "Current Action:");
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_10, 0);
+    lv_obj_align(label, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    if(get_action_str(action_key, action_string) == 0)
+    {
+        ESP_LOGI(MODE_SETTING_UI_TAG, "Succeed to get action string: %s.", action_string);
+    }
+    else
+    {
+        ESP_LOGI(MODE_SETTING_UI_TAG, "Failed to get action string: %s.", action_string);
+    }
+
+    lv_obj_t *label_action = lv_label_create(scr_actions);
+    lv_label_set_text(label_action, action_string);
+    lv_obj_set_style_text_font(label_action, &lv_font_montserrat_10, 0);
+    lv_obj_align_to(label_action, label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+
+    static lv_point_t line_points[] = {{1, 0}, {78, 0}};
+    static lv_style_t style_line;
+    lv_style_init(&style_line);
+    lv_style_set_line_width(&style_line, 2);
+    lv_style_set_line_color(&style_line, lv_color_black());
+
+    /*Create a line and apply the new style*/
+    lv_obj_t * line;
+    line = lv_line_create(scr_actions);
+    lv_line_set_points(line, line_points, 2);     /*Set the points*/
+    lv_obj_add_style(line, &style_line, 0);
+    lv_obj_align_to(line, label_action, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 2);
+
+
     list1 = lv_list_create(scr_actions);
     lv_obj_set_size(list1, LV_PCT(100), LV_SIZE_CONTENT);
-    lv_obj_align(list1, LV_ALIGN_TOP_LEFT, 0, 0);
+    //lv_obj_align(list1, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_align_to(list1, line, LV_ALIGN_BOTTOM_LEFT, 0 , 0);
 
     /*Add buttons to the list*/
     lv_obj_t * btn;
@@ -238,7 +275,7 @@ void create_actions_ui()
     lv_group_add_obj(g, btn);
     lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
 
-    btn = lv_list_add_btn(list1, LV_SYMBOL_SAVE, "Keyboard");
+    btn = lv_list_add_btn(list1, LV_SYMBOL_KEYBOARD, "Keyboard");
     lv_obj_add_style(btn, &list_button, LV_STATE_DEFAULT);
     lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
     lv_group_add_obj(g, btn);
@@ -719,10 +756,11 @@ void ui_demo()
 
     lv_indev_set_group(encoder_indev, g); // 将编码器和组关联
 
-    create_setting_ui();
-    lv_scr_load(scr_setting);
-    //create_actions_ui();
-    //lv_scr_load(scr_actions);
+    //create_setting_ui();
+    //lv_scr_load(scr_setting);
+
+    create_actions_ui();
+    lv_scr_load(scr_actions);
 
     //create_actions_slide_ui();
     //lv_scr_load(scr_acts_slide);
