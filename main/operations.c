@@ -65,7 +65,7 @@ const action_str action_strs[] =
     {101, "Slide up"},
     {102, "Slide down"},
     {103, "Slide left"},
-    {104, "Slede right"},
+    {104, "Slide right"},
     {105, "Tap"},
     {106, "Double Tap"},
     {107, "Backward"},
@@ -83,8 +83,8 @@ const action_str action_strs[] =
     {305, "Key space"},
     {306, "Key enter"},
     {307, "Switch window"},
-    {308, "Desktop next"},
-    {309, "Desktop prev"},
+    {308, "Dsktop next"},
+    {309, "Dsktop prev"},
     {310, "Minimize all"},
 
     {401, "Volume up"},
@@ -664,16 +664,24 @@ uint16_t get_action_code_from_tmp_matrix(int index)
     return act_code;
 }
 
-// get actoin string by action key from constrait array: action_strs
+void set_action_code_to_tmp_matrix(int key_index, uint16_t code)
+{
+    if(key_index >= 0 && key_index < OPER_KEY_MAX_NUM)
+    {
+        operation_action_matrix_tmp[key_index].action_code = code;
+    }
+}
+
+// get actoin str by action code from constrait array: action_strs
 int get_action_str(uint16_t act_key, char act_str[20])
 {
     if(act_key > 0 && act_str != NULL)
     {
         for (size_t i = 0; i < sizeof(action_strs)/sizeof(action_str); i++)
         {
-            if(action_strs[i].key == act_key)
+            if(action_strs[i].code == act_key)
             {
-                strcpy(act_str, action_strs[i].action_str);
+                strcpy(act_str, action_strs[i].str);
                 return 0;
             }
             else
@@ -686,3 +694,37 @@ int get_action_str(uint16_t act_key, char act_str[20])
         return 1;
     }
 }
+
+// Get the action strings for touch related actions
+const action_str* get_touch_action_strs(int *count)
+{
+    if(count != NULL)
+        *count = 7;
+    return &action_strs[0];
+}
+
+// Get the action strings for touch related actions
+const action_str* get_mouse_action_strs(int *count)
+{
+    if(count != NULL)
+        *count = 5;
+    return &action_strs[7];
+}
+
+// Get the action strings for keyboard related actions
+const action_str* get_keybd_action_strs(int *count)
+{
+    if(count != NULL)
+        *count = 10;
+    return &action_strs[12];
+}
+
+
+// Get the action strings for devide constrol related actions
+const action_str* get_devctl_action_strs(int *count)
+{
+    if(count != NULL)
+        *count = 6;
+    return &action_strs[22];
+}
+

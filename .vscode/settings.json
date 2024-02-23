@@ -62,7 +62,8 @@
         "trackball.h": "c",
         "function_btn.h": "c",
         "lvgl.h": "c",
-        "mode_setting_ui.h":"c"
+        "mode_setting_ui.h": "c",
+        "algorithm": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

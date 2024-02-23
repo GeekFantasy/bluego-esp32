@@ -100,8 +100,8 @@ typedef struct
 
 typedef struct
 {
-    uint16_t key;
-    char action_str[20];
+    uint16_t code;
+    char str[20];
 } action_str;
 
 typedef union 
@@ -141,6 +141,11 @@ void write_all_modes_to_nvs();
 int  check_module_enabled(int oper_key);
 void read_mode_to_matrix_tmp(int8_t mode_num);
 uint16_t get_action_code_from_tmp_matrix(int index);
+void set_action_code_to_tmp_matrix(int index, uint16_t code);
 int get_action_str(uint16_t act_key, char act_str[20]);
+const action_str* get_touch_action_strs(int *count);
+const action_str* get_mouse_action_strs(int *count);
+const action_str* get_keybd_action_strs(int *count);
+const action_str* get_devctl_action_strs(int *count);
 
 #endif
