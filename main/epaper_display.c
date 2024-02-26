@@ -801,10 +801,11 @@ esp_err_t  edp_init_spi_device(spi_device_handle_t *spi)
     };
     //Initialize the SPI bus
     ret = spi_bus_initialize(HSPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
-    ESP_ERROR_CHECK(ret);
+    //ESP_ERROR_CHECK(ret);
+    
     //Attach the LCD to the SPI bus
     ret = spi_bus_add_device(HSPI_HOST, &devcfg, spi);
-    ESP_ERROR_CHECK(ret);
+    //ESP_ERROR_CHECK(ret);
 
     return ret;
 }

@@ -36,6 +36,9 @@
 #include "driver/timer.h"
 #include "mode_setting_ui.h"
 
+void lv_indev_init();
+void lv_indev_deinit();
+
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
 #define HIDD_DEVICE_NAME "BlueGo"
@@ -489,6 +492,7 @@ void mode_setting_task(void *pvParameters)
     int display_updated = 0;
     int mv_direction = TRACK_BALL_DIRECTION_NONE;
     int mv_steps = 0;
+    int state_last_time_ms = xTaskGetTickCount();
     
     while (1)
     {
@@ -537,7 +541,7 @@ void mode_setting_task(void *pvParameters)
         }
 
         // Dealing with entering and exiting mode setting
-        get_func_btn_state(&func_btn_state, NULL);
+        get_func_btn_state(&func_btn_state, &state_last_time_ms);
         if((func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED) 
             || (tb_touch_state != tb_touch_state_old && tb_touch_state == TRACK_BALL_TOUCH_DOWN ))
         {
@@ -978,6 +982,14 @@ void lv_indev_init()
     encoder_indev = lv_indev_drv_register(&indev_drv);
 }
 
+void lv_indev_deinit()
+{
+    if(encoder_indev != NULL)
+    {
+        lv_indev_delete(encoder_indev);
+    }
+}
+
 void lv_disp_init()
 {
     //Create a buffer for drawing
@@ -1038,10 +1050,10 @@ void app_main(void)
 {
     esp_err_t ret;
 
-    if(ESP_OK == nvs_flash_erase())
-    {
-        ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
-    }
+    // if(ESP_OK == nvs_flash_erase())
+    // {
+    //     ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
+    // }
 
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -1064,18 +1076,16 @@ void app_main(void)
     ESP_LOGI(HID_DEMO_TAG, "Initialized the mode matrix.");
 
     // init e-paper-display
-    ret = edp_init_spi_device(&epd_spi);
+    edp_init_spi_device(&epd_spi);
 
     // This is used to fully display white page on init
-    epd_init_full_display(epd_spi);
-    epd_full_display_white(epd_spi);
-    epd_wait_until_ilde(epd_spi);
+    // epd_init_full_display(epd_spi);
+    // epd_full_display_white(epd_spi);
+    // epd_wait_until_ilde(epd_spi);
 
-    // This is use for partial display powering on process.
+    // This is used for partial display powering on process.
     epd_power_on_to_partial_display(epd_spi);
     epd_partial_display_full_image(epd_spi, gImage_poweringon, EPD_DIS_ARRAY);
-    
-
     
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.
@@ -1148,8 +1158,8 @@ void app_main(void)
     
     init_paj7620_power_control();
     Delay(10);
-    // Initialize PAJ7620
-    if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
+    // Initialize PAJ7620 from powering on
+    if(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) 
     {
         if(init_paj7620_i2c() == ESP_OK)
             ESP_LOGI(HID_DEMO_TAG,"PAJ7620 I2C configed sucessfully!");
@@ -1157,7 +1167,7 @@ void app_main(void)
             ESP_LOGI(HID_DEMO_TAG,"PAJ7620 registers configed sucessfully!");
         init_paj7620_interrupt();
     }
-    else
+    else  // This is for wakeup process 
     {
         if(init_paj7620_i2c() == ESP_OK)
             ESP_LOGI(HID_DEMO_TAG,"PAJ7620 I2C configed sucessfully!");
@@ -1183,7 +1193,7 @@ void app_main(void)
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 
-    // Record the last operation time which is used for power off
+    // Record the last operation time which is used for power saving
     last_oper_time = xTaskGetTickCount(); 
 
     //ESP_LOGI(HID_DEMO_TAG, "multi_fun_switch task initialed.");
@@ -1210,15 +1220,15 @@ void app_main(void)
     // Lvgl related initialization
     lv_init();
     lv_disp_init();
-    lv_indev_init();
-    init_mode_setting_ui(encoder_indev);
-    read_mode_to_matrix_tmp(2);
-    ui_demo();
+    //lv_indev_init();
+    //init_mode_setting_ui(encoder_indev);
+    //read_mode_to_matrix_tmp(2);
+    //ui_demo();
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
     xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
 
     // Show current working mode after initialization done.
-    // partial_display_work_mode(epd_spi, curr_mode);
-    // epd_deep_sleep(epd_spi);
+    partial_display_work_mode(epd_spi, curr_mode);
+    epd_deep_sleep(epd_spi);
 }
