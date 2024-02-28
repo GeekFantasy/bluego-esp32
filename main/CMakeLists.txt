@@ -1,4 +1,4 @@
-idf_component_register(SRCS "mode_setting_ui.c"
+idf_component_register(SRCS "air-mouse.c" "gesture.c" "mode_setting_ui.c"
                             "image_display.c" 
                             "image_data.c" 
                             "function_btn.c" 

@@ -8,6 +8,7 @@ static lv_indev_t * encoder_indev = NULL;
 lv_obj_t * scr_setting = NULL;
 lv_obj_t * scr_actions = NULL;
 lv_obj_t * scr_acts_select = NULL;
+lv_obj_t * scr_img_btns = NULL;
 static uint16_t  action_code = 0;
 static int action_index = 0;
 
@@ -536,6 +537,15 @@ static void tkb_sw_event_cb(lv_event_t * event)
     }
 }
 
+static void settings_back_btn_cb(lv_event_t * e) {
+    if(lv_event_get_code(e) == LV_EVENT_CLICKED) 
+    {
+        create_image_btns();
+        lv_scr_load(scr_img_btns);
+        lv_obj_del(scr_setting);
+    }
+}
+
 void create_setting_ui()
 {
     lv_obj_t * label;
@@ -553,7 +563,7 @@ void create_setting_ui()
     scr_setting = lv_obj_create(NULL);
 
     lv_obj_t * container = lv_obj_create(scr_setting);
-    lv_obj_set_size(container, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_size(container, LV_PCT(100), 114);
     lv_obj_align(container, LV_ALIGN_TOP_LEFT, 0, 0);
     lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
 
@@ -890,6 +900,38 @@ void create_setting_ui()
 
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Press " LV_SYMBOL_RIGHT);
+
+    // Back button at the buttom
+    static lv_style_t styel_back_btn_focused;
+    static lv_style_t styel_back_btn;
+
+    lv_style_init(&styel_back_btn_focused);
+    lv_style_set_bg_opa(&styel_back_btn_focused, LV_OPA_COVER);
+    lv_style_set_bg_color(&styel_back_btn_focused, lv_color_black()); 
+    lv_style_set_border_color(&styel_back_btn_focused, lv_color_black()); 
+    lv_style_set_border_width(&styel_back_btn_focused, 1);
+    lv_style_set_text_color(&styel_back_btn_focused, lv_color_white());
+    lv_style_set_text_font(&styel_back_btn_focused, &lv_font_montserrat_10);
+
+    lv_style_init(&styel_back_btn);
+    lv_style_set_bg_opa(&styel_back_btn, LV_OPA_COVER);
+    lv_style_set_bg_color(&styel_back_btn, lv_color_white()); 
+    lv_style_set_border_color(&styel_back_btn, lv_color_white()); 
+    lv_style_set_border_width(&styel_back_btn, 1);
+    lv_style_set_text_color(&styel_back_btn, lv_color_black());
+    lv_style_set_text_font(&styel_back_btn, &lv_font_montserrat_10);
+
+    lv_obj_t *back_btn = lv_btn_create(scr_setting);
+    lv_obj_set_size(back_btn, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_group_add_obj(g, back_btn);
+    lv_obj_add_style(back_btn, &styel_back_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(back_btn, &styel_back_btn, LV_STATE_DEFAULT);
+
+    lv_obj_t *back_btn_label = lv_label_create(back_btn);
+    lv_label_set_text(back_btn_label, LV_SYMBOL_LEFT " Back  "); 
+    lv_obj_align(back_btn_label, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+    lv_obj_align(back_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+    lv_obj_add_event_cb(back_btn, settings_back_btn_cb, LV_EVENT_CLICKED, NULL);
 }
 
 void btn_event_cb(lv_event_t * e) {
@@ -1026,4 +1068,105 @@ void ui_demo()
     //action_str *act_strs = get_keybd_action_strs(&act_cnt);
     //create_action_select_ui(act_strs, act_cnt);
     //lv_scr_load(scr_acts_select);
+}
+
+void img_btn_event_cb(lv_event_t * e) {
+    lv_obj_t * obj = lv_event_get_target(e);
+    lv_event_code_t code = lv_event_get_code(e);
+    int data = lv_event_get_user_data(e);
+    
+    if(code == LV_EVENT_CLICKED) {
+        ESP_LOGI(MODE_SETTING_UI_TAG, "*Image Button is clicked*.");
+        create_setting_ui();
+        lv_scr_load(scr_setting);
+        lv_obj_del(scr_img_btns);
+    }
+}
+
+void img_btn_key_event_cb(lv_event_t * e) {
+    lv_obj_t * obj = lv_event_get_target(e);
+    lv_event_code_t code = lv_event_get_code(e);
+    int data = lv_event_get_user_data(e);
+    
+    lv_group_t * g = lv_group_get_default();
+    lv_obj_t * focus_obj = lv_group_get_focused(g);
+    int index = lv_obj_get_index(focus_obj);
+
+    if(code == LV_EVENT_SCROLL) {
+        ESP_LOGI(MODE_SETTING_UI_TAG, "*Image key is pressed %d, index: %d *.", data, index);
+    }
+}
+
+void create_image_btns()
+{
+    LV_IMG_DECLARE(air_mouse);
+    LV_IMG_DECLARE(gesture);
+
+    lv_group_t * g = lv_group_create();
+    lv_indev_set_group(encoder_indev, g);
+    lv_group_set_default(g);
+
+    scr_img_btns = lv_obj_create(NULL);
+    lv_obj_t * container = lv_obj_create(scr_img_btns);
+    lv_obj_set_size(container, LV_PCT(100), LV_PCT(100));
+    lv_obj_align(container, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
+
+    static lv_style_t style_def;
+    lv_style_init(&style_def);
+    lv_style_set_text_color(&style_def, lv_color_white());
+    
+    static lv_style_t style_pr;
+    lv_style_init(&style_pr);
+    lv_style_set_img_recolor(&style_pr, lv_color_black());
+
+    // for (size_t i = 0; i < 9; i++)
+    // {
+    //    lv_obj_t * btn = lv_btn_create(container);
+    //    lv_obj_t * label = lv_label_create(btn);
+    //    lv_label_set_text(label, "Button");
+    //    lv_group_add_obj(g, btn);
+    // }
+
+    lv_obj_t * imgbtn1 = lv_imgbtn_create(container);
+    lv_imgbtn_set_src(imgbtn1, LV_IMGBTN_STATE_RELEASED, NULL, &air_mouse, NULL);
+    lv_imgbtn_set_src(imgbtn1, LV_IMGBTN_STATE_PRESSED, NULL, &air_mouse, NULL);
+    //lv_obj_set_size(imgbtn1, 60, 30);
+    lv_obj_t * label1 = lv_label_create(imgbtn1);
+    lv_label_set_text(label1, "1");
+    //lv_obj_align(imgbtn1, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_add_style(imgbtn1, &style_def, 0);
+    lv_obj_add_style(imgbtn1, &style_pr, LV_STATE_PRESSED);
+    lv_obj_add_flag(imgbtn1, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn1, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn1);
+
+    lv_obj_t * imgbtn2 = lv_imgbtn_create(container);
+    lv_imgbtn_set_src(imgbtn2, LV_IMGBTN_STATE_RELEASED, NULL, &gesture, NULL);
+    lv_imgbtn_set_src(imgbtn2, LV_IMGBTN_STATE_PRESSED, NULL, &gesture, NULL);
+    //lv_obj_set_size(imgbtn2, 60, 30);
+    lv_obj_t * label2 = lv_label_create(imgbtn2);
+    lv_label_set_text(label2, "2");
+    //lv_obj_align_to(imgbtn2, imgbtn1, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+    lv_obj_add_style(imgbtn2, &style_def, 0);
+    lv_obj_add_style(imgbtn2, &style_pr, LV_STATE_PRESSED);
+    lv_obj_add_flag(imgbtn2, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn2, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn2);
+
+    lv_obj_add_event_cb(container, img_btn_key_event_cb, LV_EVENT_SCROLL, (void*)3);
+
+    // for (size_t i = 0; i < 3; i++)
+    // {
+    //    lv_obj_t * btn = lv_btn_create(container);
+    //    lv_obj_t * label = lv_label_create(btn);
+    //    lv_label_set_text(label, "Button");
+    //    lv_group_add_obj(g, btn);
+    // }
+}
+
+void image_demo()
+{
+    create_image_btns();
+    lv_scr_load(scr_img_btns);
 }

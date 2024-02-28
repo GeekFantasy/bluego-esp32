@@ -80,7 +80,7 @@ static uint16_t hid_conn_id = 0;
 static bool ble_connected = false;
 int8_t curr_mode;
 gesture_state generic_gs;
-int in_mode_setting = 0;
+int in_mode_switching = 0;
 spi_device_handle_t epd_spi;
 TickType_t last_oper_time;
 
@@ -452,7 +452,7 @@ void track_ball_task(void *pvParameters)
 
     while (1)
     {
-        if (ble_connected && check_module_enabled(OPER_KEY_TKB) && (!in_mode_setting))
+        if (ble_connected && check_module_enabled(OPER_KEY_TKB) && (!in_mode_switching))
         {
             tb_touch_state = get_track_ball_touch_state();
             if((TRACK_BALL_TOUCH_DOWN == tb_touch_state) && (TRACK_BALL_TOUCH_DOWN != tb_touch_state_old))
@@ -496,7 +496,7 @@ void mode_setting_task(void *pvParameters)
     
     while (1)
     {
-        if(in_mode_setting)
+        if(in_mode_switching)
         {
             get_track_ball_main_movement(&mv_direction, &mv_steps);
             tb_touch_state = get_track_ball_touch_state();
@@ -545,11 +545,11 @@ void mode_setting_task(void *pvParameters)
         if((func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED) 
             || (tb_touch_state != tb_touch_state_old && tb_touch_state == TRACK_BALL_TOUCH_DOWN ))
         {
-            if(in_mode_setting)
+            if(in_mode_switching)
             {
                 ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
                 TRACK_BALL_TURN_OFF_LED(LED_BLUE_PIN);
-                in_mode_setting = 0;
+                in_mode_switching = 0;
                 epd_deep_sleep(epd_spi);
                 clear_track_ball_step_counters();
                 write_mode_num_to_nvs(curr_mode);
@@ -559,7 +559,7 @@ void mode_setting_task(void *pvParameters)
             {
                 ESP_LOGI(HID_DEMO_TAG, "Entering mode setting ...");
                 TRACK_BALL_TURN_ON_LED(LED_BLUE_PIN);
-                in_mode_setting = 1;
+                in_mode_switching = 1;
                 epd_power_on_to_partial_display(epd_spi);
                 clear_track_ball_step_counters();
             }
@@ -708,7 +708,7 @@ void gesture_detect_task(void *pvParameters)
 
     while (1)
     {
-        if (ble_connected && check_module_enabled(OPER_KEY_GES) && (!in_mode_setting))
+        if (ble_connected && check_module_enabled(OPER_KEY_GES) && (!in_mode_switching))
         {
             ges_key = read_ges_from_paj7620();
 
@@ -769,7 +769,7 @@ void imu_gyro_task(void *pvParameters)
 
     while (1)
     {
-        if (ble_connected && check_module_enabled(OPER_KEY_IMU)  && (!in_mode_setting))
+        if (ble_connected && check_module_enabled(OPER_KEY_IMU)  && (!in_mode_switching))
         {
             mpu6500_GYR_read(&gyro);
             gettimeofday(&tv_now, NULL);
@@ -822,7 +822,7 @@ void hid_main_task(void *pvParameters)
 
     while (1)
     {
-        if (ble_connected && (!in_mode_setting))
+        if (ble_connected && (!in_mode_switching))
         {
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
@@ -1220,15 +1220,16 @@ void app_main(void)
     // Lvgl related initialization
     lv_init();
     lv_disp_init();
-    //lv_indev_init();
-    //init_mode_setting_ui(encoder_indev);
+    lv_indev_init();
+    init_mode_setting_ui(encoder_indev);
     //read_mode_to_matrix_tmp(2);
     //ui_demo();
+    image_demo();
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
     xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
 
     // Show current working mode after initialization done.
-    partial_display_work_mode(epd_spi, curr_mode);
-    epd_deep_sleep(epd_spi);
+    //partial_display_work_mode(epd_spi, curr_mode);
+    //epd_deep_sleep(epd_spi);
 }
