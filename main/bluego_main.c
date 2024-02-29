@@ -34,10 +34,11 @@
 #include "image_display.h"
 #include "lvgl.h"
 #include "driver/timer.h"
-#include "mode_setting_ui.h"
+#include "mode_mangement_ui.h"
 
 void lv_indev_init();
-void lv_indev_deinit();
+void enable_indev();
+void disable_indev();
 
 #define HID_DEMO_TAG "BLUEGO"
 #define IMU_LOG_TAG "IMU DATA"
@@ -66,6 +67,7 @@ void lv_indev_deinit();
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
+int indev_enable = 1;
 
 static uint8_t flush_buff[1280] = {};
 
@@ -496,59 +498,59 @@ void mode_setting_task(void *pvParameters)
     
     while (1)
     {
-        if(in_mode_switching)
-        {
-            get_track_ball_main_movement(&mv_direction, &mv_steps);
-            tb_touch_state = get_track_ball_touch_state();
+        // if(in_mode_switching)
+        // {
+        //     get_track_ball_main_movement(&mv_direction, &mv_steps);
+        //     tb_touch_state = get_track_ball_touch_state();
             
-            switch (mv_direction)
-            {
-            case TRACK_BALL_DIRECTION_UP:
-            case TRACK_BALL_DIRECTION_LEFT:
-                curr_mode++;
-                curr_mode %= MODE_MAX_NUM;
-                partial_display_work_mode(epd_spi, curr_mode);
-                clear_track_ball_step_counters();
-                display_updated = 1;
-                /* code */
-                break;
-            case TRACK_BALL_DIRECTION_DOWN:
-            case TRACK_BALL_DIRECTION_RIGHT:
-                curr_mode--;
-                curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
-                partial_display_work_mode(epd_spi, curr_mode);
-                clear_track_ball_step_counters();
-                display_updated = 1;
-                /* code */
-                break;
-            default:
-                break;
-            }
+        //     switch (mv_direction)
+        //     {
+        //     case TRACK_BALL_DIRECTION_UP:
+        //     case TRACK_BALL_DIRECTION_LEFT:
+        //         curr_mode++;
+        //         curr_mode %= MODE_MAX_NUM;
+        //         partial_display_work_mode(epd_spi, curr_mode);
+        //         clear_track_ball_step_counters();
+        //         display_updated = 1;
+        //         /* code */
+        //         break;
+        //     case TRACK_BALL_DIRECTION_DOWN:
+        //     case TRACK_BALL_DIRECTION_RIGHT:
+        //         curr_mode--;
+        //         curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
+        //         partial_display_work_mode(epd_spi, curr_mode);
+        //         clear_track_ball_step_counters();
+        //         display_updated = 1;
+        //         /* code */
+        //         break;
+        //     default:
+        //         break;
+        //     }
 
-            if(display_updated)    // No need to delay if e-paper is updated
-            {
-                display_updated = 0;
-                last_oper_time = xTaskGetTickCount();
-            }
-            else
-            {            
-                Delay(200);
-            }
-        }
-        else
+        //     if(display_updated)    // No need to delay if e-paper is updated
+        //     {
+        //         display_updated = 0;
+        //         last_oper_time = xTaskGetTickCount();
+        //     }
+        //     else
+        //     {            
+        //         Delay(200);
+        //     }
+        // }
+        // else
         {
             Delay(200);
         }
 
         // Dealing with entering and exiting mode setting
         get_func_btn_state(&func_btn_state, &state_last_time_ms);
-        if((func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED) 
-            || (tb_touch_state != tb_touch_state_old && tb_touch_state == TRACK_BALL_TOUCH_DOWN ))
+        if((func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED) )
         {
             if(in_mode_switching)
             {
                 ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
                 TRACK_BALL_TURN_OFF_LED(LED_BLUE_PIN);
+                disable_indev();  // disable the input device encoder to make lvgl not work
                 in_mode_switching = 0;
                 epd_deep_sleep(epd_spi);
                 clear_track_ball_step_counters();
@@ -562,12 +564,13 @@ void mode_setting_task(void *pvParameters)
                 in_mode_switching = 1;
                 epd_power_on_to_partial_display(epd_spi);
                 clear_track_ball_step_counters();
+                enable_indev(); // enable input device encoder to make trackball control lvgl
             }
 
             last_oper_time = xTaskGetTickCount();
         }
 
-        tb_touch_state_old = tb_touch_state;
+        //tb_touch_state_old = tb_touch_state;
         func_btn_state_old = func_btn_state;
     }
 }
@@ -940,26 +943,34 @@ void IRAM_ATTR timer_group0_isr(void *para) {
 
 int16_t enc_get_new_moves()
 {
-    int16_t moves = 0;
-    int mv_direction = TRACK_BALL_DIRECTION_NONE;
-    int mv_steps = 0;
-    get_track_ball_main_movement(&mv_direction, &mv_steps);
-
-    if(mv_direction == TRACK_BALL_DIRECTION_UP || mv_direction == TRACK_BALL_DIRECTION_LEFT)
+    if(indev_enable)
     {
-        moves = mv_steps;
-    }
-    else if(mv_direction == TRACK_BALL_DIRECTION_DOWN || mv_direction == TRACK_BALL_DIRECTION_RIGHT)
-    {
-        moves = -mv_steps;
-    }
+        int16_t moves = 0;
+        int mv_direction = TRACK_BALL_DIRECTION_NONE;
+        int mv_steps = 0;
+        get_track_ball_main_movement(&mv_direction, &mv_steps);
 
-    return moves;
+        if(mv_direction == TRACK_BALL_DIRECTION_UP || mv_direction == TRACK_BALL_DIRECTION_LEFT)
+        {
+            moves = mv_steps;
+        }
+        else if(mv_direction == TRACK_BALL_DIRECTION_DOWN || mv_direction == TRACK_BALL_DIRECTION_RIGHT)
+        {
+            moves = -mv_steps;
+        }
+
+        return moves;
+    }
+    else
+        return 0;
 }
 
 int enc_pressed()
 {
-    return (get_track_ball_touch_state() == 0);
+    if(indev_enable)
+        return (get_track_ball_touch_state() == 0);
+    else
+        return 0;
 }
 
 void encoder_read(lv_indev_drv_t * drv, lv_indev_data_t*data)
@@ -982,12 +993,14 @@ void lv_indev_init()
     encoder_indev = lv_indev_drv_register(&indev_drv);
 }
 
-void lv_indev_deinit()
+void enable_indev()
 {
-    if(encoder_indev != NULL)
-    {
-        lv_indev_delete(encoder_indev);
-    }
+    indev_enable = 1;
+}
+
+void disable_indev()
+{
+    indev_enable = 0;
 }
 
 void lv_disp_init()
@@ -1044,6 +1057,12 @@ void lv_task(void *pvParameters)
         Delay(200);
         //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
     }
+}
+
+void mode_switch_callback(int mode_num)
+{
+    curr_mode = mode_num;
+    ESP_LOGI(HID_DEMO_TAG, "mode_switch_callback is called with mode: %d", mode_num);
 }
 
 void app_main(void)
@@ -1188,7 +1207,7 @@ void app_main(void)
     init_track_ball();
 
     // Init function button
-    init_function_btn();
+    //init_function_btn();
 
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
@@ -1221,15 +1240,19 @@ void app_main(void)
     lv_init();
     lv_disp_init();
     lv_indev_init();
-    init_mode_setting_ui(encoder_indev);
+    disable_indev();
+    init_mode_management(encoder_indev, mode_switch_callback);
     //read_mode_to_matrix_tmp(2);
-    //ui_demo();
-    image_demo();
+    mode_management_start(curr_mode);
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
     xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
 
     // Show current working mode after initialization done.
     //partial_display_work_mode(epd_spi, curr_mode);
-    //epd_deep_sleep(epd_spi);
+    Delay(1600);
+    epd_deep_sleep(epd_spi);
+
+    // make funtion button work after everything loaded.
+    init_function_btn();
 }

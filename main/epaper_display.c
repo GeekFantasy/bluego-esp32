@@ -455,6 +455,7 @@ void epd_init_partial_display(spi_device_handle_t spi)
 //Enter the sleep mode and please do not delete it, otherwise it will reduce the lifespan of the screen.
 void epd_deep_sleep(spi_device_handle_t spi)
 {
+    ESP_LOGI(EPD_TAG, "Entering epd_deep_sleep().");
     epd_wait_until_ilde(spi);
     epd_send_command(spi, 0x50);         //VCOM AND DATA INTERVAL SETTING 
     epd_send_byte_data(spi, 0x7F);       //WBmode:VBDF 17|D7 VBDW 97 VBDB 57    WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7

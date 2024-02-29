@@ -1,20 +1,23 @@
-#include "mode_setting_ui.h"
+#include "mode_mangement_ui.h"
 #include "operations.h"
 
 #define MODE_SETTING_UI_TAG     "MODE SETTING"
 
 
+static mode_switch_callback_t mode_sw_cb = NULL;
 static lv_indev_t * encoder_indev = NULL;
 lv_obj_t * scr_setting = NULL;
 lv_obj_t * scr_actions = NULL;
 lv_obj_t * scr_acts_select = NULL;
-lv_obj_t * scr_img_btns = NULL;
+lv_obj_t * scr_mode_switch = NULL;
 static uint16_t  action_code = 0;
 static int action_index = 0;
+int curr_mode = 0;
 
-void init_mode_setting_ui(lv_indev_t * enc_indev)
+void init_mode_management(lv_indev_t * enc_indev, mode_switch_callback_t md_sw_cb)
 {
     encoder_indev = enc_indev;
+    mode_sw_cb = md_sw_cb;
 }
 
 lv_obj_t *list1;
@@ -540,8 +543,8 @@ static void tkb_sw_event_cb(lv_event_t * event)
 static void settings_back_btn_cb(lv_event_t * e) {
     if(lv_event_get_code(e) == LV_EVENT_CLICKED) 
     {
-        create_image_btns();
-        lv_scr_load(scr_img_btns);
+        create_mode_switch_scr(curr_mode);
+        lv_scr_load(scr_mode_switch);
         lv_obj_del(scr_setting);
     }
 }
@@ -1079,11 +1082,11 @@ void img_btn_event_cb(lv_event_t * e) {
         ESP_LOGI(MODE_SETTING_UI_TAG, "*Image Button is clicked*.");
         create_setting_ui();
         lv_scr_load(scr_setting);
-        lv_obj_del(scr_img_btns);
+        lv_obj_del(scr_mode_switch);
     }
 }
 
-void img_btn_key_event_cb(lv_event_t * e) {
+void mode_scroll_event_cb(lv_event_t * e) {
     lv_obj_t * obj = lv_event_get_target(e);
     lv_event_code_t code = lv_event_get_code(e);
     int data = lv_event_get_user_data(e);
@@ -1094,23 +1097,49 @@ void img_btn_key_event_cb(lv_event_t * e) {
 
     if(code == LV_EVENT_SCROLL) {
         ESP_LOGI(MODE_SETTING_UI_TAG, "*Image key is pressed %d, index: %d *.", data, index);
+        curr_mode = index;
+        if(mode_sw_cb != NULL)
+            mode_sw_cb(index);
     }
 }
 
-void create_image_btns()
+void create_mode_switch_scr(int current_mode)
 {
-    LV_IMG_DECLARE(air_mouse);
-    LV_IMG_DECLARE(gesture);
+    LV_IMG_DECLARE(img_connected);
+    LV_IMG_DECLARE(img_disconnected);
+    LV_IMG_DECLARE(img_air_mouse);
+    LV_IMG_DECLARE(img_gesture);
+    LV_IMG_DECLARE(img_trackball);
+    LV_IMG_DECLARE(img_custom1);
+    LV_IMG_DECLARE(img_custom2);
 
     lv_group_t * g = lv_group_create();
     lv_indev_set_group(encoder_indev, g);
     lv_group_set_default(g);
 
-    scr_img_btns = lv_obj_create(NULL);
-    lv_obj_t * container = lv_obj_create(scr_img_btns);
-    lv_obj_set_size(container, LV_PCT(100), LV_PCT(100));
-    lv_obj_align(container, LV_ALIGN_TOP_LEFT, 0, 0);
-    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
+    scr_mode_switch = lv_obj_create(NULL);
+
+    // UI for header part
+    lv_obj_t * cont_head = lv_obj_create(scr_mode_switch);
+    lv_obj_set_size(cont_head, LV_PCT(100), 14);
+    lv_obj_align(cont_head, LV_ALIGN_TOP_LEFT, 0, 0);
+    //lv_obj_set_flex_flow(cont_head, LV_FLEX_FLOW_ROW);
+
+    lv_obj_t * img1 = lv_img_create(cont_head);
+    lv_img_set_src(img1, &img_disconnected);
+    lv_obj_set_style_pad_left(img1, 2, 0);
+    lv_obj_align(img1, LV_ALIGN_LEFT_MID, 0, 0);
+
+    lv_obj_t* lb_batt = lv_label_create(cont_head);
+    lv_label_set_text(lb_batt, LV_SYMBOL_BATTERY_3);
+    lv_obj_align(lb_batt, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_set_style_pad_right(lb_batt, 4, 0);
+
+    // UI for modes switching part
+    lv_obj_t * cont_modes = lv_obj_create(scr_mode_switch);
+    lv_obj_set_size(cont_modes, LV_PCT(100), 114);
+    lv_obj_align(cont_modes, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+    lv_obj_set_flex_flow(cont_modes, LV_FLEX_FLOW_COLUMN);
 
     static lv_style_t style_def;
     lv_style_init(&style_def);
@@ -1120,53 +1149,65 @@ void create_image_btns()
     lv_style_init(&style_pr);
     lv_style_set_img_recolor(&style_pr, lv_color_black());
 
-    // for (size_t i = 0; i < 9; i++)
-    // {
-    //    lv_obj_t * btn = lv_btn_create(container);
-    //    lv_obj_t * label = lv_label_create(btn);
-    //    lv_label_set_text(label, "Button");
-    //    lv_group_add_obj(g, btn);
-    // }
+    lv_obj_t * imgbtn_am = lv_imgbtn_create(cont_modes);
+    lv_imgbtn_set_src(imgbtn_am, LV_IMGBTN_STATE_RELEASED, NULL, &img_air_mouse, NULL);
+    lv_obj_add_flag(imgbtn_am, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn_am, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn_am);
 
-    lv_obj_t * imgbtn1 = lv_imgbtn_create(container);
-    lv_imgbtn_set_src(imgbtn1, LV_IMGBTN_STATE_RELEASED, NULL, &air_mouse, NULL);
-    lv_imgbtn_set_src(imgbtn1, LV_IMGBTN_STATE_PRESSED, NULL, &air_mouse, NULL);
-    //lv_obj_set_size(imgbtn1, 60, 30);
-    lv_obj_t * label1 = lv_label_create(imgbtn1);
-    lv_label_set_text(label1, "1");
-    //lv_obj_align(imgbtn1, LV_ALIGN_TOP_LEFT, 0, 0);
-    lv_obj_add_style(imgbtn1, &style_def, 0);
-    lv_obj_add_style(imgbtn1, &style_pr, LV_STATE_PRESSED);
-    lv_obj_add_flag(imgbtn1, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
-    lv_obj_add_event_cb(imgbtn1, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_group_add_obj(g, imgbtn1);
+    lv_obj_t * imgbtn_ges = lv_imgbtn_create(cont_modes);
+    lv_imgbtn_set_src(imgbtn_ges, LV_IMGBTN_STATE_RELEASED, NULL, &img_gesture, NULL);
+    lv_obj_add_flag(imgbtn_ges, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn_ges, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn_ges);
 
-    lv_obj_t * imgbtn2 = lv_imgbtn_create(container);
-    lv_imgbtn_set_src(imgbtn2, LV_IMGBTN_STATE_RELEASED, NULL, &gesture, NULL);
-    lv_imgbtn_set_src(imgbtn2, LV_IMGBTN_STATE_PRESSED, NULL, &gesture, NULL);
-    //lv_obj_set_size(imgbtn2, 60, 30);
-    lv_obj_t * label2 = lv_label_create(imgbtn2);
-    lv_label_set_text(label2, "2");
-    //lv_obj_align_to(imgbtn2, imgbtn1, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
-    lv_obj_add_style(imgbtn2, &style_def, 0);
-    lv_obj_add_style(imgbtn2, &style_pr, LV_STATE_PRESSED);
-    lv_obj_add_flag(imgbtn2, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
-    lv_obj_add_event_cb(imgbtn2, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_group_add_obj(g, imgbtn2);
+    lv_obj_t * imgbtn_tkb = lv_imgbtn_create(cont_modes);
+    lv_imgbtn_set_src(imgbtn_tkb, LV_IMGBTN_STATE_RELEASED, NULL, &img_trackball, NULL);
+    lv_obj_add_flag(imgbtn_tkb, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn_tkb, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn_tkb);
 
-    lv_obj_add_event_cb(container, img_btn_key_event_cb, LV_EVENT_SCROLL, (void*)3);
+    lv_obj_t * imgbtn_custom1 = lv_imgbtn_create(cont_modes);
+    lv_imgbtn_set_src(imgbtn_custom1, LV_IMGBTN_STATE_RELEASED, NULL, &img_custom1, NULL);
+    lv_obj_add_flag(imgbtn_custom1, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn_custom1, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn_custom1);
 
-    // for (size_t i = 0; i < 3; i++)
-    // {
-    //    lv_obj_t * btn = lv_btn_create(container);
-    //    lv_obj_t * label = lv_label_create(btn);
-    //    lv_label_set_text(label, "Button");
-    //    lv_group_add_obj(g, btn);
-    // }
+    lv_obj_t * imgbtn_custom2 = lv_imgbtn_create(cont_modes);
+    lv_imgbtn_set_src(imgbtn_custom2, LV_IMGBTN_STATE_RELEASED, NULL, &img_custom2, NULL);
+    lv_obj_add_flag(imgbtn_custom2, LV_OBJ_FLAG_SCROLL_ON_FOCUS );
+    lv_obj_add_event_cb(imgbtn_custom2, img_btn_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(g, imgbtn_custom2);
+
+    lv_obj_add_event_cb(cont_modes, mode_scroll_event_cb, LV_EVENT_SCROLL, NULL);
+
+    switch (current_mode)
+    {
+    case 0:
+        lv_group_focus_obj(imgbtn_am);
+        break;
+    case 1:
+        lv_group_focus_obj(imgbtn_ges);
+        break;
+    case 2:
+        lv_group_focus_obj(imgbtn_tkb);
+        break;
+    case 3:
+        lv_group_focus_obj(imgbtn_custom1);
+        break;
+    case 4:
+        lv_group_focus_obj(imgbtn_custom2);
+        break;
+    default:
+        lv_group_focus_obj(imgbtn_am);
+        break;
+    }
+
+    curr_mode = current_mode;
 }
 
-void image_demo()
+void mode_management_start(int mode_num)
 {
-    create_image_btns();
-    lv_scr_load(scr_img_btns);
+    create_mode_switch_scr(mode_num);
+    lv_scr_load(scr_mode_switch);
 }

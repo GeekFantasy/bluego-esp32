@@ -1,4 +1,11 @@
-idf_component_register(SRCS "air-mouse.c" "gesture.c" "mode_setting_ui.c"
+idf_component_register(SRCS "mode_mangement_ui.c" "img_disconnected.c" "img_connected.c" 
+                            
+                            "img_custom1.c"
+                            "img_custom2.c" 
+                            "img_air_mouse.c" 
+                            "img_trackball.c"
+                            "img_gesture.c" 
+                           
                             "image_display.c" 
                             "image_data.c" 
                             "function_btn.c" 
