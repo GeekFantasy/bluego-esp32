@@ -540,9 +540,20 @@ static void tkb_sw_event_cb(lv_event_t * event)
     }
 }
 
-static void settings_back_btn_cb(lv_event_t * e) {
+static void settings_footer_btn_cb(lv_event_t * e) {
+    int data = lv_event_get_user_data(e);
+
     if(lv_event_get_code(e) == LV_EVENT_CLICKED) 
     {
+        if(data == 0)  //For save
+        {
+            ESP_LOGI(MODE_SETTING_UI_TAG, "Save settings to NVS");
+            write_matrix_tmp_to_nvs(curr_mode);
+        }
+        else if(data ==1 ) // For back
+        {
+            ESP_LOGI(MODE_SETTING_UI_TAG, "Not save settings to NVS");
+        }
         create_mode_switch_scr(curr_mode);
         lv_scr_load(scr_mode_switch);
         lv_obj_del(scr_setting);
@@ -904,37 +915,54 @@ void create_setting_ui()
     btn_label = lv_label_create(btn);
     lv_label_set_text(btn_label, "Press " LV_SYMBOL_RIGHT);
 
+    lv_obj_t * cont_footer = lv_obj_create(scr_setting);
+    lv_obj_set_size(cont_footer, LV_PCT(100), 14);
+    lv_obj_align(cont_footer, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+    lv_obj_set_style_pad_hor(cont_footer, 1, 0);
+
     // Back button at the buttom
-    static lv_style_t styel_back_btn_focused;
-    static lv_style_t styel_back_btn;
+    static lv_style_t style_foot_btn_focused;
+    static lv_style_t style_foot_btn;
 
-    lv_style_init(&styel_back_btn_focused);
-    lv_style_set_bg_opa(&styel_back_btn_focused, LV_OPA_COVER);
-    lv_style_set_bg_color(&styel_back_btn_focused, lv_color_black()); 
-    lv_style_set_border_color(&styel_back_btn_focused, lv_color_black()); 
-    lv_style_set_border_width(&styel_back_btn_focused, 1);
-    lv_style_set_text_color(&styel_back_btn_focused, lv_color_white());
-    lv_style_set_text_font(&styel_back_btn_focused, &lv_font_montserrat_10);
+    lv_style_init(&style_foot_btn_focused);
+    lv_style_set_bg_opa(&style_foot_btn_focused, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_foot_btn_focused, lv_color_black()); 
+    lv_style_set_border_color(&style_foot_btn_focused, lv_color_black()); 
+    lv_style_set_border_width(&style_foot_btn_focused, 1);
+    lv_style_set_text_color(&style_foot_btn_focused, lv_color_white());
+    lv_style_set_text_font(&style_foot_btn_focused, &lv_font_montserrat_10);
 
-    lv_style_init(&styel_back_btn);
-    lv_style_set_bg_opa(&styel_back_btn, LV_OPA_COVER);
-    lv_style_set_bg_color(&styel_back_btn, lv_color_white()); 
-    lv_style_set_border_color(&styel_back_btn, lv_color_white()); 
-    lv_style_set_border_width(&styel_back_btn, 1);
-    lv_style_set_text_color(&styel_back_btn, lv_color_black());
-    lv_style_set_text_font(&styel_back_btn, &lv_font_montserrat_10);
+    lv_style_init(&style_foot_btn);
+    lv_style_set_bg_opa(&style_foot_btn, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_foot_btn, lv_color_white()); 
+    lv_style_set_border_color(&style_foot_btn, lv_color_white()); 
+    lv_style_set_border_width(&style_foot_btn, 1);
+    lv_style_set_text_color(&style_foot_btn, lv_color_black());
+    lv_style_set_text_font(&style_foot_btn, &lv_font_montserrat_10);
 
-    lv_obj_t *back_btn = lv_btn_create(scr_setting);
-    lv_obj_set_size(back_btn, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_t *save_btn = lv_btn_create(cont_footer);
+    lv_obj_set_size(save_btn, LV_SIZE_CONTENT, LV_PCT(100));
+    lv_obj_align(save_btn, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+    lv_group_add_obj(g, save_btn);
+    lv_obj_add_style(save_btn, &style_foot_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(save_btn, &style_foot_btn, LV_STATE_DEFAULT);
+    lv_obj_add_event_cb(save_btn, settings_footer_btn_cb, LV_EVENT_CLICKED, (void*)0);
+
+    lv_obj_t *save_btn_label = lv_label_create(save_btn);
+    lv_label_set_text(save_btn_label, LV_SYMBOL_SAVE "Save"); 
+    lv_obj_align(save_btn_label, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+
+    lv_obj_t *back_btn = lv_btn_create(cont_footer);
+    lv_obj_set_size(back_btn, LV_SIZE_CONTENT, LV_PCT(100));
+    lv_obj_align(back_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
     lv_group_add_obj(g, back_btn);
-    lv_obj_add_style(back_btn, &styel_back_btn_focused, LV_STATE_FOCUSED);
-    lv_obj_add_style(back_btn, &styel_back_btn, LV_STATE_DEFAULT);
+    lv_obj_add_style(back_btn, &style_foot_btn_focused, LV_STATE_FOCUSED);
+    lv_obj_add_style(back_btn, &style_foot_btn, LV_STATE_DEFAULT);
+    lv_obj_add_event_cb(back_btn, settings_footer_btn_cb, LV_EVENT_CLICKED, (void*)1);
 
     lv_obj_t *back_btn_label = lv_label_create(back_btn);
-    lv_label_set_text(back_btn_label, LV_SYMBOL_LEFT " Back  "); 
-    lv_obj_align(back_btn_label, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
-    lv_obj_align(back_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
-    lv_obj_add_event_cb(back_btn, settings_back_btn_cb, LV_EVENT_CLICKED, NULL);
+    lv_label_set_text(back_btn_label, LV_SYMBOL_LEFT "Back"); 
+    lv_obj_align(back_btn_label, LV_ALIGN_BOTTOM_RIGHT, 0, 0); 
 }
 
 void btn_event_cb(lv_event_t * e) {
@@ -1076,10 +1104,11 @@ void ui_demo()
 void img_btn_event_cb(lv_event_t * e) {
     lv_obj_t * obj = lv_event_get_target(e);
     lv_event_code_t code = lv_event_get_code(e);
-    int data = lv_event_get_user_data(e);
+    //int data = lv_event_get_user_data(e);
     
     if(code == LV_EVENT_CLICKED) {
         ESP_LOGI(MODE_SETTING_UI_TAG, "*Image Button is clicked*.");
+        read_mode_to_matrix_tmp(curr_mode);
         create_setting_ui();
         lv_scr_load(scr_setting);
         lv_obj_del(scr_mode_switch);

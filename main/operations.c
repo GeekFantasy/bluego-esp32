@@ -654,6 +654,24 @@ void read_mode_to_matrix_tmp(int8_t mode_num)
     read_mode_from_nvs(mode_num, operation_action_matrix_tmp);
 }
 
+void write_matrix_tmp_to_nvs(int8_t mode_num)
+{
+    // 写入operations record
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(OPER_STORAGE_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK)
+    {
+        return;
+    }
+
+    for (int i = 0; i < OPER_KEY_MAX_NUM; i++)
+    {
+        write_mode_oper_to_nvs(handle, operation_action_matrix_tmp[i], mode_num);
+    }
+
+    nvs_close(handle);
+}
+
 uint16_t get_action_code_from_tmp_matrix(int index)
 {
     uint16_t act_code = INVALID_ACTION_CODE;

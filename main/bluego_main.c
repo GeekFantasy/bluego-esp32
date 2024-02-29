@@ -1246,7 +1246,7 @@ void app_main(void)
     mode_management_start(curr_mode);
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
-    xTaskCreate(&lv_task, "lv_task", 2048 * 5, NULL, 5, NULL);
+    xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 5, NULL);
 
     // Show current working mode after initialization done.
     //partial_display_work_mode(epd_spi, curr_mode);
