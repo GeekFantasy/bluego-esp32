@@ -63,7 +63,7 @@ void disable_indev();
 #define EPD_VER_RES             128
 #define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
 #define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
-#define TIMER_INTERVAL0_SEC     (0.01) // 定时器间隔为10毫秒
+#define TIMER_INTERVAL0_SEC     (0.05) // 定时器间隔为10毫秒
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
@@ -937,7 +937,7 @@ void IRAM_ATTR timer_group0_isr(void *para) {
     int timer_idx = (int) para;
     TIMERG0.int_clr_timers.t0 = 1;
     //timer_test_cnt++;
-    lv_tick_inc(10);
+    lv_tick_inc(50);
     TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
 }
 
