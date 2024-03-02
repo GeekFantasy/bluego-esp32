@@ -63,7 +63,9 @@
         "function_btn.h": "c",
         "lvgl.h": "c",
         "mode_setting_ui.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "limits": "c",
+        "esp_adc_cal.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

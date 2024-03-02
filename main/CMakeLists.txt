@@ -6,7 +6,7 @@ idf_component_register(SRCS "mode_mangement_ui.c" "img_disconnected.c" "img_conn
                             "img_trackball.c"
                             "img_gesture.c" 
                            
-                            "image_display.c" 
+                            
                             "image_data.c" 
                             "function_btn.c" 
                             "trackball.c" 

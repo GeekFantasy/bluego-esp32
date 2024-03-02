@@ -135,6 +135,8 @@ esp_err_t update_operations_tab(const uint8_t* data, int data_len);
 void clear_operations_tab_action_code();
 // Check if gesture is enabled
 uint16_t check_stylus_enableed();
+int tkb_set_as_mouse_pointer();
+int tkb_set_as_mouse_wheel();
 void write_mode_operations_to_nvs(int8_t mode_num);
 void read_mode_to_matrix(int8_t mode_num);
 void write_all_modes_to_nvs();

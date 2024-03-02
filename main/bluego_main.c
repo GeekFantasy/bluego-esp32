@@ -31,9 +31,9 @@
 #include "driver/rtc_io.h"
 #include "image_data.h"
 #include "epaper_display.h"
-#include "image_display.h"
 #include "lvgl.h"
 #include "driver/timer.h"
+#include "esp_adc_cal.h"
 #include "mode_mangement_ui.h"
 
 void lv_indev_init();
@@ -54,16 +54,18 @@ void disable_indev();
 
 #define MODE_MAX_NUM             5
 #define HOLD_TIME_MS_TO_SLEEP    2 * 1000
-#define ILDE_TIME_TO_POWER_OFF   5 * 60 * 1000          // If there is no operation for 5 minutes, it will power off
+#define ILDE_TIME_TO_POWER_OFF   30 * 60 * 1000          // If there is no operation for 5 minutes, it will power off
 
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 #define POWER_ADC_PIN           35
+#define V_REF                   1100 
 
 #define EPD_HOR_RES             80
 #define EPD_VER_RES             128
 #define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
 #define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
 #define TIMER_INTERVAL0_SEC     (0.05) // 定时器间隔为10毫秒
+#define TKB_POINTER_MULT        5
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
@@ -85,6 +87,7 @@ gesture_state generic_gs;
 int in_mode_switching = 0;
 spi_device_handle_t epd_spi;
 TickType_t last_oper_time;
+esp_adc_cal_characteristics_t *adc_chars = NULL;
 
 // Action processing queue
 QueueHandle_t oper_queue = NULL;
@@ -306,6 +309,10 @@ void init_power_voltage_adc()
     esp_err_t ret;
     ret = adc1_config_channel_atten(POWER_ADC_CHANNEL, ADC_ATTEN_DB_11);
     ret = adc1_config_width(ADC_WIDTH_BIT_12);
+
+    adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+    esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, adc_chars);
+
     if (ret)
     {
         ESP_LOGE(HID_DEMO_TAG, "Power ADC initialization failed. \n");
@@ -316,7 +323,7 @@ void init_power_voltage_adc()
     }
 }
 
-int get_track_ball_movement_key(track_ball_movement tkb_mv)
+int get_track_ball_movement_key(track_ball_move tkb_mv)
 {
     int oper_key = 0;
 
@@ -449,37 +456,96 @@ void track_ball_task(void *pvParameters)
     uint16_t tkb_key;
     int tb_touch_state = 1, tb_touch_state_old = 1;
     oper_message op_msg;
-    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
+    track_ball_move tkb_mv = {};
+    TickType_t time_delay = time_delay_for_tkb ;
     TickType_t last_wake_time = xTaskGetTickCount();
 
     while (1)
     {
         if (ble_connected && check_module_enabled(OPER_KEY_TKB) && (!in_mode_switching))
         {
+            memset(&op_msg, 0, sizeof(oper_message));
+
             tb_touch_state = get_track_ball_touch_state();
-            if((TRACK_BALL_TOUCH_DOWN == tb_touch_state) && (TRACK_BALL_TOUCH_DOWN != tb_touch_state_old))
+            if((TRACK_BALL_TOUCH_DOWN == tb_touch_state) && (tb_touch_state != tb_touch_state_old))
             {
                 tkb_key = OPER_KEY_TKB_TOUCH;
+                op_msg.oper_param.key_state.pressed = 1;
+                op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
+                time_delay = 100;
             }
-            else
+            else if((TRACK_BALL_TOUCH_UP == tb_touch_state) && (tb_touch_state != tb_touch_state_old))
             {
-                tkb_key = get_track_ball_movement_key(get_track_ball_movement());
+                tkb_key = OPER_KEY_TKB_TOUCH;
+                op_msg.oper_param.key_state.pressed = 0;
+                op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
+                time_delay = 100;
             }
+            else if(tkb_set_as_mouse_pointer())
+            {
+                tkb_mv = get_tkb_move();
+                if(tkb_mv.up > 0 || tkb_mv.down > 0 || tkb_mv.left > 0 || tkb_mv.right > 0 )
+                {
+                    tkb_key = OPER_KEY_TKB_UP;  // By default use trackball UP as the key
+                    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
+                    if(tkb_mv.up > 0)
+                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT); 
+                    else if(tkb_mv.down > 0)
+                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT;
+
+                    if(tkb_mv.left > 0)   
+                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT); 
+                    else if(tkb_mv.right > 0)
+                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT; 
+                }
+                else
+                {
+                    tkb_key = 0;
+                }
+                    
+                time_delay = 10;
+            }
+            else if(tkb_set_as_mouse_wheel())
+            {
+                tkb_mv = get_tkb_move();
+                if(tkb_mv.up > 0 || tkb_mv.down > 0)
+                {
+                    tkb_key = OPER_KEY_TKB_UP;  // By default use trackball UP as the key
+                    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
+                    if(tkb_mv.up > 0)
+                        op_msg.oper_param.mouse.wheel = tkb_mv.up; 
+                    else if(tkb_mv.down > 0)
+                        op_msg.oper_param.mouse.wheel = -tkb_mv.down; 
+                }
+                else
+                {
+                    tkb_key = 0;
+                }
+
+                time_delay = 10;
+            }
+            else 
+            {
+                tkb_key = get_track_ball_movement_key(get_tkb_div_move());
+                op_msg.oper_param.key_state.pressed = 1;
+                op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
+                time_delay = 200;
+            }
+
             tb_touch_state_old = tb_touch_state;
 
             if(tkb_key != 0 && oper_queue != NULL)
             {
                 op_msg.oper_key = tkb_key;
-                op_msg.oper_param.key_state.pressed = 1;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
+                //ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
-            vTaskDelayUntil(&last_wake_time, time_delay_for_tkb);
+            vTaskDelayUntil(&last_wake_time, time_delay);
         }
         else
         {
-            Delay(200);
+            Delay(300);
         }        
     } 
 }
@@ -579,7 +645,8 @@ void mode_setting_task(void *pvParameters)
 /// @param pvParameters
 void power_measure_task(void *pvParameters)
 {
-    int average,  read_raw = 0, min, max;
+    int average,  read_raw = 0; 
+    uint32_t voltage = 0, min, max;
     ESP_LOGI(HID_DEMO_TAG, "Entering power_measure_task  task");
 
     while(1)
@@ -591,14 +658,16 @@ void power_measure_task(void *pvParameters)
         for (size_t i = 0; i < 10; i++)
         {
             read_raw = adc1_get_raw(POWER_ADC_CHANNEL);
-            if(read_raw < min) min = read_raw;
-            if(read_raw > max) max = read_raw;
-            average += read_raw;
-            ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC %d: %d",i,  read_raw);
+            voltage = esp_adc_cal_raw_to_voltage(read_raw, adc_chars);
+
+            if(voltage < min) min = voltage;
+            if(voltage > max) max = voltage;
+            average += voltage;
+            ESP_LOGI(HID_DEMO_TAG, "******Power voltage %d: raw: %d, volt: %d",i, read_raw,  voltage *2);
             Delay(6 * 1000);
         }
         
-        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average/10);
+        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", 2 * min, 2* max, 2 * average/10);
     }
 }
 
@@ -864,7 +933,7 @@ void hid_main_task(void *pvParameters)
         {
             // Show power off screen
             epd_power_on_to_partial_display(epd_spi);
-            partial_display_work_mode(epd_spi, 5);
+            epd_partial_display_full_image(epd_spi, gImage_poweringoff, EPD_DIS_ARRAY);
             Delay(1000);
             // Show white screen
             epd_init_full_display(epd_spi);
@@ -1050,6 +1119,7 @@ void lv_disp_init()
     timer_start(TIMER_GROUP_0, TIMER_0);
 }
 
+// lvgl main task, as it runs epaper , the delay is 200ms here
 void lv_task(void *pvParameters)
 {
     while(1){
@@ -1059,6 +1129,7 @@ void lv_task(void *pvParameters)
     }
 }
 
+// mode switch callback is called when mode changed on UI
 void mode_switch_callback(int mode_num)
 {
     curr_mode = mode_num;
@@ -1242,14 +1313,11 @@ void app_main(void)
     lv_indev_init();
     disable_indev();
     init_mode_management(encoder_indev, mode_switch_callback);
-    //read_mode_to_matrix_tmp(2);
     mode_management_start(curr_mode);
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
     xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 5, NULL);
 
-    // Show current working mode after initialization done.
-    //partial_display_work_mode(epd_spi, curr_mode);
     Delay(1600);
     epd_deep_sleep(epd_spi);
 

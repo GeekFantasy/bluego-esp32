@@ -22,7 +22,7 @@
 #define TRACK_BALL_DIRECTION_RIGHT   4
 
 #define TRACK_BALL_TOUCH_DOWN   0
-#define TRACK_BALL_TOUCH_UP     0
+#define TRACK_BALL_TOUCH_UP     1
 
 #define TRACK_BALL_TURN_ON_LED(pin)          gpio_set_level(pin, 0)
 #define TRACK_BALL_TURN_OFF_LED(pin)         gpio_set_level(pin, 1)
@@ -38,12 +38,13 @@ typedef struct
     uint16_t left;
     uint16_t right;
 
-} track_ball_movement;
+} track_ball_move;
 
 
 esp_err_t init_track_ball_led();
 esp_err_t init_track_ball();
-track_ball_movement get_track_ball_movement();
+track_ball_move get_tkb_move();
+track_ball_move get_tkb_div_move();
 int get_track_ball_touch_state();
 void clear_track_ball_step_counters();
 void get_track_ball_main_movement(int* direction, int* steps);

@@ -96,9 +96,25 @@ esp_err_t init_track_ball()
     return err;
 }
 
-track_ball_movement get_track_ball_movement()
+track_ball_move get_tkb_move()
 {
-    track_ball_movement tkb_mv ={};
+    track_ball_move tkb_mv ={};
+    tkb_mv.up = tkb_move_up_steps;
+    tkb_mv.down = tkb_move_down_steps;
+    tkb_mv.left = tkb_move_left_steps;
+    tkb_mv.right = tkb_move_right_steps;
+
+    tkb_move_up_steps = 0;
+    tkb_move_down_steps = 0;
+    tkb_move_left_steps = 0;
+    tkb_move_right_steps = 0;
+
+    return tkb_mv;
+}
+
+track_ball_move get_tkb_div_move()
+{
+    track_ball_move tkb_mv ={};
     uint16_t move_steps = 0;
    
     move_steps = tkb_move_up_steps / TRACK_BALL_MOVEMENT_DIVIDER;
@@ -135,8 +151,8 @@ void get_track_ball_main_movement(int* direction, int* steps)
 {
     if(direction != NULL && steps != NULL)
     {
-        track_ball_movement tkb_mv = {};
-        tkb_mv = get_track_ball_movement();
+        track_ball_move tkb_mv = {};
+        tkb_mv = get_tkb_div_move();
 
         *direction = TRACK_BALL_DIRECTION_UP;
         *steps = tkb_mv.up;

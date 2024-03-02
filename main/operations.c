@@ -640,6 +640,32 @@ uint16_t check_stylus_enableed()
     return enabled_flag;
 }
 
+// check if track ball set as pointer or wheel
+int tkb_set_as_mouse_pointer()
+{
+    int ret_code = 0;
+
+    if(operation_action_matrix[OPER_KEY_TKB].action_code == 1 )
+    {
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_POINTOR);
+    }
+
+    return ret_code;
+}
+
+// check if track ball set as pointer or wheel
+int tkb_set_as_mouse_wheel()
+{
+    int ret_code = 0;
+    
+    if(operation_action_matrix[OPER_KEY_TKB].action_code == 1 )
+    {
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_WHEEL);
+    }
+
+    return ret_code;
+}
+
 void clear_operations_tab_action_code()
 {
     for (size_t i = 0; i < OPER_KEY_MAX_NUM; i++)
