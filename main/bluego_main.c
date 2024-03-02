@@ -891,7 +891,7 @@ void imu_gyro_task(void *pvParameters)
 
 void go_to_deep_sleep()
 {
-    ESP_LOGI(HID_DEMO_TAG, "ESP32 go into deep sleep mode.");
+    ESP_LOGI(HID_DEMO_TAG, "ESP32 go into deep sleep.");
     // Deep sleep mode preparation
     esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
     rtc_gpio_pullup_en(FUNC_BTN_PIN);
@@ -1162,6 +1162,7 @@ void app_main(void)
     //If the voltage of batteray is lower that the lowest volt, make the systerm go to deep sleep.
     if(voltage < POWER_ON_VOLTAGE_MV) 
     {
+        ESP_LOGE(HID_DEMO_TAG, "*** Cannot start up as low battery. ***");
         go_to_deep_sleep();
     }
 
