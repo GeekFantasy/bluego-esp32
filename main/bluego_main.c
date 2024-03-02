@@ -59,6 +59,7 @@ void disable_indev();
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 #define POWER_ADC_PIN           35
 #define V_REF                   1100 
+#define POWER_ON_VOLTAGE_MV     3300    // The lowest voltage to power on
 
 #define EPD_HOR_RES             80
 #define EPD_VER_RES             128
@@ -100,6 +101,8 @@ typedef struct
 } oper_message;
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
+uint32_t adc1_get_volt(int channel, esp_adc_cal_characteristics_t *adc_chars);
+void go_to_deep_sleep();
 
 static uint8_t hidd_service_uuid128[] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -315,11 +318,11 @@ void init_power_voltage_adc()
 
     if (ret)
     {
-        ESP_LOGE(HID_DEMO_TAG, "Power ADC initialization failed. \n");
+        ESP_LOGE(HID_DEMO_TAG, "Power ADC initialization failed.");
     }
     else
     {
-        ESP_LOGI(HID_DEMO_TAG, "Power ADC initialized successfully\n");
+        ESP_LOGI(HID_DEMO_TAG, "Power ADC initialized successfully。");
     }
 }
 
@@ -641,6 +644,11 @@ void mode_setting_task(void *pvParameters)
     }
 }
 
+uint32_t adc1_get_volt(int channel, esp_adc_cal_characteristics_t *adc_chars)
+{
+    return 2 * esp_adc_cal_raw_to_voltage(adc1_get_raw(channel), adc_chars);
+}
+
 /// @brief Task for checking power voltage ADC
 /// @param pvParameters
 void power_measure_task(void *pvParameters)
@@ -657,17 +665,16 @@ void power_measure_task(void *pvParameters)
 
         for (size_t i = 0; i < 10; i++)
         {
-            read_raw = adc1_get_raw(POWER_ADC_CHANNEL);
-            voltage = esp_adc_cal_raw_to_voltage(read_raw, adc_chars);
+            voltage = adc1_get_volt(POWER_ADC_CHANNEL, adc_chars);
 
             if(voltage < min) min = voltage;
             if(voltage > max) max = voltage;
             average += voltage;
-            ESP_LOGI(HID_DEMO_TAG, "******Power voltage %d: raw: %d, volt: %d",i, read_raw,  voltage *2);
+            ESP_LOGI(HID_DEMO_TAG, "******Power voltage %d: volt: %d",i,  voltage);
             Delay(6 * 1000);
         }
         
-        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", 2 * min, 2* max, 2 * average/10);
+        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average/10);
     }
 }
 
@@ -882,6 +889,18 @@ void imu_gyro_task(void *pvParameters)
     }
 }
 
+void go_to_deep_sleep()
+{
+    ESP_LOGI(HID_DEMO_TAG, "ESP32 go into deep sleep mode.");
+    // Deep sleep mode preparation
+    esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
+    rtc_gpio_pullup_en(FUNC_BTN_PIN);
+    rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
+            
+    // Officially go to deep sleep
+    esp_deep_sleep_start();
+}
+
 void hid_main_task(void *pvParameters)
 {
     Delay(100);
@@ -947,18 +966,12 @@ void hid_main_task(void *pvParameters)
             } while(FUNC_BTN_PRESSED == func_btn_state );
             
             ESP_LOGI(HID_DEMO_TAG, "Will make ESP32 go into deep sleep mode.");
-            // Deep sleep mode preparation
-            esp_sleep_enable_ext0_wakeup(FUNC_BTN_PIN, FUNC_BTN_PRESSED);
-            rtc_gpio_pullup_en(FUNC_BTN_PIN);
-            rtc_gpio_pulldown_dis(FUNC_BTN_PIN);
 
-            // disable sensor to save power
+             // disable sensor to save power
             suspend_imu_and_ges_detector(); 
             reset_all_gpio();
 
-            // Officially go to deep sleep
-            esp_deep_sleep_start();
-
+            go_to_deep_sleep();
             // Energy saving test results:
             // Working without ble connection but broadcasting: ~50 ma
             // Working with ble connection: ~42 ma, air mouse sending： 62 ma
@@ -1139,6 +1152,18 @@ void mode_switch_callback(int mode_num)
 void app_main(void)
 {
     esp_err_t ret;
+    uint32_t voltage = 0;
+
+    // init power voltage adc first 
+    init_power_voltage_adc();
+    voltage = adc1_get_volt(POWER_ADC_CHANNEL, adc_chars);
+    ESP_LOGI(HID_DEMO_TAG, "*** Battery voltage on start up: %d mV.***", voltage);
+
+    //If the voltage of batteray is lower that the lowest volt, make the systerm go to deep sleep.
+    if(voltage < POWER_ON_VOLTAGE_MV) 
+    {
+        go_to_deep_sleep();
+    }
 
     // if(ESP_OK == nvs_flash_erase())
     // {
@@ -1270,9 +1295,6 @@ void app_main(void)
     // init MPU6500
     mpu6500_init();
     mpu6500_who_am_i();  // check if initialised successfully
-
-    // init power voltage adc
-    init_power_voltage_adc();
 
     //Init led indicator and touch ball input
     init_track_ball();
