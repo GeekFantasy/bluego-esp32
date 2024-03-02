@@ -66,8 +66,10 @@ static const uint8_t hid_report_map_mouse_kb_CC[] = {
     0x09, 0x30, //     Usage (X)
     0x09, 0x31, //     Usage (Y)
     0x09, 0x38, //     Usage (Wheel)
-    0x15, 0x81, //     Logical Minimum (-127)
-    0x25, 0x7F, //     Logical Maximum (127)
+    // 0x15, 0x81, //     Logical Minimum (-127)
+    // 0x25, 0x7F, //     Logical Maximum (127)
+    0x15, 0xC0, //     Logical Minimum (-64)
+    0x25, 0x40, //     Logical Maximum (64)
     0x75, 0x08, //     Report Size (8)
     0x95, 0x03, //     Report Count (3)
     0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate

@@ -508,6 +508,10 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
             esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
         }
         break;
+    case ACTION_CODE_MOUSE_WHEEL:
+        esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, op_param.mouse.point_x,
+                                  op_param.mouse.point_y, op_param.mouse.wheel);
+        break;
     case ACTION_CODE_SCREEN_SLIDE_UP:
         if (op_param.key_state.pressed)
             send_slide_up(hid_conn_id);
