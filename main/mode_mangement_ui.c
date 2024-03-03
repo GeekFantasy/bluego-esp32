@@ -10,9 +10,32 @@ lv_obj_t * scr_setting = NULL;
 lv_obj_t * scr_actions = NULL;
 lv_obj_t * scr_acts_select = NULL;
 lv_obj_t * scr_mode_switch = NULL;
+lv_timer_t * timer_for_conn_volt = NULL;
+lv_obj_t * img_connection = NULL;
+lv_obj_t* lb_battery = NULL;
 static uint16_t  action_code = 0;
 static int action_index = 0;
 int curr_mode = 0;
+bool ble_conn_status = false , ble_conn_status_old = false;
+uint32_t voltage_new = 0, voltage_old = 0;
+
+// The images to use
+LV_IMG_DECLARE(img_connected);
+LV_IMG_DECLARE(img_disconnected);
+LV_IMG_DECLARE(img_air_mouse);
+LV_IMG_DECLARE(img_gesture);
+LV_IMG_DECLARE(img_trackball);
+LV_IMG_DECLARE(img_custom1);
+LV_IMG_DECLARE(img_custom2);
+
+
+void set_voltage_label(lv_obj_t * label, uint32_t voltage);
+
+void update_volt_and_ble_status(uint32_t voltage, bool ble_status)
+{
+    voltage_new = voltage;
+    ble_conn_status = ble_status;
+}
 
 void init_mode_management(lv_indev_t * enc_indev, mode_switch_callback_t md_sw_cb)
 {
@@ -1112,6 +1135,7 @@ void img_btn_event_cb(lv_event_t * e) {
         create_setting_ui();
         lv_scr_load(scr_setting);
         lv_obj_del(scr_mode_switch);
+        scr_mode_switch = NULL;
     }
 }
 
@@ -1132,16 +1156,60 @@ void mode_scroll_event_cb(lv_event_t * e) {
     }
 }
 
+void set_voltage_label(lv_obj_t * label, uint32_t voltage)
+{
+    if(voltage > 4160)
+    {
+        lv_label_set_text(label, LV_SYMBOL_BATTERY_FULL);
+    }
+    else if(voltage > 3960)
+    {
+        lv_label_set_text(label, LV_SYMBOL_BATTERY_3);
+    }
+    else if(voltage > 3800)
+    {
+        lv_label_set_text(label, LV_SYMBOL_BATTERY_2);
+    }
+    else if(voltage > 3760)
+    {
+        lv_label_set_text(label, LV_SYMBOL_BATTERY_1);
+    }
+    else 
+    {
+        lv_label_set_text(label, LV_SYMBOL_BATTERY_EMPTY);
+    }
+}
+
+void update_conn_and_volt_ui(lv_timer_t * timer) 
+{
+    if(scr_mode_switch != NULL)
+    {
+        if(ble_conn_status != ble_conn_status_old)
+        {
+            // Update connection UI
+            if(img_connection != NULL)
+            {
+                if(ble_conn_status)
+                    lv_img_set_src(img_connection, &img_connected);
+                else   
+                    lv_img_set_src(img_connection, &img_disconnected);
+            }
+                
+            ble_conn_status_old = ble_conn_status;
+        }
+
+
+        if(voltage_new != voltage_old)
+        {
+            if(lb_battery != NULL)
+                set_voltage_label(lb_battery, voltage_new);
+            voltage_old = voltage_new;
+        }
+    }
+}
+
 void create_mode_switch_scr(int current_mode)
 {
-    LV_IMG_DECLARE(img_connected);
-    LV_IMG_DECLARE(img_disconnected);
-    LV_IMG_DECLARE(img_air_mouse);
-    LV_IMG_DECLARE(img_gesture);
-    LV_IMG_DECLARE(img_trackball);
-    LV_IMG_DECLARE(img_custom1);
-    LV_IMG_DECLARE(img_custom2);
-
     lv_group_t * g = lv_group_create();
     lv_indev_set_group(encoder_indev, g);
     lv_group_set_default(g);
@@ -1154,16 +1222,25 @@ void create_mode_switch_scr(int current_mode)
     lv_obj_align(cont_head, LV_ALIGN_TOP_LEFT, 0, 0);
     //lv_obj_set_flex_flow(cont_head, LV_FLEX_FLOW_ROW);
 
-    lv_obj_t * img1 = lv_img_create(cont_head);
-    lv_img_set_src(img1, &img_disconnected);
-    lv_obj_set_style_pad_left(img1, 2, 0);
-    lv_obj_align(img1, LV_ALIGN_LEFT_MID, 0, 0);
+    img_connection = lv_img_create(cont_head);
+    if(ble_conn_status)
+        lv_img_set_src(img_connection, &img_connected);
+    else   
+        lv_img_set_src(img_connection, &img_disconnected);
+    lv_obj_set_style_pad_left(img_connection, 3, 0);
+    lv_obj_align(img_connection, LV_ALIGN_LEFT_MID, 0, 0);
 
-    lv_obj_t* lb_batt = lv_label_create(cont_head);
-    lv_label_set_text(lb_batt, LV_SYMBOL_BATTERY_3);
-    lv_obj_align(lb_batt, LV_ALIGN_TOP_RIGHT, 0, 0);
-    lv_obj_set_style_pad_right(lb_batt, 4, 0);
+    lb_battery = lv_label_create(cont_head);
+    set_voltage_label(lb_battery, voltage_new);
+    lv_obj_align(lb_battery, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_set_style_pad_right(lb_battery, 5, 0);
 
+    // Only need to create once during the lifetime
+    if(timer_for_conn_volt == NULL) 
+    {
+        timer_for_conn_volt = lv_timer_create(update_conn_and_volt_ui, 1000, NULL); 
+    }
+    
     // UI for modes switching part
     lv_obj_t * cont_modes = lv_obj_create(scr_mode_switch);
     lv_obj_set_size(cont_modes, LV_PCT(100), 114);

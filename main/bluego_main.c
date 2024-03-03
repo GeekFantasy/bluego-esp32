@@ -78,7 +78,7 @@ const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 200;
 const TickType_t time_delay_for_tkb = 200;
 const TickType_t time_delay_for_gyro = 10;
-const TickType_t time_delay_when_idle = 500;
+const TickType_t time_delay_when_idle = 400;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
@@ -89,6 +89,7 @@ int in_mode_switching = 0;
 spi_device_handle_t epd_spi;
 TickType_t last_oper_time;
 esp_adc_cal_characteristics_t *adc_chars = NULL;
+uint32_t average_voltage = 0;
 
 // Action processing queue
 QueueHandle_t oper_queue = NULL;
@@ -185,6 +186,7 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
     case ESP_HIDD_EVENT_BLE_DISCONNECT:
     {
         ble_connected = false;
+        update_volt_and_ble_status(average_voltage, ble_connected);
         ESP_LOGI(HID_DEMO_TAG, "ESP_HIDD_EVENT_BLE_DISCONNECT");
         esp_ble_gap_start_advertising(&hidd_adv_params);
         break;
@@ -227,6 +229,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     case ESP_GAP_BLE_AUTH_CMPL_EVT:
         ble_connected = true;
+        update_volt_and_ble_status(average_voltage, ble_connected);
         esp_bd_addr_t bd_addr;
         memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
         ESP_LOGI(HID_DEMO_TAG, "remote BD_ADDR: %08x%04x",
@@ -653,8 +656,8 @@ uint32_t adc1_get_volt(int channel, esp_adc_cal_characteristics_t *adc_chars)
 /// @param pvParameters
 void power_measure_task(void *pvParameters)
 {
-    int average,  read_raw = 0; 
-    uint32_t voltage = 0, min, max;
+    int average; 
+    uint32_t  voltage = 0, min, max;
     ESP_LOGI(HID_DEMO_TAG, "Entering power_measure_task  task");
 
     while(1)
@@ -673,8 +676,8 @@ void power_measure_task(void *pvParameters)
             ESP_LOGI(HID_DEMO_TAG, "******Power voltage %d: volt: %d",i,  voltage);
             Delay(6 * 1000);
         }
-        
-        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average/10);
+        average_voltage = average / 10;
+        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average_voltage);
     }
 }
 
@@ -1152,15 +1155,14 @@ void mode_switch_callback(int mode_num)
 void app_main(void)
 {
     esp_err_t ret;
-    uint32_t voltage = 0;
 
     // init power voltage adc first 
     init_power_voltage_adc();
-    voltage = adc1_get_volt(POWER_ADC_CHANNEL, adc_chars);
-    ESP_LOGI(HID_DEMO_TAG, "*** Battery voltage on start up: %d mV.***", voltage);
+    average_voltage = adc1_get_volt(POWER_ADC_CHANNEL, adc_chars);
+    ESP_LOGI(HID_DEMO_TAG, "*** Battery voltage on start up: %d mV.***", average_voltage);
 
     //If the voltage of batteray is lower that the lowest volt, make the systerm go to deep sleep.
-    if(voltage < POWER_ON_VOLTAGE_MV) 
+    if(average_voltage < POWER_ON_VOLTAGE_MV) 
     {
         ESP_LOGE(HID_DEMO_TAG, "*** Cannot start up as low battery. ***");
         go_to_deep_sleep();
@@ -1336,6 +1338,7 @@ void app_main(void)
     lv_indev_init();
     disable_indev();
     init_mode_management(encoder_indev, mode_switch_callback);
+    update_volt_and_ble_status(average_voltage, ble_connected);
     mode_management_start(curr_mode);
 
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
