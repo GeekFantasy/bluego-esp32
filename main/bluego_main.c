@@ -1303,9 +1303,6 @@ void app_main(void)
     //Init led indicator and touch ball input
     init_track_ball();
 
-    // Init function button
-    //init_function_btn();
-
     // Create queue for processing operations.
     oper_queue = xQueueCreate(10, sizeof(oper_message));
 

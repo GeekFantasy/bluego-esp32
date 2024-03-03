@@ -165,4 +165,3 @@ void send_double_tap(uint16_t hid_conn_id)
     esp_hidd_send_touch_value(hid_conn_id, 0, 1, 8, 0, 2000, 1600, 0, 0);
     Delay(TAP_DELAY);
 }
-

@@ -14,14 +14,8 @@
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
 
 uint8_t old_data[EPD_DIS_ARRAY] = {0};
+uint8_t epd_buff[1280] = {0xFF};
 int old_data_init_flag = 0;
-uint8_t old_data_p[256];
-uint8_t old_data_a[256];
-uint8_t old_data_b[256];
-uint8_t old_data_c[256];
-uint8_t old_data_d[256];
-uint8_t old_data_e[256];
-
 uint8_t part_flag = 1;
 
 /**
@@ -47,8 +41,6 @@ const unsigned char lut_b1[] =
 0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
 0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
 0x00	,0x00	,0x00	,0x00	,0x00	,0x00	,
-
-
 };
 /**
  * partial screen update LUT
@@ -75,8 +67,6 @@ const uint8_t lut_b[] =
 0x00  ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,
 
 };
-
-uint8_t epd_buff[1280] = {0xFF};
 
 void epd_send_command(spi_device_handle_t spi, const uint8_t cmd)
 {
@@ -181,197 +171,6 @@ void epd_set_raw_value_base_map(spi_device_handle_t spi, const uint8_t* data )
     memcpy(old_data, data, EPD_DIS_ARRAY);
 
     epd_update_display(spi);
-}
-
-/// @brief Partial refresh write address and data
-/// @param spi 
-/// @param x_start 
-/// @param y_start 
-/// @param datas_A 
-/// @param datas_B 
-/// @param datas_C 
-/// @param datas_D 
-/// @param datas_E 
-/// @param num 
-/// @param PART_COLUMN 
-/// @param PART_LINE 
-void epd_dis_part_ram(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
-                        const uint8_t * data_A, const uint8_t * data_B,
-                        const uint8_t * data_C, const uint8_t * data_D,
-                        const uint8_t * data_E, unsigned char num,
-                        unsigned int PART_COLUMN, unsigned int PART_LINE)
-{
-    ESP_LOGD(EPD_TAG, "Entering epd_dis_part_ram()");
-    unsigned int i, x_end, y_end;
-    x_start = x_start - x_start % 8;
-    x_end = x_start + PART_LINE - 1; 
-    y_end = y_start + PART_COLUMN * num - 1;
-
-    epd_init_partial_display(spi);
-    epd_send_command(spi, 0x91);     //This command makes the display enter partial display
-    epd_send_command(spi, 0x90);     //resolution setting
-
-    epd_send_byte_data(spi, x_start);
-    epd_send_byte_data(spi, x_end);
-    epd_send_byte_data(spi, y_start);
-    epd_send_byte_data(spi, y_end);
-    epd_send_byte_data(spi, 0x00);
-
-    epd_send_command(spi, 0x10);
-    if(part_flag == 1)
-    {
-        part_flag = 0;
-        for (size_t i = 0; i < PART_COLUMN * PART_LINE * num / 8; i++)
-        {
-            epd_send_byte_data(spi, 0xFF);
-        } 
-    }
-    else
-    {
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_a[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_b[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_c[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_d[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_e[i]); 
-    }
-
-    epd_send_command(spi, 0x13);
-
-    for(i = 0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_A[i]); 
-       old_data_a[i] = data_A[i];     
-    } 
-
-    for(i = 0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_B[i]); 
-       old_data_b[i] = data_B[i];     
-    } 
-
-    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_C[i]); 
-       old_data_c[i] = data_C[i];     
-    } 
-
-    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_D[i]); 
-       old_data_d[i] = data_D[i];     
-    } 
-
-    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_E[i]); 
-       old_data_e[i] = data_E[i];     
-    } 
-
-    epd_update_display(spi);
-}
-
-void epd_dis_part_ram_v2(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
-                        const uint8_t * data_A, const uint8_t * data_B,
-                        const uint8_t * data_C, const uint8_t * data_D,
-                        const uint8_t * data_E, unsigned char num,
-                        unsigned int PART_COLUMN, unsigned int PART_LINE)
-{
-    ESP_LOGD(EPD_TAG, "Entering epd_dis_part_ram()");
-    unsigned int i, x_end, y_end;
-    x_start = x_start - x_start % 8;
-    x_end = x_start + PART_LINE - 1; 
-    y_end = y_start + PART_COLUMN * num - 1;
-
-    // epd_init_partial_display(spi);       // move inital code out 
-    epd_send_command(spi, 0x91);     //This command makes the display enter partial display
-    epd_send_command(spi, 0x90);     //resolution setting
-
-    epd_send_byte_data(spi, x_start);
-    epd_send_byte_data(spi, x_end);
-    epd_send_byte_data(spi, y_start);
-    epd_send_byte_data(spi, y_end);
-    epd_send_byte_data(spi, 0x00);
-
-    epd_send_command(spi, 0x10);
-    if(part_flag == 1)
-    {
-        part_flag = 0;
-        for (size_t i = 0; i < PART_COLUMN * PART_LINE * num / 8; i++)
-        {
-            epd_send_byte_data(spi, 0xFF);
-        } 
-    }
-    else
-    {
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_a[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_b[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_c[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_d[i]); 
-        for(i = 0; i < PART_COLUMN * PART_LINE / 8; i++)       
-            epd_send_byte_data(spi, old_data_e[i]); 
-    }
-
-    epd_send_command(spi, 0x13);
-
-    for(i = 0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_A[i]); 
-       old_data_a[i] = data_A[i];     
-    } 
-
-    for(i = 0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_B[i]); 
-       old_data_b[i] = data_B[i];     
-    } 
-
-    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_C[i]); 
-       old_data_c[i] = data_C[i];     
-    } 
-
-    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_D[i]); 
-       old_data_d[i] = data_D[i];     
-    } 
-
-    for(i=0; i < PART_COLUMN * PART_LINE  / 8; i++)    
-    {   
-       epd_send_byte_data(spi, data_E[i]); 
-       old_data_e[i] = data_E[i];     
-    } 
-
-    epd_update_display(spi);
-}
-
-void epd_dis_part_time(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
-                        const uint8_t * datas_A, const uint8_t * datas_B,
-                        const uint8_t * datas_C, const uint8_t * datas_D,
-                        const uint8_t * datas_E, unsigned char num,
-                        unsigned int PART_COLUMN, unsigned int PART_LINE)
-{
-    epd_dis_part_ram(spi, x_start, y_start, datas_A, datas_B, datas_C, datas_D, datas_E, num, PART_COLUMN, PART_LINE);
-}
-
-void epd_dis_part_time_v2(spi_device_handle_t spi, unsigned int x_start,unsigned int y_start,
-                        const uint8_t * datas_A, const uint8_t * datas_B,
-                        const uint8_t * datas_C, const uint8_t * datas_D,
-                        const uint8_t * datas_E, unsigned char num,
-                        unsigned int PART_COLUMN, unsigned int PART_LINE)
-{
-    ESP_LOGD(EPD_TAG, "***************Display new image on partial display*********************.");
-    epd_dis_part_ram_v2(spi, x_start, y_start, datas_A, datas_B, datas_C, datas_D, datas_E, num, PART_COLUMN, PART_LINE);
 }
 
 void epd_init_full_display(spi_device_handle_t spi)
@@ -634,7 +433,6 @@ void epd_power_on_to_partial_display(spi_device_handle_t spi)
     epd_enter_partial_display(spi);
 }
 
-
 uint8_t epd_get_byte(spi_device_handle_t spi, uint8_t cmd)
 {
     ESP_LOGD(EPD_TAG, "Entering epd_get_byte().");
@@ -662,8 +460,6 @@ uint8_t epd_get_ic_status(spi_device_handle_t spi)
     rx = epd_get_byte(spi, 0x71);
     return rx;
 }
-
-
 
 // /// @brief Test display partial functions
 // /// @param spi 

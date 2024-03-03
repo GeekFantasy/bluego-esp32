@@ -775,4 +775,3 @@ const action_str* get_devctl_action_strs(int *count)
         *count = 6;
     return &action_strs[22];
 }
-
