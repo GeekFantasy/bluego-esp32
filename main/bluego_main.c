@@ -677,6 +677,7 @@ void power_measure_task(void *pvParameters)
             Delay(6 * 1000);
         }
         average_voltage = average / 10;
+        update_volt_and_ble_status(average_voltage, ble_connected);
         ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average_voltage);
     }
 }
