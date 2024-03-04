@@ -1072,7 +1072,7 @@ void ui_demo()
     // 设置背景颜色为白色
     lv_style_set_bg_opa(&style_btn, LV_OPA_COVER);
     lv_style_set_bg_color(&style_btn, lv_color_white());
-    lv_style_set_text_color(&style_btn, lv_color_black()); // 文本为白色
+    lv_style_set_text_color(&style_btn, lv_color_black()); 
 
     // 设置边框颜色为黑色和边框宽度
     lv_style_set_border_color(&style_btn, lv_color_black());
@@ -1089,8 +1089,8 @@ void ui_demo()
     lv_style_init(&style_focused);
 
     // 为选中状态设置反向颜色
-    lv_style_set_bg_color(&style_focused, lv_color_black()); // 背景为黑色
-    lv_style_set_text_color(&style_focused, lv_color_white()); // 文本为白色
+    lv_style_set_bg_color(&style_focused, lv_color_black()); 
+    lv_style_set_text_color(&style_focused, lv_color_white()); 
     //lv_style_set_border_color(&style_focused, lv_color_white()); // 边框为白色
 
     // 将新样式应用于按钮的选中状态
@@ -1310,6 +1310,56 @@ void create_mode_switch_scr(int current_mode)
     }
 
     curr_mode = current_mode;
+}
+
+static void mbox_ok_btn_event_cb(lv_event_t * e)
+{
+    lv_obj_t * obj = lv_event_get_current_target(e);
+    button_callback_t callback = lv_event_get_user_data(e);
+    ESP_LOGI(MODE_SETTING_UI_TAG, "Button %s clicked", lv_msgbox_get_active_btn_text(obj));
+    if(callback != NULL)
+        callback();
+}
+
+void modal_msg_box_for_restart(button_callback_t mbox_btn_cb)
+{
+    lv_group_t * g = lv_group_create();
+    lv_obj_t* scr_tmp = lv_obj_create(NULL);
+
+    static const char * btns[] = {"OK",""};
+    static lv_style_t mbox_style;
+    lv_style_init(&mbox_style);
+    lv_style_set_bg_opa(&mbox_style, LV_OPA_COVER);
+    lv_style_set_bg_color(&mbox_style, lv_color_white());
+
+    lv_obj_t * mbox = lv_msgbox_create(NULL, "ALERT:", "A restart is required. Please unpair and then re-pair afterwards.", btns, false);
+    lv_obj_set_width(mbox, 80);
+    lv_obj_set_height(mbox, 128);
+    lv_obj_add_style(mbox, &mbox_style, 0);
+    lv_obj_add_event_cb(mbox, mbox_ok_btn_event_cb, LV_EVENT_VALUE_CHANGED, mbox_btn_cb);
+    lv_obj_center(mbox);
+    lv_obj_t * btn =  lv_msgbox_get_btns(mbox);
+
+    static lv_style_t style_btn_default;
+    lv_style_init(&style_btn_default);
+    lv_style_set_bg_opa(&style_btn_default, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_btn_default, lv_color_white()); 
+    lv_style_set_text_color(&style_btn_default, lv_color_black());
+
+    // 创建一个样式对象用于焦点状态
+    static lv_style_t style_btn_focused;
+    lv_style_init(&style_btn_focused);
+    lv_style_set_bg_opa(&style_btn_focused, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_btn_focused, lv_color_black()); 
+    lv_style_set_text_color(&style_btn_focused, lv_color_white());
+
+    // 将按钮应用样式
+    lv_obj_add_style(btn, &style_btn_default, LV_STATE_DEFAULT );
+    lv_obj_add_style(btn, &style_btn_focused, LV_STATE_FOCUSED | LV_STATE_EDITED);
+    lv_group_add_obj(g, btn);
+
+    lv_indev_set_group(encoder_indev, g);
+    lv_scr_load(scr_tmp);
 }
 
 void mode_management_start(int mode_num)

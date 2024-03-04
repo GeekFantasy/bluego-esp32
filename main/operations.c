@@ -100,7 +100,7 @@ const uint16_t mode_am_actions[OPER_KEY_MAX_NUM] =  // mode actions for air mous
     1, 201,
     0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0   
+    1, 0, 0, 0, 0, 202   
 };
 
 const uint16_t mode_ges_actions[OPER_KEY_MAX_NUM] = // mode actions for hand gesture control 
@@ -124,7 +124,7 @@ const uint16_t mode_ctm1_actions[OPER_KEY_MAX_NUM] =    // mode actions for hand
     0, 0,
     0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0   
+    1, 201, 0, 0, 0, 202   
 };
 
 const uint16_t mode_ctm2_actions[OPER_KEY_MAX_NUM] =    // mode actions for custom 2 
@@ -610,9 +610,9 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
 }
 
 // Check if stulus is enabled
-uint16_t check_stylus_enableed()
+int check_stylus_enabled()
 {
-    uint16_t enabled_flag = 0;
+    int enabled_flag = 0;
 
     if(get_action_code(OPER_KEY_MFS))
     {

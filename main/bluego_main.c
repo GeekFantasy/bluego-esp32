@@ -90,6 +90,8 @@ spi_device_handle_t epd_spi;
 TickType_t last_oper_time;
 esp_adc_cal_characteristics_t *adc_chars = NULL;
 uint32_t average_voltage = 0;
+int restart_required = 0;
+int stylus_enabled = 0;
 
 // Action processing queue
 QueueHandle_t oper_queue = NULL;
@@ -104,6 +106,7 @@ typedef struct
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
 uint32_t adc1_get_volt(int channel, esp_adc_cal_characteristics_t *adc_chars);
 void go_to_deep_sleep();
+void restart_msg_callback();
 
 static uint8_t hidd_service_uuid128[] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -570,50 +573,6 @@ void mode_setting_task(void *pvParameters)
     
     while (1)
     {
-        // if(in_mode_switching)
-        // {
-        //     get_track_ball_main_movement(&mv_direction, &mv_steps);
-        //     tb_touch_state = get_track_ball_touch_state();
-            
-        //     switch (mv_direction)
-        //     {
-        //     case TRACK_BALL_DIRECTION_UP:
-        //     case TRACK_BALL_DIRECTION_LEFT:
-        //         curr_mode++;
-        //         curr_mode %= MODE_MAX_NUM;
-        //         partial_display_work_mode(epd_spi, curr_mode);
-        //         clear_track_ball_step_counters();
-        //         display_updated = 1;
-        //         /* code */
-        //         break;
-        //     case TRACK_BALL_DIRECTION_DOWN:
-        //     case TRACK_BALL_DIRECTION_RIGHT:
-        //         curr_mode--;
-        //         curr_mode = (curr_mode + MODE_MAX_NUM) % (MODE_MAX_NUM);
-        //         partial_display_work_mode(epd_spi, curr_mode);
-        //         clear_track_ball_step_counters();
-        //         display_updated = 1;
-        //         /* code */
-        //         break;
-        //     default:
-        //         break;
-        //     }
-
-        //     if(display_updated)    // No need to delay if e-paper is updated
-        //     {
-        //         display_updated = 0;
-        //         last_oper_time = xTaskGetTickCount();
-        //     }
-        //     else
-        //     {            
-        //         Delay(200);
-        //     }
-        // }
-        // else
-        {
-            Delay(200);
-        }
-
         // Dealing with entering and exiting mode setting
         get_func_btn_state(&func_btn_state, &state_last_time_ms);
         if((func_btn_state != func_btn_state_old && func_btn_state == FUNC_BTN_PRESSED) )
@@ -622,12 +581,23 @@ void mode_setting_task(void *pvParameters)
             {
                 ESP_LOGI(HID_DEMO_TAG, "Exiting mode setting ...");
                 TRACK_BALL_TURN_OFF_LED(LED_BLUE_PIN);
-                disable_indev();  // disable the input device encoder to make lvgl not work
-                in_mode_switching = 0;
-                epd_deep_sleep(epd_spi);
-                clear_track_ball_step_counters();
                 write_mode_num_to_nvs(curr_mode);
                 read_mode_to_matrix(curr_mode);
+
+                int stylus_status = check_stylus_enabled();
+                if(stylus_status == stylus_enabled) // No systerm restart needed
+                {
+                    ESP_LOGI(HID_DEMO_TAG, "No restart is needed.");
+                    clear_track_ball_step_counters();
+                    disable_indev();  // disable the input device encoder to make lvgl not work
+                    epd_deep_sleep(epd_spi);   
+                    in_mode_switching = 0;
+                }
+                else // Otherwise a restart is needed
+                {
+                    ESP_LOGI(HID_DEMO_TAG, "A restart is needed.");
+                    modal_msg_box_for_restart(restart_msg_callback);
+                }   
             }
             else
             {
@@ -644,6 +614,7 @@ void mode_setting_task(void *pvParameters)
 
         //tb_touch_state_old = tb_touch_state;
         func_btn_state_old = func_btn_state;
+        Delay(200);
     }
 }
 
@@ -809,26 +780,6 @@ void gesture_detect_task(void *pvParameters)
         {
             Delay(time_delay_when_idle);
         }
-
-        tb_touch_state = get_track_ball_touch_state();
-        if((TRACK_BALL_TOUCH_DOWN == tb_touch_state) && (TRACK_BALL_TOUCH_DOWN != tb_touch_state_old))
-        {
-            // After suspend and wake up, sometimes paj7620 would be work well again.
-            if(state_switch == 0)
-            {
-                ESP_LOGI(HID_DEMO_TAG, "paj7620_suspend");
-                paj7620_suspend();
-            }
-            
-            if(state_switch == 1)
-            {
-                ESP_LOGI(HID_DEMO_TAG, "paj7620_wake_up.");
-                paj7620_wake_up();
-            }
-            state_switch++; 
-            state_switch = state_switch % 2;
-        }
-        tb_touch_state_old = tb_touch_state;
     }
 }
 
@@ -952,8 +903,13 @@ void hid_main_task(void *pvParameters)
         current_tick = xTaskGetTickCount();
         //ESP_LOGI(HID_DEMO_TAG, "******FUNC KEY STATE: %d and state last time: %d.", func_btn_state, state_last_time_ms);
         if((current_tick - last_oper_time > ILDE_TIME_TO_POWER_OFF) 
-            || (FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP))
+            || (FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP) || restart_required)
         {
+            if(restart_required)
+            {
+                Delay(500);
+            }
+           
             // Show power off screen
             epd_power_on_to_partial_display(epd_spi);
             epd_partial_display_full_image(epd_spi, gImage_poweringoff, EPD_DIS_ARRAY);
@@ -975,7 +931,15 @@ void hid_main_task(void *pvParameters)
             suspend_imu_and_ges_detector(); 
             reset_all_gpio();
 
-            go_to_deep_sleep();
+            if(restart_required)
+            {
+                Delay(100);
+                esp_restart();
+            }
+            else
+            {
+                go_to_deep_sleep();
+            }
             // Energy saving test results:
             // Working without ble connection but broadcasting: ~50 ma
             // Working with ble connection: ~42 ma, air mouse sending： 62 ma
@@ -1153,6 +1117,11 @@ void mode_switch_callback(int mode_num)
     ESP_LOGI(HID_DEMO_TAG, "mode_switch_callback is called with mode: %d", mode_num);
 }
 
+void restart_msg_callback()
+{
+    restart_required = 1;
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -1208,7 +1177,8 @@ void app_main(void)
     
     // If the gesture is eneabled, use the report map with stylus and consumer control
     // Or use the one with mouse, keyborad and consumer control.
-    if(check_stylus_enableed())
+    stylus_enabled = check_stylus_enabled();
+    if(stylus_enabled)
     {
         hidd_set_report_map(HIDD_REPORT_MAP_STYLUS_CC);
         ESP_LOGI(HID_DEMO_TAG, "Stylus is used in current mode.");
@@ -1334,16 +1304,15 @@ void app_main(void)
     lv_init();
     lv_disp_init();
     lv_indev_init();
-    disable_indev();
+    //disable_indev();
     init_mode_management(encoder_indev, mode_switch_callback);
     update_volt_and_ble_status(average_voltage, ble_connected);
     mode_management_start(curr_mode);
-
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
     xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 5, NULL);
 
     Delay(1600);
-    epd_deep_sleep(epd_spi);
+    //epd_deep_sleep(epd_spi);
 
     // make funtion button work after everything loaded.
     init_function_btn();
