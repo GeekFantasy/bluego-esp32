@@ -131,7 +131,7 @@ void esp_hidd_send_consumer_value(uint16_t conn_id, uint8_t key_cmd, bool key_pr
         ESP_LOGI(HID_LE_PRF_TAG, "hid_consumer_build_report");
         hid_consumer_build_report(buffer, key_cmd);
     }
-    ESP_LOGI(HID_LE_PRF_TAG, "buffer[0] = %x, buffer[1] = %x", buffer[0], buffer[1]);
+    ESP_LOGD(HID_LE_PRF_TAG, "buffer[0] = %x, buffer[1] = %x", buffer[0], buffer[1]);
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
                         HID_RPT_ID_CC_IN, HID_REPORT_TYPE_INPUT, HID_CC_IN_RPT_LEN, buffer);
     return;
@@ -152,7 +152,7 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
         buffer[i+2] = keyboard_cmd[i];
     }
 
-    ESP_LOGI(HID_LE_PRF_TAG, "the key vaule = %d,%d,%d, %d, %d, %d,%d, %d", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7]);
+    ESP_LOGD(HID_LE_PRF_TAG, "the key vaule = %d,%d,%d, %d, %d, %d,%d, %d", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7]);
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
                         HID_RPT_ID_KEY_IN, HID_REPORT_TYPE_INPUT, HID_KEYBOARD_IN_RPT_LEN, buffer);
     return;
@@ -160,7 +160,7 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
 
 void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y, int8_t wheel)
 {
-    ESP_LOGI(HID_LE_PRF_TAG, "Send Mouse,B:%x X:%d,Y:%d,W:%d",mouse_button, mickeys_x, mickeys_y, wheel);
+    ESP_LOGD(HID_LE_PRF_TAG, "Send Mouse,B:%x X:%d,Y:%d,W:%d",mouse_button, mickeys_x, mickeys_y, wheel);
     uint8_t buffer[HID_MOUSE_IN_RPT_LEN];
 
     buffer[0] = mouse_button;   // Buttons
@@ -176,11 +176,11 @@ void esp_hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mi
 
 void esp_hidd_send_touch_value(uint16_t conn_id, uint8_t touch_down, uint8_t contact_count,  uint8_t contact_id, uint16_t scan_time, uint16_t touch_x, uint16_t touch_y, uint16_t touch_width, uint16_t touch_height)
 {
-    ESP_LOGI("HID_LE_PRF_TAG","ID:%d,x:%d,y:%d,count:%d,down:%d,time:%d", contact_id, touch_x, touch_y, contact_count,touch_down, scan_time);
+    ESP_LOGD("HID_LE_PRF_TAG","ID:%d,x:%d,y:%d,count:%d,down:%d,time:%d", contact_id, touch_x, touch_y, contact_count,touch_down, scan_time);
     uint8_t buffer[HID_STYLUS_IN_RPT_LEN] = {0};
 
     buffer[0] = touch_down & 0x01;         // Buttons
-    buffer[0] |= (touch_down << 1) & 0x02; //            set in range
+    buffer[0] |= (touch_down << 1) & 0x02; // set in range
     buffer[1] = contact_id ;         // Contact Identifier
     buffer[2] = touch_x;            // X low byte
     buffer[3] = touch_x >> 8;       // X High byte

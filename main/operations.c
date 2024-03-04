@@ -641,7 +641,7 @@ int check_stylus_enabled()
         }
     }
 
-    return enabled_flag;
+    return (enabled_flag > 0 ? 1 : 0);
 }
 
 // check if track ball set as pointer or wheel
@@ -654,7 +654,7 @@ int tkb_set_as_mouse_pointer()
         ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_POINTOR);
     }
 
-    return ret_code;
+    return (ret_code > 0 ? 1 : 0);
 }
 
 // check if track ball set as pointer or wheel
@@ -667,7 +667,7 @@ int tkb_set_as_mouse_wheel()
         ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_WHEEL);
     }
 
-    return ret_code;
+    return (ret_code > 0 ? 1 : 0);;
 }
 
 void clear_operations_tab_action_code()

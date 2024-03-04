@@ -54,7 +54,7 @@ void disable_indev();
 
 #define MODE_MAX_NUM             5
 #define HOLD_TIME_MS_TO_SLEEP    2 * 1000
-#define ILDE_TIME_TO_POWER_OFF   30 * 60 * 1000          // If there is no operation for 5 minutes, it will power off
+#define ILDE_TIME_TO_POWER_OFF   6 * 60 * 1000          // If there is no operation for 5 minutes, it will power off
 
 #define POWER_ADC_CHANNEL       ADC1_CHANNEL_7
 #define POWER_ADC_PIN           35
@@ -66,7 +66,7 @@ void disable_indev();
 #define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
 #define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
 #define TIMER_INTERVAL0_SEC     (0.05) // 定时器间隔为10毫秒
-#define TKB_POINTER_MULT        5
+#define TKB_POINTER_MULT        6
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
@@ -91,6 +91,7 @@ TickType_t last_oper_time;
 esp_adc_cal_characteristics_t *adc_chars = NULL;
 uint32_t average_voltage = 0;
 int restart_required = 0;
+int is_low_battery = 0;
 int stylus_enabled = 0;
 
 // Action processing queue
@@ -644,12 +645,14 @@ void power_measure_task(void *pvParameters)
             if(voltage < min) min = voltage;
             if(voltage > max) max = voltage;
             average += voltage;
-            ESP_LOGI(HID_DEMO_TAG, "******Power voltage %d: volt: %d",i,  voltage);
+            //ESP_LOGI(HID_DEMO_TAG, "******Power voltage %d: volt: %d",i,  voltage);
             Delay(6 * 1000);
         }
         average_voltage = average / 10;
         update_volt_and_ble_status(average_voltage, ble_connected);
-        ESP_LOGI(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average_voltage);
+        if(average_voltage <= POWER_ON_VOLTAGE_MV) // If battery is low set the flag to power off
+            is_low_battery = 1;
+        ESP_LOGD(HID_DEMO_TAG, "******Power voltage ADC min:%d, max: %d, average: %d", min, max, average_voltage);
     }
 }
 
@@ -872,7 +875,7 @@ void hid_main_task(void *pvParameters)
         {
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
-                ESP_LOGI(HID_DEMO_TAG, "msg op_key:%d", op_msg.oper_key);
+                ESP_LOGI(HID_DEMO_TAG, "OP KEY:%d", op_msg.oper_key);
                 if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
                 {
                     action_code = get_action_code(op_msg.oper_key);
@@ -903,7 +906,9 @@ void hid_main_task(void *pvParameters)
         current_tick = xTaskGetTickCount();
         //ESP_LOGI(HID_DEMO_TAG, "******FUNC KEY STATE: %d and state last time: %d.", func_btn_state, state_last_time_ms);
         if((current_tick - last_oper_time > ILDE_TIME_TO_POWER_OFF) 
-            || (FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP) || restart_required)
+            || (FUNC_BTN_PRESSED == func_btn_state && state_last_time_ms >= HOLD_TIME_MS_TO_SLEEP) 
+            || restart_required
+            || (is_low_battery && !in_mode_switching) )
         {
             if(restart_required)
             {
@@ -1009,6 +1014,7 @@ int16_t enc_get_new_moves()
             moves = -mv_steps;
         }
 
+        if(moves != 0) last_oper_time = xTaskGetTickCount();
         return moves;
     }
     else
@@ -1304,7 +1310,7 @@ void app_main(void)
     lv_init();
     lv_disp_init();
     lv_indev_init();
-    //disable_indev();
+    disable_indev();
     init_mode_management(encoder_indev, mode_switch_callback);
     update_volt_and_ble_status(average_voltage, ble_connected);
     mode_management_start(curr_mode);
@@ -1312,7 +1318,7 @@ void app_main(void)
     xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 5, NULL);
 
     Delay(1600);
-    //epd_deep_sleep(epd_spi);
+    epd_deep_sleep(epd_spi);
 
     // make funtion button work after everything loaded.
     init_function_btn();
