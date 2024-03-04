@@ -32,6 +32,12 @@
 #ifndef __PAJ7620_H__
 #define __PAJ7620_H__
 
+#include <stdlib.h>
+#include "esp_log.h"
+#include "hal/gpio_types.h"
+#include "paj7620.h"
+#include "driver/i2c.h"
+
 #define PAJ7620_TAG "PAJ7620 LOG:"
 
 // #define BIT(x)  1 << x
@@ -56,10 +62,12 @@
 #define ACK_VAL    0x0         /*!< I2C ack value */
 #define NACK_VAL   0x1         /*!< I2C nack value */
 
-#define INTERRUPT_PIN 37       /*!< I2C Interrupt pin */ 
+#define PAJ7620_INTERRUPT_PIN 7			//Origianl: 37       /*!< I2C Interrupt pin */ 
 
-#define I2C_MASTER_SCL_IO 19               /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO 22               /*!< gpio number for I2C master data  */
+#define PAJ7620_I2C_SCL 	8     //Origianl: 26          /*!< gpio number for I2C master clock */
+#define PAJ7620_I2C_SDA 	5     //Origianl: 25          /*!< gpio number for I2C master data  */
+
+#define PAJ7620_PWR_CONTROL    2
 
 #define I2C_MASTER_NUM I2C_NUM_1   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
@@ -122,13 +130,19 @@ typedef enum {
 #define GES_QUIT_TIME     0
 
 
-#define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
+//#define INIT_REG_ARRAY_SIZE (sizeof(initRegisterArray)/sizeof(initRegisterArray[0]))
+#define INIT_REG_ARRAY_SIZE (sizeof(initial_register_array)/sizeof(initial_register_array[0]))
 
-
-uint8_t paj7620_init(void);
+int init_paj7620_i2c(void);
+uint8_t init_paj7620_registers(void);
+esp_err_t init_paj7620_interrupt();
+int paj7620_gesture_triggered();
 uint8_t paj7620_write_reg(uint8_t addr, uint8_t cmd);
 uint8_t paj7620_read_reg(uint8_t addr, uint8_t qty, uint8_t data[]);
 void paj7620_select_bank(bank_e bank);
-
+esp_err_t paj7620_suspend();
+esp_err_t paj7620_wake_up();
+esp_err_t paj7620_reset();
+esp_err_t init_paj7620_power_control();
 
 #endif

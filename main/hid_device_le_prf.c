@@ -66,8 +66,10 @@ static const uint8_t hid_report_map_mouse_kb_CC[] = {
     0x09, 0x30, //     Usage (X)
     0x09, 0x31, //     Usage (Y)
     0x09, 0x38, //     Usage (Wheel)
-    0x15, 0x81, //     Logical Minimum (-127)
-    0x25, 0x7F, //     Logical Maximum (127)
+    // 0x15, 0x81, //     Logical Minimum (-127)
+    // 0x25, 0x7F, //     Logical Maximum (127)
+    0x15, 0xC0, //     Logical Minimum (-64)
+    0x25, 0x40, //     Logical Maximum (64)
     0x75, 0x08, //     Report Size (8)
     0x95, 0x03, //     Report Count (3)
     0x81, 0x06, //     Input (Data, Variable, Relative) - X & Y coordinate
@@ -899,8 +901,8 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         {
             esp_gatt_rsp_t rsp;
             memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-            uint8_t curr_mode = 0;
-            read_curr_mode_from_nvs(&curr_mode);
+            int8_t curr_mode = 0;
+            read_working_mode_num_from_nvs(&curr_mode);
             rsp.attr_value.handle = param->read.handle;
             rsp.attr_value.len = 1;
             rsp.attr_value.value[0] = curr_mode;
@@ -911,8 +913,8 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         {
             esp_gatt_rsp_t rsp;
             memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-            uint8_t curr_mode = 0;
-            read_curr_mode_from_nvs(&curr_mode);
+            int8_t curr_mode = 0;
+            read_working_mode_num_from_nvs(&curr_mode);
             rsp.attr_value.handle = param->read.handle;
             rsp.attr_value.len = 1;
             rsp.attr_value.value[0] = curr_mode;
@@ -933,7 +935,7 @@ void esp_mode_prf_cb_hd(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 esp_log_buffer_hex(HID_LE_PRF_TAG, param->write.value, param->write.len);
                 if (param->write.len >= 1)
                 {
-                    write_curr_mode_to_nvs(param->write.value[0]);
+                    write_mode_num_to_nvs(param->write.value[0]);
                 }
 
                 if (param->write.need_rsp)
@@ -1053,7 +1055,6 @@ void hidd_le_create_service(esp_gatt_if_t gatts_if)
 
 void hidd_le_init(void)
 {
-
     // Reset the hid device target environment
     memset(&hidd_le_env, 0, sizeof(hidd_le_env_t));
 }

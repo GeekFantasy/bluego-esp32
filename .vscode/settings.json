@@ -55,7 +55,17 @@
         "esp_bt_defs.h": "c",
         "esp_gatt_defs.h": "c",
         "esp_gatts_api.h": "c",
-        "esp_gap_ble_api.h": "c"
+        "esp_gap_ble_api.h": "c",
+        "stdlib.h": "c",
+        "epaper_display.h": "c",
+        "image_display.h": "c",
+        "trackball.h": "c",
+        "function_btn.h": "c",
+        "lvgl.h": "c",
+        "mode_setting_ui.h": "c",
+        "algorithm": "c",
+        "limits": "c",
+        "esp_adc_cal.h": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",

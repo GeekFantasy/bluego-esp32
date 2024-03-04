@@ -35,9 +35,9 @@ int mpu_i2c_master_init(void)
    
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_SDA,
+        .sda_io_num = MPU6500_I2C_SDA,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = I2C_SCL,
+        .scl_io_num = MPU6500_I2C_SCL,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = 100000,
         // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
@@ -54,7 +54,7 @@ int mpu_i2c_master_init(void)
 
 void mpu6500_init(void)
 {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    //vTaskDelay(100 / portTICK_PERIOD_MS);
 	
     ESP_ERROR_CHECK(mpu_i2c_master_init());
 	// Serial.println("INIT SENSOR...");
@@ -62,7 +62,7 @@ void mpu6500_init(void)
 
     if(mpu6500_reset()) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 reset with error");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 reset with error");
     }
     else
     {
@@ -71,7 +71,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_sleep(false)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 wake up modules with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 wake up modules with error.");
     }
     else
     {
@@ -102,7 +102,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_gyro_offset(&gyro_r))
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro offset with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set gyro offset with error.");
     }
     else
     {
@@ -110,11 +110,11 @@ void mpu6500_init(void)
     }
 
     gyro_r = mpu6500_get_gyro_offset();
-    ESP_LOGI(MPU6500_TAG, "Set gyro offset is, x = %d, y = %d, z = %d.", gyro_r.x, gyro_r.y, gyro_r.z);
+    ESP_LOGI(MPU6500_TAG, "Set gyro offset, x = %d, y = %d, z = %d.", gyro_r.x, gyro_r.y, gyro_r.z);
 
     if(mpu6500_set_clock_source(CLOCK_PLL)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set clock source with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set clock source with error.");
     }
     else
     {
@@ -123,7 +123,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_gyro_full_scale(GYRO_FS_SETTING)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set gyro scale with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set gyro scale with error.");
     }
     else
     {
@@ -132,7 +132,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_accel_full_scale(ACCEL_FS_16G)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set accel scale with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set accel scale with error.");
     }
     else
     {
@@ -141,7 +141,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_digital_low_pass_filter(DLPF_42HZ)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set low pass filter with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set low pass filter with error.");
     }
     else
     {
@@ -150,7 +150,7 @@ void mpu6500_init(void)
 
     if(mpu6500_set_sample_rate(100)) 
     {
-        ESP_LOGI(MPU6500_TAG, "MPU6500 set sample rate with error.");
+        ESP_LOGE(MPU6500_TAG, "MPU6500 set sample rate with error.");
     }
     else
     {
@@ -171,7 +171,7 @@ uint8_t mpu6500_who_am_i(void)
     }
     else
     {
-        ESP_LOGI(MPU6500_TAG,"Failed to read who am I!");
+        ESP_LOGE(MPU6500_TAG,"Failed to read who am I!");
     }
 
     return ret;
@@ -204,7 +204,7 @@ uint8_t mpu6500_write_bytes(uint8_t reg_addr, uint8_t* data, uint8_t data_len)
 uint8_t mpu6500_read_reg(uint8_t reg_addr,uint8_t data[], uint8_t data_len)
 {
     int ret;
-    ret=i2c_master_write_read_device(mpu_i2c_master_port, MPU6500_I2C_ADDR, &reg_addr, 1, data, data_len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);   
+    ret = i2c_master_write_read_device(mpu_i2c_master_port, MPU6500_I2C_ADDR, &reg_addr, 1, data, data_len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);   
     return ret;  
 }
 
@@ -479,7 +479,7 @@ esp_err_t mpu6500_get_gyro_bias(gyro_fs_t gyroFS, gyro_raw* gyro_bias)
         gyro_y  += (int16_t)((buffer[2] << 8) | buffer[3]);
         gyro_z  += (int16_t)((buffer[4] << 8) | buffer[5]);
 
-        ESP_LOGI(MPU6500_TAG, "Package num: %d, x=%d, y=%d, z=%d", i, (int16_t)((buffer[0] << 8) | buffer[1]), (int16_t)((buffer[2] << 8) | buffer[3]), (int16_t)((buffer[4] << 8) | buffer[5]));
+        ESP_LOGD(MPU6500_TAG, "Package num: %d, x=%d, y=%d, z=%d", i, (int16_t)((buffer[0] << 8) | buffer[1]), (int16_t)((buffer[2] << 8) | buffer[3]), (int16_t)((buffer[4] << 8) | buffer[5]));
     }
 
     // calculate average
