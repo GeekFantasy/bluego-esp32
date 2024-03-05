@@ -1089,21 +1089,23 @@ void lv_disp_init()
     /*Finally register the driver*/
     lv_disp_drv_register(&disp_drv);
 
-    // 定时器组0，定时器0的配置
-    timer_config_t config = {
-    .divider = TIMER_DIVIDER,
-    .counter_dir = TIMER_COUNT_UP,
-    .counter_en = TIMER_PAUSE,
-    .alarm_en = TIMER_ALARM_EN,
-    .auto_reload = true,
-    };
+    // Changed to use another method, so comment out this temporarily 
+    // // This timer is initalized for invoking lv_tick_inc() periodically
+    // // 定时器组0，定时器0的配置
+    // timer_config_t config = {
+    // .divider = TIMER_DIVIDER,
+    // .counter_dir = TIMER_COUNT_UP,
+    // .counter_en = TIMER_PAUSE,
+    // .alarm_en = TIMER_ALARM_EN,
+    // .auto_reload = true,
+    // };
 
-    timer_init(TIMER_GROUP_0, TIMER_0, &config);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *) TIMER_0, ESP_INTR_FLAG_IRAM, NULL);
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    // timer_init(TIMER_GROUP_0, TIMER_0, &config);
+    // timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *) TIMER_0, ESP_INTR_FLAG_IRAM, NULL);
+    // timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+    // timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
+    // timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+    // timer_start(TIMER_GROUP_0, TIMER_0);
 }
 
 // lvgl main task, as it runs epaper , the delay is 200ms here
@@ -1112,6 +1114,15 @@ void lv_task(void *pvParameters)
     while(1){
         lv_timer_handler();
         Delay(200);
+        //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
+    }
+}
+
+void lv_tick_task(void *pvParameters)
+{
+    while(1){
+        lv_tick_inc(50);;
+        Delay(50);
         //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
     }
 }
@@ -1315,7 +1326,8 @@ void app_main(void)
     update_volt_and_ble_status(average_voltage, ble_connected);
     mode_management_start(curr_mode);
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
-    xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 5, NULL);
+    xTaskCreate(&lv_tick_task, "lv_tick_task", 2048, NULL, 6, NULL);
+    xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 1, NULL);
 
     Delay(1600);
     epd_deep_sleep(epd_spi);
