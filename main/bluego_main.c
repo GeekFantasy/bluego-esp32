@@ -66,7 +66,7 @@ void disable_indev();
 #define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
 #define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
 #define TIMER_INTERVAL0_SEC     (0.05) // 定时器间隔为10毫秒
-#define TKB_POINTER_MULT        6
+#define TKB_POINTER_MULT        5
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
@@ -459,6 +459,22 @@ int is_valid_operation(oper_message op_msg)
     return valid_op;
 }
 
+float get_tkb_step_multipler(uint32_t last_sent_time, uint32_t curr_time)
+{
+    float mult = 0.0;
+    uint32_t time_span = curr_time - last_sent_time;
+
+    if(time_span < 10) 
+        mult = 5.5;
+    else if(time_span > 100)
+        mult = 1;
+    else
+    {
+        mult = -0.05 * time_span + 6;
+    }
+    return mult;
+}
+
 void track_ball_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
@@ -468,7 +484,9 @@ void track_ball_task(void *pvParameters)
     oper_message op_msg;
     track_ball_move tkb_mv = {};
     TickType_t time_delay = time_delay_for_tkb ;
-    TickType_t last_wake_time = xTaskGetTickCount();
+    TickType_t wake_time = xTaskGetTickCount();
+    TickType_t last_sent_time = 0;
+    float step_multipler = 1;
 
     while (1)
     {
@@ -496,17 +514,18 @@ void track_ball_task(void *pvParameters)
                 tkb_mv = get_tkb_move();
                 if(tkb_mv.up > 0 || tkb_mv.down > 0 || tkb_mv.left > 0 || tkb_mv.right > 0 )
                 {
+                    step_multipler = get_tkb_step_multipler(last_sent_time, wake_time);
                     tkb_key = OPER_KEY_TKB_UP;  // By default use trackball UP as the key
                     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
                     if(tkb_mv.up > 0)
-                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT); 
+                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.down > 0)
-                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT;
+                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT * step_multipler;
 
                     if(tkb_mv.left > 0)   
-                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT); 
+                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.right > 0)
-                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT; 
+                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT * step_multipler; 
                 }
                 else
                 {
@@ -548,10 +567,11 @@ void track_ball_task(void *pvParameters)
             {
                 op_msg.oper_key = tkb_key;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+                last_sent_time = xTaskGetTickCount();
                 //ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
-            vTaskDelayUntil(&last_wake_time, time_delay);
+            vTaskDelayUntil(&wake_time, time_delay);
         }
         else
         {
@@ -758,7 +778,7 @@ void gesture_detect_task(void *pvParameters)
     uint16_t ges_key;
     oper_message op_msg;
     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
-    TickType_t last_wake_time = xTaskGetTickCount();
+    TickType_t wake_time = xTaskGetTickCount();
     ESP_LOGI(HID_DEMO_TAG, "Entering gesture detect task");
 
     int state_switch = 0,  tb_touch_state = 1, tb_touch_state_old = 1;
@@ -774,10 +794,10 @@ void gesture_detect_task(void *pvParameters)
                 op_msg.oper_key = ges_key;
                 op_msg.oper_param.key_state.pressed = 1;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
+                //ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
-            vTaskDelayUntil(&last_wake_time, time_delay_for_ges);
+            vTaskDelayUntil(&wake_time, time_delay_for_ges);
         }
         else
         {
