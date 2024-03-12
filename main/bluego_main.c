@@ -422,13 +422,14 @@ void suspend_imu_and_ges_detector()
     }
 }
 
+// check if the operatino is recognized as a vlid operation
 int is_valid_operation(oper_message op_msg)
 {
     int valid_op = 0;
     switch (op_msg.oper_key)
     {
     case OPER_KEY_IMU_GYRO:
-        if(op_msg.oper_param.mouse.point_x > 2 || op_msg.oper_param.mouse.point_y > 2 || op_msg.oper_param.mouse.wheel > 0)  // Filter small movement
+        if(op_msg.oper_param.mouse.point_x > 3 || op_msg.oper_param.mouse.point_y > 3 || op_msg.oper_param.mouse.wheel > 0)  // Filter small movement
             valid_op = 1;
         break;
     case OPER_KEY_MFS_UP:
@@ -500,14 +501,14 @@ void track_ball_task(void *pvParameters)
                 tkb_key = OPER_KEY_TKB_TOUCH;
                 op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
-                time_delay = 100;
+                time_delay = 25;
             }
             else if((TRACK_BALL_TOUCH_UP == tb_touch_state) && (tb_touch_state != tb_touch_state_old))
             {
                 tkb_key = OPER_KEY_TKB_TOUCH;
                 op_msg.oper_param.key_state.pressed = 0;
                 op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
-                time_delay = 100;
+                time_delay = 25;
             }
             else if(tkb_set_as_mouse_pointer())
             {

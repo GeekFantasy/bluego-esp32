@@ -4,12 +4,12 @@ dependencies:
     source:
       type: idf
     version: 4.4.2
-  lvgl/lvgl:
-    component_hash: 948bff879a345149b83065535bbc4a026ce9f47498a22881e432a264b9098015
+  lvgl__lvgl:
+    component_hash: null
     source:
-      service_url: https://api.components.espressif.com/
-      type: service
+      path: D:\Project\bluego\BlueGo\components\lvgl__lvgl
+      type: local
     version: 8.3.11
-manifest_hash: 291f017743ba9039e77d171f657cdbf41d06706fb079bc7f62ffd4f16c6729cd
+manifest_hash: 96629521991d2cdedda93900b98cc508700546cfe34d02215d522f2f2cd62a9d
 target: esp32
 version: 1.0.0
