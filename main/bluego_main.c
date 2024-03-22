@@ -66,7 +66,7 @@ void disable_indev();
 #define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
 #define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
 #define TIMER_INTERVAL0_SEC     (0.05) // 定时器间隔为10毫秒
-#define TKB_POINTER_MULT        6
+#define TKB_POINTER_MULT        5
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
@@ -78,7 +78,7 @@ const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 200;
 const TickType_t time_delay_for_tkb = 200;
 const TickType_t time_delay_for_gyro = 10;
-const TickType_t time_delay_when_idle = 400;
+const TickType_t time_delay_when_idle = 200;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
@@ -422,13 +422,14 @@ void suspend_imu_and_ges_detector()
     }
 }
 
+// check if the operatino is recognized as a vlid operation
 int is_valid_operation(oper_message op_msg)
 {
     int valid_op = 0;
     switch (op_msg.oper_key)
     {
     case OPER_KEY_IMU_GYRO:
-        if(op_msg.oper_param.mouse.point_x > 2 || op_msg.oper_param.mouse.point_y > 2 || op_msg.oper_param.mouse.wheel > 0)  // Filter small movement
+        if(op_msg.oper_param.mouse.point_x > 3 || op_msg.oper_param.mouse.point_y > 3 || op_msg.oper_param.mouse.wheel > 0)  // Filter small movement
             valid_op = 1;
         break;
     case OPER_KEY_MFS_UP:
@@ -459,6 +460,22 @@ int is_valid_operation(oper_message op_msg)
     return valid_op;
 }
 
+float get_tkb_step_multipler(uint32_t last_sent_time, uint32_t curr_time)
+{
+    float mult = 0.0;
+    uint32_t time_span = curr_time - last_sent_time;
+
+    if(time_span < 10) 
+        mult = 5.5;
+    else if(time_span > 100)
+        mult = 1;
+    else
+    {
+        mult = -0.05 * time_span + 6;
+    }
+    return mult;
+}
+
 void track_ball_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
@@ -468,7 +485,9 @@ void track_ball_task(void *pvParameters)
     oper_message op_msg;
     track_ball_move tkb_mv = {};
     TickType_t time_delay = time_delay_for_tkb ;
-    TickType_t last_wake_time = xTaskGetTickCount();
+    TickType_t wake_time = xTaskGetTickCount();
+    TickType_t last_sent_time = 0;
+    float step_multipler = 1;
 
     while (1)
     {
@@ -482,31 +501,32 @@ void track_ball_task(void *pvParameters)
                 tkb_key = OPER_KEY_TKB_TOUCH;
                 op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
-                time_delay = 100;
+                time_delay = 25;
             }
             else if((TRACK_BALL_TOUCH_UP == tb_touch_state) && (tb_touch_state != tb_touch_state_old))
             {
                 tkb_key = OPER_KEY_TKB_TOUCH;
                 op_msg.oper_param.key_state.pressed = 0;
                 op_msg.oper_type = OPER_TYPE_TRIGGER_CANCEL;
-                time_delay = 100;
+                time_delay = 25;
             }
             else if(tkb_set_as_mouse_pointer())
             {
                 tkb_mv = get_tkb_move();
                 if(tkb_mv.up > 0 || tkb_mv.down > 0 || tkb_mv.left > 0 || tkb_mv.right > 0 )
                 {
+                    step_multipler = get_tkb_step_multipler(last_sent_time, wake_time);
                     tkb_key = OPER_KEY_TKB_UP;  // By default use trackball UP as the key
                     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
                     if(tkb_mv.up > 0)
-                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT); 
+                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.down > 0)
-                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT;
+                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT * step_multipler;
 
                     if(tkb_mv.left > 0)   
-                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT); 
+                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.right > 0)
-                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT; 
+                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT * step_multipler; 
                 }
                 else
                 {
@@ -548,10 +568,11 @@ void track_ball_task(void *pvParameters)
             {
                 op_msg.oper_key = tkb_key;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
+                last_sent_time = xTaskGetTickCount();
                 //ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
-            vTaskDelayUntil(&last_wake_time, time_delay);
+            vTaskDelayUntil(&wake_time, time_delay);
         }
         else
         {
@@ -615,7 +636,7 @@ void mode_setting_task(void *pvParameters)
 
         //tb_touch_state_old = tb_touch_state;
         func_btn_state_old = func_btn_state;
-        Delay(200);
+        Delay(100);
     }
 }
 
@@ -758,7 +779,7 @@ void gesture_detect_task(void *pvParameters)
     uint16_t ges_key;
     oper_message op_msg;
     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
-    TickType_t last_wake_time = xTaskGetTickCount();
+    TickType_t wake_time = xTaskGetTickCount();
     ESP_LOGI(HID_DEMO_TAG, "Entering gesture detect task");
 
     int state_switch = 0,  tb_touch_state = 1, tb_touch_state_old = 1;
@@ -774,10 +795,10 @@ void gesture_detect_task(void *pvParameters)
                 op_msg.oper_key = ges_key;
                 op_msg.oper_param.key_state.pressed = 1;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
+                //ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
-            vTaskDelayUntil(&last_wake_time, time_delay_for_ges);
+            vTaskDelayUntil(&wake_time, time_delay_for_ges);
         }
         else
         {
@@ -1089,21 +1110,23 @@ void lv_disp_init()
     /*Finally register the driver*/
     lv_disp_drv_register(&disp_drv);
 
-    // 定时器组0，定时器0的配置
-    timer_config_t config = {
-    .divider = TIMER_DIVIDER,
-    .counter_dir = TIMER_COUNT_UP,
-    .counter_en = TIMER_PAUSE,
-    .alarm_en = TIMER_ALARM_EN,
-    .auto_reload = true,
-    };
+    // Changed to use another method, so comment out this temporarily 
+    // // This timer is initalized for invoking lv_tick_inc() periodically
+    // // 定时器组0，定时器0的配置
+    // timer_config_t config = {
+    // .divider = TIMER_DIVIDER,
+    // .counter_dir = TIMER_COUNT_UP,
+    // .counter_en = TIMER_PAUSE,
+    // .alarm_en = TIMER_ALARM_EN,
+    // .auto_reload = true,
+    // };
 
-    timer_init(TIMER_GROUP_0, TIMER_0, &config);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *) TIMER_0, ESP_INTR_FLAG_IRAM, NULL);
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    // timer_init(TIMER_GROUP_0, TIMER_0, &config);
+    // timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *) TIMER_0, ESP_INTR_FLAG_IRAM, NULL);
+    // timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+    // timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
+    // timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+    // timer_start(TIMER_GROUP_0, TIMER_0);
 }
 
 // lvgl main task, as it runs epaper , the delay is 200ms here
@@ -1112,6 +1135,15 @@ void lv_task(void *pvParameters)
     while(1){
         lv_timer_handler();
         Delay(200);
+        //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
+    }
+}
+
+void lv_tick_task(void *pvParameters)
+{
+    while(1){
+        lv_tick_inc(30);;
+        Delay(30);
         //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
     }
 }
@@ -1315,7 +1347,8 @@ void app_main(void)
     update_volt_and_ble_status(average_voltage, ble_connected);
     mode_management_start(curr_mode);
     // ESP_LOGI(HID_DEMO_TAG, "lv_task task initialised.");
-    xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 5, NULL);
+    xTaskCreate(&lv_tick_task, "lv_tick_task", 2048, NULL, 6, NULL);
+    xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 1, NULL);
 
     Delay(1600);
     epd_deep_sleep(epd_spi);

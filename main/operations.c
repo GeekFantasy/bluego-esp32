@@ -91,7 +91,7 @@ const action_str action_strs[] =
     {402, "Volume down"},
     {403, "Mute"},
     {404, "Power"},
-    {405, "Rest"},
+    {405, "Reset"},
     {406, "Sleep"},
 };
 
