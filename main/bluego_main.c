@@ -78,7 +78,7 @@ const TickType_t time_delay_for_mfs = 50;
 const TickType_t time_delay_for_ges = 200;
 const TickType_t time_delay_for_tkb = 200;
 const TickType_t time_delay_for_gyro = 10;
-const TickType_t time_delay_when_idle = 400;
+const TickType_t time_delay_when_idle = 200;
 const TickType_t tick_delay_msg_send = 10;
 
 static uint16_t hid_conn_id = 0;
@@ -636,7 +636,7 @@ void mode_setting_task(void *pvParameters)
 
         //tb_touch_state_old = tb_touch_state;
         func_btn_state_old = func_btn_state;
-        Delay(200);
+        Delay(100);
     }
 }
 
@@ -1142,8 +1142,8 @@ void lv_task(void *pvParameters)
 void lv_tick_task(void *pvParameters)
 {
     while(1){
-        lv_tick_inc(50);;
-        Delay(50);
+        lv_tick_inc(30);;
+        Delay(30);
         //ESP_LOGI(HID_DEMO_TAG, "*Timer CNT: %d *.", timer_test_cnt);
     }
 }
