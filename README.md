@@ -1,3 +1,4 @@
+![image](bluego-v2.png)
 | Supported Targets | ESP32 | 
 | ----------------- | ----- |
 
