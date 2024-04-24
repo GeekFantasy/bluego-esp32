@@ -65,7 +65,8 @@
         "mode_setting_ui.h": "c",
         "algorithm": "c",
         "limits": "c",
-        "esp_adc_cal.h": "c"
+        "esp_adc_cal.h": "c",
+        "cmath": "c"
     },
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
