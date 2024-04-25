@@ -112,6 +112,33 @@ track_ball_move get_tkb_move()
     return tkb_mv;
 }
 
+track_ball_move convert_to_tkb_div_move(track_ball_move mv)
+{
+    track_ball_move div_mv ={};
+
+    div_mv.up = mv.up / TRACK_BALL_MOVEMENT_DIVIDER;
+    div_mv.down = mv.down / TRACK_BALL_MOVEMENT_DIVIDER;
+    div_mv.left = mv.left / TRACK_BALL_MOVEMENT_DIVIDER;
+    div_mv.right = mv.right / TRACK_BALL_MOVEMENT_DIVIDER;
+
+    return div_mv;
+}
+
+track_ball_move convert_to_tkb_div_move_v2(track_ball_move mv, int div)
+{
+    track_ball_move div_mv ={};
+
+    if(div <=0)
+        return div_mv;
+
+    div_mv.up = mv.up / div;
+    div_mv.down = mv.down / div;
+    div_mv.left = mv.left / div;
+    div_mv.right = mv.right / div;
+
+    return div_mv;
+}
+
 track_ball_move get_tkb_div_move()
 {
     track_ball_move tkb_mv ={};
@@ -131,6 +158,34 @@ track_ball_move get_tkb_div_move()
 
     move_steps = tkb_move_right_steps / TRACK_BALL_MOVEMENT_DIVIDER;
     tkb_move_right_steps -= (move_steps * TRACK_BALL_MOVEMENT_DIVIDER);
+    tkb_mv.right = move_steps;
+
+    return tkb_mv;
+}
+
+track_ball_move get_tkb_div_move_v2(int div)
+{
+    
+    track_ball_move tkb_mv ={};
+    uint16_t move_steps = 0;
+
+    if(div <= 0)
+        return tkb_mv;
+   
+    move_steps = tkb_move_up_steps / div;
+    tkb_move_up_steps -= (move_steps * div);
+    tkb_mv.up = move_steps;
+
+    move_steps = tkb_move_down_steps / div;
+    tkb_move_down_steps -= (move_steps * div);
+    tkb_mv.down = move_steps;
+
+    move_steps = tkb_move_left_steps / div;
+    tkb_move_left_steps -= (move_steps * div);
+    tkb_mv.left = move_steps;
+
+    move_steps = tkb_move_right_steps / div;
+    tkb_move_right_steps -= (move_steps * div);
     tkb_mv.right = move_steps;
 
     return tkb_mv;

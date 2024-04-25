@@ -40,7 +40,7 @@ void lv_indev_init();
 void enable_indev();
 void disable_indev();
 
-#define HID_DEMO_TAG "BLUEGO"
+#define HID_DEMO_TAG "BG"
 #define IMU_LOG_TAG "IMU DATA"
 #define HIDD_DEVICE_NAME "BlueGo"
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
@@ -66,7 +66,9 @@ void disable_indev();
 #define TIMER_DIVIDER           16  // 硬件定时器时钟分频器
 #define TIMER_SCALE             (TIMER_BASE_CLK / TIMER_DIVIDER)  // 将定时器计数器值转换为秒
 #define TIMER_INTERVAL0_SEC     (0.05) // 定时器间隔为10毫秒
-#define TKB_POINTER_MULT        5
+#define TKB_POINTER_MULT        1
+
+#define IGNORE_POINTER_SPAN     200  //需要忽略pointer事件的时间
 
 //static int timer_test_cnt = 0;
 lv_indev_t * encoder_indev = NULL;
@@ -281,10 +283,10 @@ int read_ges_from_paj7620()
                 ges_key = OPER_KEY_GES_DOWN;
                 break;
             case GES_UP_FLAG:
-                ges_key = OPER_KEY_GES_RIGHT;
+                ges_key = OPER_KEY_GES_LEFT;
                 break;
             case GES_DOWN_FLAG:
-                ges_key = OPER_KEY_GES_LEFT;
+                ges_key = OPER_KEY_GES_RIGHT;
                 break;
             case GES_FORWARD_FLAG: 
                 ges_key = OPER_KEY_GES_FORWOARD;
@@ -476,6 +478,40 @@ float get_tkb_step_multipler(uint32_t last_sent_time, uint32_t curr_time)
     return mult;
 }
 
+float get_tkb_step_multipler_v2(uint32_t time, uint32_t distance)
+{
+    float mult = 0.0;
+    float velocity = (distance * 100) / (float)time;
+
+    if(velocity < 1)
+        mult = 1;
+    if(velocity > 20)
+        mult = 25.2;
+    else
+    {
+        mult = 1.26 * velocity - 0.26;
+    }
+
+    return mult;
+}
+
+double get_tkb_step_multipler_v3(uint32_t time, double distance)
+{
+    double mult = 0.0;
+    double velocity = (distance * 200) / time;
+
+    if(velocity < 1)
+        mult = 1;
+    if(velocity > 20)
+        mult = 30;
+    else
+    {
+        mult =  1.526 * velocity - 0.526;
+    }
+
+    return mult;
+}
+
 void track_ball_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
@@ -486,8 +522,9 @@ void track_ball_task(void *pvParameters)
     track_ball_move tkb_mv = {};
     TickType_t time_delay = time_delay_for_tkb ;
     TickType_t wake_time = xTaskGetTickCount();
-    TickType_t last_sent_time = 0;
-    float step_multipler = 1;
+    TickType_t curr_time = wake_time;
+    TickType_t last_time = wake_time;
+    double step_multipler = 1;
 
     while (1)
     {
@@ -512,21 +549,28 @@ void track_ball_task(void *pvParameters)
             }
             else if(tkb_set_as_mouse_pointer())
             {
+                curr_time = xTaskGetTickCount();
                 tkb_mv = get_tkb_move();
                 if(tkb_mv.up > 0 || tkb_mv.down > 0 || tkb_mv.left > 0 || tkb_mv.right > 0 )
                 {
-                    step_multipler = get_tkb_step_multipler(last_sent_time, wake_time);
+                    step_multipler = get_tkb_step_multipler_v3(curr_time - last_time, 
+                        sqrt(tkb_mv.up * tkb_mv.up + tkb_mv.down * tkb_mv.down + tkb_mv.left * tkb_mv.left  + tkb_mv.right * tkb_mv.right));
                     tkb_key = OPER_KEY_TKB_UP;  // By default use trackball UP as the key
                     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
                     if(tkb_mv.up > 0)
-                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT * step_multipler); 
+                        op_msg.oper_param.mouse.point_y = - ceil(tkb_mv.up * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.down > 0)
-                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT * step_multipler;
+                        op_msg.oper_param.mouse.point_y = ceil(tkb_mv.down * TKB_POINTER_MULT * step_multipler);
 
                     if(tkb_mv.left > 0)   
-                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT * step_multipler); 
+                        op_msg.oper_param.mouse.point_x = -ceil(tkb_mv.left * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.right > 0)
-                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT * step_multipler; 
+                        op_msg.oper_param.mouse.point_x = ceil(tkb_mv.right * TKB_POINTER_MULT * step_multipler); 
+                    
+                    ESP_LOGD("M", "%d: %d, %d", (curr_time - last_time)
+                                          , ((int8_t)op_msg.oper_param.mouse.point_y)
+                                          , ((int8_t)op_msg.oper_param.mouse.point_x));
+                    last_time = curr_time;
                 }
                 else
                 {
@@ -535,7 +579,7 @@ void track_ball_task(void *pvParameters)
                     
                 time_delay = 10;
             }
-            else if(tkb_set_as_mouse_wheel())
+            else if(tkb_up_down_set_as_mouse_wheel())
             {
                 tkb_mv = get_tkb_move();
                 if(tkb_mv.up > 0 || tkb_mv.down > 0)
@@ -546,20 +590,45 @@ void track_ball_task(void *pvParameters)
                         op_msg.oper_param.mouse.wheel = tkb_mv.up; 
                     else if(tkb_mv.down > 0)
                         op_msg.oper_param.mouse.wheel = -tkb_mv.down; 
+                    
+                    time_delay = 10;
                 }
                 else
                 {
-                    tkb_key = 0;
+                    tkb_key = get_track_ball_movement_key(convert_to_tkb_div_move(tkb_mv));
+                    op_msg.oper_param.key_state.pressed = 1;
+                    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
+                    time_delay = 150;
                 }
-
-                time_delay = 10;
+            }
+            else if(tkb_left_right_set_as_mouse_wheel())
+            {
+                tkb_mv = get_tkb_move();
+                if(tkb_mv.left > 0 || tkb_mv.right > 0)
+                {
+                    tkb_key = OPER_KEY_TKB_LEFT;  // By default use trackball UP as the key
+                    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
+                    if(tkb_mv.left > 0)
+                        op_msg.oper_param.mouse.wheel = tkb_mv.left; 
+                    else if(tkb_mv.right > 0)
+                        op_msg.oper_param.mouse.wheel = -tkb_mv.right; 
+                    
+                    time_delay = 10;
+                }
+                else
+                {
+                    tkb_key = get_track_ball_movement_key(convert_to_tkb_div_move(tkb_mv));
+                    op_msg.oper_param.key_state.pressed = 1;
+                    op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
+                    time_delay = 150;
+                }
             }
             else 
             {
-                tkb_key = get_track_ball_movement_key(get_tkb_div_move());
+                tkb_key = get_track_ball_movement_key(convert_to_tkb_div_move(get_tkb_move()));
                 op_msg.oper_param.key_state.pressed = 1;
                 op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY;
-                time_delay = 200;
+                time_delay = 150;
             }
 
             tb_touch_state_old = tb_touch_state;
@@ -568,7 +637,7 @@ void track_ball_task(void *pvParameters)
             {
                 op_msg.oper_key = tkb_key;
                 xQueueSend(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS);
-                last_sent_time = xTaskGetTickCount();
+                //last_sent_time = xTaskGetTickCount();
                 //ESP_LOGI(HID_DEMO_TAG, "Message send with op_key: %d.", op_msg.oper_key);
             }
 
@@ -889,6 +958,7 @@ void hid_main_task(void *pvParameters)
     int func_btn_state = 1;
     TickType_t current_tick = 0;
     int state_last_time_ms = xTaskGetTickCount();
+    int ignore_pointer_time = state_last_time_ms;
 
     while (1)
     {
@@ -896,11 +966,30 @@ void hid_main_task(void *pvParameters)
         {
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
-                ESP_LOGI(HID_DEMO_TAG, "OP KEY:%d", op_msg.oper_key);
+                ESP_LOGI(HID_DEMO_TAG, "Key:%d", op_msg.oper_key);
                 if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
                 {
                     action_code = get_action_code(op_msg.oper_key);
-                    send_operation_action(hid_conn_id, action_code, op_msg.oper_param, op_msg.oper_type);
+
+                    // If mouse left/right is clicked, need to ignore pointer for a short while to make the click stable.
+                    if(ACTION_CODE_MOUSE_LEFT_CLICK == action_code
+                    || ACTION_CODE_MOUSE_RIGHT_CLICK == action_code )
+                    {
+                        ignore_pointer_time = xTaskGetTickCount() + IGNORE_POINTER_SPAN;
+                    }
+
+                    if(ACTION_CODE_MOUSE_POINTOR != action_code)
+                    {
+                        send_operation_action(hid_conn_id, action_code, op_msg.oper_param, op_msg.oper_type);
+                    }
+                    else // Only send pointer action after IGNORE_POINTER_SPAN to make the click stable.
+                    {
+                        if(xTaskGetTickCount() > ignore_pointer_time)
+                        {
+                            send_operation_action(hid_conn_id, action_code, op_msg.oper_param, op_msg.oper_type);
+                        }
+                    }
+                    
                     if(is_valid_operation(op_msg))
                         last_oper_time = xTaskGetTickCount(); 
                 }
@@ -1176,6 +1265,7 @@ void app_main(void)
         go_to_deep_sleep();
     }
 
+    // Can be used to clear the mode in flash
     // if(ESP_OK == nvs_flash_erase())
     // {
     //     ESP_LOGI(HID_DEMO_TAG, "NVS defualt partition is erased.");
@@ -1350,7 +1440,7 @@ void app_main(void)
     xTaskCreate(&lv_tick_task, "lv_tick_task", 2048, NULL, 6, NULL);
     xTaskCreate(&lv_task, "lv_task", 2048 * 6, NULL, 1, NULL);
 
-    Delay(1600);
+    Delay(3000);
     epd_deep_sleep(epd_spi);
 
     // make funtion button work after everything loaded.

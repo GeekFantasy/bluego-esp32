@@ -137,6 +137,8 @@ void clear_operations_tab_action_code();
 int check_stylus_enabled();
 int tkb_set_as_mouse_pointer();
 int tkb_set_as_mouse_wheel();
+int tkb_up_down_set_as_mouse_wheel();
+int tkb_left_right_set_as_mouse_wheel();
 void write_mode_operations_to_nvs(int8_t mode_num);
 void read_mode_to_matrix(int8_t mode_num);
 void write_all_modes_to_nvs();

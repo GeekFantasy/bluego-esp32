@@ -10,7 +10,7 @@
 
 #define OPERATIONS_TAG "BG_OPER"
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
-#define ACTION_DURATION 100
+#define ACTION_DURATION 50
 
 operation_action operation_action_matrix[OPER_KEY_MAX_NUM] = {
     {"imu", 1},
@@ -100,7 +100,7 @@ const uint16_t mode_am_actions[OPER_KEY_MAX_NUM] =  // mode actions for air mous
     1, 201,
     0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 202   
+    1, 205, 205, 402, 401, 202   
 };
 
 const uint16_t mode_ges_actions[OPER_KEY_MAX_NUM] = // mode actions for hand gesture control 
@@ -478,6 +478,17 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
             }
             esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
         }
+        else if(oper_type == OPER_TYPE_TRIGGER_ONLY)
+        {
+            if (op_param.key_state.pressed)
+            {
+                mouse_key_state |= MOUSE_LEFT_KEY_SET_MASK;
+                esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+                Delay(ACTION_DURATION);
+                mouse_key_state &= MOUSE_LEFT_KEY_CLEAR_MASK;
+                esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+            }
+        }
         break;
     case ACTION_CODE_MOUSE_RIGHT_CLICK:
         if (oper_type == OPER_TYPE_TRIGGER_CANCEL)
@@ -491,6 +502,17 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
                 mouse_key_state &= MOUSE_RIGHT_KEY_CLEAR_MASK;
             }
             esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+        }
+        else if(oper_type == OPER_TYPE_TRIGGER_ONLY)
+        {
+             if (op_param.key_state.pressed)
+            {
+                mouse_key_state |= MOUSE_RIGHT_KEY_SET_MASK;
+                esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+                Delay(ACTION_DURATION);
+                mouse_key_state &= MOUSE_RIGHT_KEY_CLEAR_MASK;
+                esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+            }
         }
 
         break;
@@ -506,6 +528,17 @@ void send_operation_action(uint16_t hid_conn_id, uint16_t action_code, oper_para
                 mouse_key_state &= MOUSE_MIDDLE_KEY_CLEAR_MASK;
             }
             esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+        }
+        else if(oper_type == OPER_TYPE_TRIGGER_ONLY)
+        {
+            if (op_param.key_state.pressed)
+            {
+                mouse_key_state |= MOUSE_MIDDLE_KEY_SET_MASK;
+                esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+                Delay(ACTION_DURATION);
+                mouse_key_state &= MOUSE_MIDDLE_KEY_CLEAR_MASK;
+                esp_hidd_send_mouse_value(hid_conn_id, mouse_key_state, 0, 0, 0);
+            }
         }
         break;
     case ACTION_CODE_MOUSE_WHEEL:
@@ -644,7 +677,7 @@ int check_stylus_enabled()
     return (enabled_flag > 0 ? 1 : 0);
 }
 
-// check if track ball set as pointer or wheel
+// check if track ball set as pointer
 int tkb_set_as_mouse_pointer()
 {
     int ret_code = 0;
@@ -652,6 +685,9 @@ int tkb_set_as_mouse_pointer()
     if(operation_action_matrix[OPER_KEY_TKB].action_code == 1 )
     {
         ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_POINTOR);
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_DOWN].action_code == ACTION_CODE_MOUSE_POINTOR);
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_LEFT].action_code == ACTION_CODE_MOUSE_POINTOR);
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_RIGHT].action_code == ACTION_CODE_MOUSE_POINTOR);
     }
 
     return (ret_code > 0 ? 1 : 0);
@@ -667,8 +703,37 @@ int tkb_set_as_mouse_wheel()
         ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_WHEEL);
     }
 
-    return (ret_code > 0 ? 1 : 0);;
+    return (ret_code > 0 ? 1 : 0);
 }
+
+// check if track ball up/down set as pointer or wheel
+int tkb_up_down_set_as_mouse_wheel()
+{
+    int ret_code = 0;
+    
+    if(operation_action_matrix[OPER_KEY_TKB].action_code == 1 )
+    {
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_UP].action_code == ACTION_CODE_MOUSE_WHEEL);
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_DOWN].action_code == ACTION_CODE_MOUSE_WHEEL);
+    }
+
+    return (ret_code > 0 ? 1 : 0);
+}
+
+// check if track ball left/righ set as pointer or wheel
+int tkb_left_right_set_as_mouse_wheel()
+{
+    int ret_code = 0;
+    
+    if(operation_action_matrix[OPER_KEY_TKB].action_code == 1 )
+    {
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_LEFT].action_code == ACTION_CODE_MOUSE_WHEEL);
+        ret_code += (operation_action_matrix[OPER_KEY_TKB_RIGHT].action_code == ACTION_CODE_MOUSE_WHEEL);
+    }
+
+    return (ret_code > 0 ? 1 : 0);
+}
+
 
 void clear_operations_tab_action_code()
 {
