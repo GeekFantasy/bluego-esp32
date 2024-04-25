@@ -40,7 +40,7 @@ void lv_indev_init();
 void enable_indev();
 void disable_indev();
 
-#define HID_DEMO_TAG "BLUEGO"
+#define HID_DEMO_TAG "BG"
 #define IMU_LOG_TAG "IMU DATA"
 #define HIDD_DEVICE_NAME "BlueGo"
 #define Delay(t) vTaskDelay(t / portTICK_PERIOD_MS)
@@ -495,6 +495,23 @@ float get_tkb_step_multipler_v2(uint32_t time, uint32_t distance)
     return mult;
 }
 
+double get_tkb_step_multipler_v3(uint32_t time, double distance)
+{
+    double mult = 0.0;
+    double velocity = (distance * 200) / time;
+
+    if(velocity < 1)
+        mult = 1;
+    if(velocity > 20)
+        mult = 30;
+    else
+    {
+        mult =  1.526 * velocity - 0.526;
+    }
+
+    return mult;
+}
+
 void track_ball_task(void *pvParameters)
 {
     ESP_LOGI(HID_DEMO_TAG, "Entering track_ball_task task");
@@ -507,7 +524,7 @@ void track_ball_task(void *pvParameters)
     TickType_t wake_time = xTaskGetTickCount();
     TickType_t curr_time = wake_time;
     TickType_t last_time = wake_time;
-    float step_multipler = 1;
+    double step_multipler = 1;
 
     while (1)
     {
@@ -536,21 +553,21 @@ void track_ball_task(void *pvParameters)
                 tkb_mv = get_tkb_move();
                 if(tkb_mv.up > 0 || tkb_mv.down > 0 || tkb_mv.left > 0 || tkb_mv.right > 0 )
                 {
-                    step_multipler = get_tkb_step_multipler_v2(curr_time - last_time, 
+                    step_multipler = get_tkb_step_multipler_v3(curr_time - last_time, 
                         sqrt(tkb_mv.up * tkb_mv.up + tkb_mv.down * tkb_mv.down + tkb_mv.left * tkb_mv.left  + tkb_mv.right * tkb_mv.right));
                     tkb_key = OPER_KEY_TKB_UP;  // By default use trackball UP as the key
                     op_msg.oper_type = OPER_TYPE_TRIGGER_ONLY; 
                     if(tkb_mv.up > 0)
-                        op_msg.oper_param.mouse.point_y = - (tkb_mv.up * TKB_POINTER_MULT * ceil(step_multipler)); 
+                        op_msg.oper_param.mouse.point_y = - ceil(tkb_mv.up * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.down > 0)
-                        op_msg.oper_param.mouse.point_y = tkb_mv.down * TKB_POINTER_MULT * ceil(step_multipler);
+                        op_msg.oper_param.mouse.point_y = ceil(tkb_mv.down * TKB_POINTER_MULT * step_multipler);
 
                     if(tkb_mv.left > 0)   
-                        op_msg.oper_param.mouse.point_x = -(tkb_mv.left * TKB_POINTER_MULT * ceil(step_multipler)); 
+                        op_msg.oper_param.mouse.point_x = -ceil(tkb_mv.left * TKB_POINTER_MULT * step_multipler); 
                     else if(tkb_mv.right > 0)
-                        op_msg.oper_param.mouse.point_x = tkb_mv.right * TKB_POINTER_MULT * ceil(step_multipler); 
+                        op_msg.oper_param.mouse.point_x = ceil(tkb_mv.right * TKB_POINTER_MULT * step_multipler); 
                     
-                    ESP_LOGI("M", "%d: %d, %d", (curr_time - last_time)
+                    ESP_LOGD("M", "%d: %d, %d", (curr_time - last_time)
                                           , ((int8_t)op_msg.oper_param.mouse.point_y)
                                           , ((int8_t)op_msg.oper_param.mouse.point_x));
                     last_time = curr_time;
@@ -949,7 +966,7 @@ void hid_main_task(void *pvParameters)
         {
             if (xQueueReceive(oper_queue, &op_msg, tick_delay_msg_send / portTICK_PERIOD_MS))
             {
-                ESP_LOGI(HID_DEMO_TAG, "OP KEY:%d", op_msg.oper_key);
+                ESP_LOGI(HID_DEMO_TAG, "Key:%d", op_msg.oper_key);
                 if(op_msg.oper_key != OPER_KEY_ESP_RESTART)
                 {
                     action_code = get_action_code(op_msg.oper_key);
