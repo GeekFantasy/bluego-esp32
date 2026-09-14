@@ -1,3 +1,5 @@
+
+
 ![image](bluego-v2.png)
 | Supported Targets | ESP32 | 
 | ----------------- | ----- |
@@ -10,7 +12,7 @@
 此设备是是一个基于BLE（低功耗蓝牙）的HID（人机交互）设备。它基于ESP32芯片开发，集成了手势识别模块PAJ7620, 惯性传感芯片MPU6500,还有一个五向按钮（v2换成了轨迹球），同时带有锂电池管理芯片，可以便携使用。
 
 ### 功能介绍：
-现在最新是BlueGo v2,在原有基础上增加了电子墨水屏，按钮换成了轨迹球，能够支持一下功能，功能自定义已从APP移植到设备上。
+现在最新是BlueGo v2,在原有基础上增加了电子墨水屏，按钮换成了轨迹球，能够支持以下功能，功能自定义已从APP移植到设备上。
 
 * __空鼠 Air Mouse__,  它使用MPU6500的陀螺仪Y， Z轴的角度变化，转化成鼠标的x，y坐标，X轴角度变化转化成滚轮数据，使用五向按钮中的3个映射鼠标的左中右键。
 
@@ -24,6 +26,3 @@
 硬件的电路图，PCB以及BOM在嘉立创平台开源：  
 BlueGo v2: https://oshwhub.com/geekfantasy/bluego-v1-0-0 (对应master分支）  
 BlueGo v1: https://oshwhub.com/geekfantasy/fei-shu-shou-shi-cao-kong-wai-sh (对应bluego-v1分支）
-
-
-
